@@ -1,0 +1,166 @@
+{
+ "map_to_resources": true,
+ "objects": {
+  "READ_ME_I_AM_VERY_IMPORTANT": {
+   "hash": "0d000710b71ca9aafabd8f587768431d0b560b32",
+   "size": 546
+  },
+  "icons/icon_16x16.png": {
+   "hash": "bdf48ef6b5d0d23bbb02e17d04865216179f510a",
+   "size": 3665
+  },
+  "icons/icon_32x32.png": {
+   "hash": "92750c5f93c312ba9ab413d546f32190c56d6f1f",
+   "size": 5362
+  },
+  "icons/minecraft.icns": {
+   "hash": "991b421dfd401f115241601b2b373140a8d78572",
+   "size": 114786
+  },
+  "music/calm1.ogg": {
+   "hash": "50a59a4f56e4046701b758ddbb1c1587efa4cadf",
+   "size": 2530812
+  },
+  "music/calm2.ogg": {
+   "hash": "74da65c99aa578486efa7b69983d3533e14c0d6e",
+   "size": 1976731
+  },
+  "music/calm3.ogg": {
+   "hash": "14ae57a6bce3d4254daa8be2b098c2d99743cc3f",
+   "size": 2232651
+  },
+  "newmusic/hal1.ogg": {
+   "hash": "df1ff11b79757432c5c3f279e5ecde7b63ceda64",
+   "size": 1972217
+  },
+  "newmusic/hal2.ogg": {
+   "hash": "ceaaaa1d57dfdfbb0bd4da5ea39628b42897a687",
+   "size": 1754429
+  },
+  "newmusic/hal3.ogg": {
+   "hash": "dd85fb564e96ee2dbd4754f711ae9deb08a169f9",
+   "size": 1923269
+  },
+  "newmusic/hal4.ogg": {
+   "hash": "5e7d63e75c6e042f452bc5e151276911ef92fed8",
+   "size": 2558252
+  },
+  "newmusic/nuance1.ogg": {
+   "hash": "cc1a80b6becfc6d6489c069f053d0a8adc71c339",
+   "size": 156322
+  },
+  "newmusic/nuance2.ogg": {
+   "hash": "78152dc42b036e0de7616e6e669ce5a81d17f82a",
+   "size": 219029
+  },
+  "newmusic/piano1.ogg": {
+   "hash": "0f374764aafba398f4ba90dba05a53a9e6166138",
+   "size": 542805
+  },
+  "newmusic/piano2.ogg": {
+   "hash": "98a918eb2694defd19726436d4b9dca9e7dd6a65",
+   "size": 824333
+  },
+  "newmusic/piano3.ogg": {
+   "hash": "9528b6a76e7bac64ca1145cc682e8a8448cc04e5",
+   "size": 2665984
+  },
+  "newsound/ambient/cave/cave1.ogg": {
+   "hash": "29d4dccf3353334c7aa2a49cb6fed3780a51a1ba",
+   "size": 33948
+  },
+  "newsound/ambient/cave/cave10.ogg": {
+   "hash": "79a5b53bf22cca182ddff2a670942c49867663ec",
+   "size": 22725
+  },
+  "newsound/ambient/cave/cave11.ogg": {
+   "hash": "e367d1dfa1ce07374e0aeaecbfb1526142a0dcc1",
+   "size": 36963
+  },
+  "newsound/ambient/cave/cave12.ogg": {
+   "hash": "a720e85e35be0dc3186d01cc599121b87e7ee9f7",
+   "size": 21193
+  },
+  "newsound/ambient/cave/cave13.ogg": {
+   "hash": "63bbe3921abd75b9f6cd1e20330360d164da169b",
+   "size": 29512
+  },
+  "newsound/ambient/cave/cave2.ogg": {
+   "hash": "5680749048457f5772ec95a73d856ad792fa1717",
+   "size": 48741
+  },
+  "newsound/ambient/cave/cave3.ogg": {
+   "hash": "d4b06ccb8e331ece734f51d84a0a5fbc7164d8be",
+   "size": 50958
+  },
+  "newsound/ambient/cave/cave4.ogg": {
+   "hash": "48540d7788ce3d9e780cb448ce5676c53dbcfd23",
+   "size": 49499
+  },
+  "newsound/ambient/cave/cave5.ogg": {
+   "hash": "18a992d93128bb2e2861930cff3140c6940c0127",
+   "size": 67196
+  },
+  "newsound/ambient/cave/cave6.ogg": {
+   "hash": "cf23204a9cca2ac7f9674168cc063cfb4dbe001f",
+   "size": 42176
+  },
+  "newsound/ambient/cave/cave7.ogg": {
+   "hash": "c8dd60f7e7087da52a431c1dbc0f397317b374fb",
+   "size": 45278
+  },
+  "newsound/ambient/cave/cave8.ogg": {
+   "hash": "9024de3f1dd4bc1e8f445c7c5b812f25c7e31bf6",
+   "size": 49295
+  },
+  "newsound/ambient/cave/cave9.ogg": {
+   "hash": "b463fa47816fe9a5dfe508093150e647403e4db6",
+   "size": 27096
+  },
+  "newsound/ambient/weather/rain1.ogg": {
+   "hash": "d68bae1949299ccd8297aaa423dd12e041e83773",
+   "size": 13185
+  },
+  "newsound/ambient/weather/rain2.ogg": {
+   "hash": "ba58e1b6c8cc814a210db268d3e59a06b7ac62be",
+   "size": 13301
+  },
+  "newsound/ambient/weather/rain3.ogg": {
+   "hash": "4cdd8fc380e85409fd94b93abdcad077d75ec58f",
+   "size": 13322
+  },
+  "newsound/ambient/weather/rain4.ogg": {
+   "hash": "08e555782cb2785b24e08a417a5e58aa08bd0695",
+   "size": 13955
+  },
+  "newsound/ambient/weather/thunder1.ogg": {
+   "hash": "671ef0ae7b59014a2f637d7af6d781324ab6309f",
+   "size": 24468
+  },
+  "newsound/ambient/weather/thunder2.ogg": {
+   "hash": "a20cbf2ddce541eaed520d7ec55665fe97428be6",
+   "size": 25571
+  },
+  "newsound/ambient/weather/thunder3.ogg": {
+   "hash": "9ead5c928f9122e3c2f5fc4f6ce7fb4054a2b578",
+   "size": 27653
+  },
+  "newsound/damage/fallbig1.ogg": {
+   "hash": "f76d4efd860b599200e96401b2485cc83c1ec21e",
+   "size": 11207
+  },
+  "newsound/damage/fallbig2.ogg": {
+   "hash": "c7c9e86e3ccc55ea2312a498aef861def771d8cf",
+   "size": 8766
+  },
+  "newsound/damage/fallsmall.ogg": {
+   "hash": "6094b6620f2d1f2d19869a2e6498a52b1a265738",
+   "size": 7640
+  },
+  "newsound/damage/hurtflesh1.ogg": {
+   "hash": "e40695b47209c3b4bbdc3496b38959d097c6afbc",
+   "size": 8981
+  }
+ },
+ "_sampled_total": 749
+}
