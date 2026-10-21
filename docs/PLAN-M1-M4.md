@@ -241,8 +241,16 @@ Now the UI layer opens, in this order (each step demos something):
 1. `motion.dart` (tokens) → `MotionScope` → `stagger_budget.dart` (+ unit tests) → primitives
 2. `app_theme.dart` — one source: Fluent theme + **explicit `brightness` in both** (§0.6),
    accent ⇒ M3 seed. Golden-tested in light *and* dark so the §0.6 trap cannot regress.
-3. `l10n.yaml` + `lib/l10n/app_en.arb`, `app_zh.arb`; `AppLocalizations` generated. Every string
-   goes through it from the first widget, per `PLAN.md` §11.3.
+3. ✅ **Done.** `l10n.yaml` + `lib/l10n/app_en.arb`, `app_zh.arb`; `AppLocalizations` generated
+   into `lib/l10n/generated/` and **committed** (Flutter 3.47 removed synthetic packages, and
+   `flutter pub get` regenerates it, so a fresh clone and CI need no extra step). Every string
+   goes through it from the first widget, per `PLAN.md` §11.3. One delegate gotcha cost real
+   time and is worth recording: `AppLocalizations.localizationsDelegates` also installs
+   `GlobalMaterialLocalizations`/`GlobalCupertinoLocalizations`, whose types come from the
+   **in-SDK** Material copy rather than `material_ui` - the second tree §2's import law exists
+   to prevent. We ship our own list (`lib/l10n/l10n.dart`: `AppLocalizations`,
+   `GlobalWidgetsLocalizations`, `FluentLocalizations`), and `tool/check_imports.dart` now
+   bans `flutter_localizations` outside that one file.
 4. `router.dart` — `GoRouter` inside `FluentApp.router`, one route per `PLAN.md` §7 screen,
    each rendering a placeholder. This proves navigation before any screen is real.
 5. `shell/` — `NavigationView` + custom `TitleBar` + `window_manager` sizing/min-size;
@@ -252,7 +260,9 @@ Now the UI layer opens, in this order (each step demos something):
 **Acceptance:** widget tests for (a) reduced motion — every primitive collapses and **creates no
 ticker**; (b) stagger budget — item 30+ renders at rest, step shrinks for long lists;
 (c) dark mode — M3 `brightness` is `dark` and `surface` is opaque; (d) navigation — each route
-reachable and localized in en + zh; (e) goldens for shell in light/dark at 3 keyframes.
+reachable and localized in en + zh (the l10n half is covered now: `test/l10n/` renders the real
+app root in both languages and asserts ARB key/translation parity, so a forgotten zh string
+fails the suite instead of silently rendering English); (e) goldens for shell in light/dark at 3 keyframes.
 
 ### M4 — First real vertical slice: launch screen + instance list
 

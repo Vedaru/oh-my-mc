@@ -1,0 +1,191 @@
+{
+  "@@locale": "en",
+  "appTitle": "oh my mc",
+  "@appTitle": {
+    "description": "Product name. Deliberately not translated: it is a name, not a sentence."
+  },
+  "navLaunch": "Launch",
+  "@navLaunch": {
+    "description": "Navigation item for the launch screen."
+  },
+  "navInstances": "Instances",
+  "@navInstances": {
+    "description": "Navigation item for the instance list."
+  },
+  "navDownload": "Download",
+  "@navDownload": {
+    "description": "Navigation item for the download screen."
+  },
+  "navSetup": "Setup",
+  "@navSetup": {
+    "description": "Navigation item for the setup screen."
+  },
+  "navLogs": "Logs",
+  "@navLogs": {
+    "description": "Navigation item for the log console."
+  },
+  "playButton": "Play",
+  "@playButton": {
+    "description": "Starts the selected instance."
+  },
+  "stopButton": "Stop",
+  "@stopButton": {
+    "description": "Stops the running game."
+  },
+  "launching": "Launching…",
+  "@launching": {
+    "description": "Shown while the game process starts."
+  },
+  "noInstanceSelected": "No instance selected",
+  "@noInstanceSelected": {
+    "description": "Placeholder when the instance list is empty."
+  },
+  "instanceCreate": "New instance",
+  "@instanceCreate": {
+    "description": "Creates a new instance."
+  },
+  "instanceImport": "Import",
+  "@instanceImport": {
+    "description": "Imports an instance from an archive."
+  },
+  "instanceExport": "Export",
+  "@instanceExport": {
+    "description": "Exports an instance to an archive."
+  },
+  "instanceClone": "Clone",
+  "@instanceClone": {
+    "description": "Duplicates an instance."
+  },
+  "instanceDelete": "Delete",
+  "@instanceDelete": {
+    "description": "Deletes an instance."
+  },
+  "instanceDeleteConfirm": "Delete {name}? This cannot be undone.",
+  "@instanceDeleteConfirm": {
+    "description": "Confirmation before deleting an instance.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "1.20.4 Vanilla"
+      }
+    }
+  },
+  "instanceCount": "{count, plural, =0{No instances} =1{1 instance} other{{count} instances}}",
+  "@instanceCount": {
+    "description": "Number of installed instances.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "downloadVersions": "Versions",
+  "@downloadVersions": {
+    "description": "Version list tab."
+  },
+  "downloadLoaders": "Loaders",
+  "@downloadLoaders": {
+    "description": "Installer tab for Forge/Fabric and friends."
+  },
+  "downloadInstall": "Install",
+  "@downloadInstall": {
+    "description": "Installs the selected version or loader."
+  },
+  "downloadInstalled": "Installed",
+  "@downloadInstalled": {
+    "description": "Marks a version that is already installed."
+  },
+  "downloadRelease": "Release",
+  "@downloadRelease": {
+    "description": "Release channel filter."
+  },
+  "downloadSnapshot": "Snapshot",
+  "@downloadSnapshot": {
+    "description": "Snapshot channel filter."
+  },
+  "downloadOld": "Old",
+  "@downloadOld": {
+    "description": "Old version filter."
+  },
+  "queueTitle": "Install queue",
+  "@queueTitle": {
+    "description": "Title of the task queue."
+  },
+  "queuePause": "Pause",
+  "@queuePause": {
+    "description": "Pauses the queue."
+  },
+  "queueResume": "Resume",
+  "@queueResume": {
+    "description": "Resumes the queue."
+  },
+  "queueCancel": "Cancel",
+  "@queueCancel": {
+    "description": "Cancels a task."
+  },
+  "setupLaunch": "Launch",
+  "@setupLaunch": {
+    "description": "Setup section: how the game is launched."
+  },
+  "setupJava": "Java",
+  "@setupJava": {
+    "description": "Setup section: Java runtime management."
+  },
+  "setupDownload": "Download",
+  "@setupDownload": {
+    "description": "Setup section: download source and mirror."
+  },
+  "setupUi": "Interface",
+  "@setupUi": {
+    "description": "Setup section: theme, motion and language."
+  },
+  "setupMemory": "Memory",
+  "@setupMemory": {
+    "description": "Memory allocation setting."
+  },
+  "setupLanguage": "Language",
+  "@setupLanguage": {
+    "description": "Interface language setting."
+  },
+  "setupMotion": "Animations",
+  "@setupMotion": {
+    "description": "Toggles UI motion."
+  },
+  "setupThemeMode": "Theme",
+  "@setupThemeMode": {
+    "description": "Light/dark/system theme choice."
+  },
+  "themeLight": "Light",
+  "@themeLight": {
+    "description": "Light theme."
+  },
+  "themeDark": "Dark",
+  "@themeDark": {
+    "description": "Dark theme."
+  },
+  "themeSystem": "Follow system",
+  "@themeSystem": {
+    "description": "Use the OS theme."
+  },
+  "logsTitle": "Logs",
+  "@logsTitle": {
+    "description": "Log console title."
+  },
+  "logsEmpty": "No log output yet",
+  "@logsEmpty": {
+    "description": "Shown before any log line arrives."
+  },
+  "actionRetry": "Retry",
+  "@actionRetry": {
+    "description": "Retry a failed action."
+  },
+  "actionClose": "Close",
+  "@actionClose": {
+    "description": "Closes a dialog."
+  },
+  "errorDownloadFailed": "Download failed",
+  "@errorDownloadFailed": {
+    "description": "Generic download error title."
+  }
+}

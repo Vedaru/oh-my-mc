@@ -20,6 +20,24 @@ const _globallyBanned = <String, String>{
       'Use package:cupertino_ui/cupertino_ui.dart for the same reason.',
 };
 
+/// Imports banned outside an allow-list, with the files permitted to use them.
+///
+/// These reach the in-SDK Material copy transitively rather than by naming
+/// `package:flutter/material.dart`, so the exact-string check above cannot see
+/// them. `flutter_localizations` does `import 'package:flutter/material.dart'`
+/// itself and installs `GlobalMaterialLocalizations`, whose type comes from that
+/// copy - importing it to get `GlobalWidgetsLocalizations` would reintroduce the
+/// second tree the law exists to keep out.
+const _restricted = <String, ({String reason, Set<String> allowed})>{
+  'package:flutter_localizations/flutter_localizations.dart': (
+    reason:
+        'Pulls the in-SDK Material localizations (and with them the second '
+        'Material tree). Only the localization bootstrap may import it, and only '
+        'for GlobalWidgetsLocalizations.',
+    allowed: {'lib/l10n/l10n.dart'},
+  ),
+};
+
 /// Layers that must stay Flutter-free so the engine is unit-testable.
 const _pureDartLayers = <String>['lib/core/'];
 
@@ -57,6 +75,22 @@ Future<void> main(List<String> argv) async {
       final ban = _globallyBanned[uri];
       if (ban != null) {
         violations.add('$rel:$line  banned import "$uri"\n    -> $ban');
+        continue;
+      }
+
+      // gen-l10n emits `AppLocalizations.localizationsDelegates`, which names the
+      // SDK Material/Cupertino delegates. We never use that list (l10n.dart builds
+      // its own), and the file is regenerated on every build, so it cannot be
+      // hand-fixed. Exempted from this rule only - test/l10n/delegate_tree_test.dart
+      // asserts that nothing we wrote references those delegate types.
+      final isGenerated = rel.startsWith('lib/l10n/generated/');
+      final restricted = isGenerated ? null : _restricted[uri];
+      if (restricted != null && !restricted.allowed.contains(rel)) {
+        violations.add(
+          '$rel:$line  restricted import "$uri"\n'
+          '    -> ${restricted.reason}\n'
+          '    -> allowed only in: ${restricted.allowed.join(', ')}',
+        );
         continue;
       }
 

@@ -1,0 +1,11 @@
+# Generated localizations land in lib/, not a synthetic package: Flutter 3.47
+# removed synthetic packages (gen-l10n exits with an error if enabled), which is
+# convenient here - output under lib/ is visible to tool/check_imports.dart, so a
+# delegate import that breaks the import law fails the same gate as hand-written
+# code.
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+output-dir: lib/l10n/generated
+nullable-getter: false
