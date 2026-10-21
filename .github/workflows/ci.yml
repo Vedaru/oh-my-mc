@@ -114,6 +114,19 @@ jobs:
             build/macos/Build/Products/Release/oh_my_mc.app \
             "dist/oh-my-mc-${{ matrix.target }}.zip"
 
+      # Workflow artifacts expire (14 days) and need a login, so they are not a
+      # download for users. Attach the build to the `rolling` release as well, or
+      # Windows/macOS have no public artifact at all - only Linux was published,
+      # and only on the Forgejo instance.
+      - name: Publish the asset to the rolling release
+        if: github.ref == 'refs/heads/master'
+        shell: bash
+        working-directory: ${{ env.SRC }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SHA: ${{ github.sha }}
+        run: bash tool/ci/publish_github_release.sh . "${{ matrix.target }}" "$SHA"
+
       - uses: actions/upload-artifact@v4
         with:
           name: oh-my-mc-${{ matrix.target }}

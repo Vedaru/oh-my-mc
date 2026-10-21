@@ -206,6 +206,12 @@ Windows or macOS at all.
 | `linux-x64` | `oh-my-mc-linux-x64.tar.gz` | Forgejo `glibc-amd64` (x86_64) | native |
 | `macos-arm64` | `oh-my-mc-macos-arm64.zip` | GitHub `macos-14` (arm64) | arm-only via `flutter config --enable-macos-arm64-only` |
 
+Each target is published to a release tagged `rolling` **on the system that builds it**: Linux on the
+Forgejo instance, Windows and macOS on the GitHub mirror, so a user downloads next to the platform
+they are on. Both releases are rebuilt from the assets actually attached and carry the commit in the
+filename, and each body links the other. Workflow artifacts alone are not a release: they expire and
+need a login.
+
 Scope decision (explicit): **no Windows arm64 and no Linux arm64 build.**
 Neither has a downloadable Flutter SDK (consequence 2). Linux arm64 was briefly
 carried in the matrix because it is *achievable* — an aarch64 runner existed and

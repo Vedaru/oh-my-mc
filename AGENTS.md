@@ -244,6 +244,12 @@ re-add it. `arch_compat` only has to handle the macOS-arm64 case below.
 * **GitHub** (`.github/workflows/ci.yml`) builds `windows-x64` + `macos-arm64`. Those jobs clone
   `https://git.vedaru.cn/Vedaru/oh-my-mc.git` (public, anonymous clone works) so both systems build
   the same commit. Push to both remotes: `git push forgejo master && git push github master`.
+  They also publish into a **GitHub** `rolling` release via `publish_github_release.sh`, because the
+  workflow artifacts expire in 14 days and require a login: without this, Windows and macOS had no
+  public download at all. Linux is published separately on the Forgejo instance (its builds are
+  Linux jobs there), and each release body links the other. The two publishers share every rule -
+  target-scoped replacement, commit in the asset name, body rebuilt from attached assets, upload
+  read back by name - so parallel matrix jobs cannot clobber each other.
 * Heavy logic lives in `tool/ci/*.sh`, not YAML, so it can be run and tested locally:
   * `fetch_flutter_sdk.sh <dest> [ver]` — 1.5 GB tarball, retries + resumes + mirrors (CN mirror is
     ~8-22 MB/s and reachable; a bare curl died at 7 min with "Recv failure: Connection reset by peer").
@@ -257,6 +263,10 @@ re-add it. `arch_compat` only has to handle the macOS-arm64 case below.
     its own target. Two jobs therefore converge on one release without any
     inter-job file passing (which this instance cannot do - no
     `actions/upload-artifact`, since the action source is github.com).
+  * `publish_github_release.sh <root> <target> <sha>` — the same contract for the GitHub mirror
+    (`windows-x64`, `macos-arm64`), on `GH_TOKEN` = the workflow's own `GITHUB_TOKEN`, so no
+    hand-made secret is needed. Uploads go to **`uploads.github.com`**, not `api.github.com` - the
+    REST path answers 404 for assets, which reads like a permissions problem and is not.
   * `package_linux.sh <root> <target>` / `publish_release.sh <root> <target> <sha>` — ONE rolling
     release tagged `rolling`, holding `oh-my-mc-linux-x64-<commit>.tar.gz`. Each build job
     uploads into it independently (no `actions/upload-artifact` on this instance). The script
