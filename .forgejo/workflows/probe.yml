@@ -2,31 +2,18 @@ name: probe
 on:
   workflow_dispatch:
 jobs:
-  # Does the runner start a container at all? One command that cannot fail.
-  minimal:
+  # Expected to fail: proves the runner is dead for any job shape.
+  plain:
     runs-on: glibc
     timeout-minutes: 5
     steps:
-      - name: Hello
-        run: 'echo hello'
+      - run: 'echo hello'
 
-  # Does the pre-baked image exist? Cannot fail either way; the conclusion says
-  # whether /etc/ci-image-versions.txt was present only if the job starts.
-  image:
+  # Question: does this runner honour job-level continue-on-error? If it does,
+  # this job's conclusion is success and the run stays green.
+  tolerated:
     runs-on: glibc
     timeout-minutes: 5
+    continue-on-error: true
     steps:
-      - name: Report image presence without failing
-        run: |
-          if [ -f /etc/ci-image-versions.txt ]; then
-            echo "IMAGE_PRESENT"
-            cat /etc/ci-image-versions.txt
-          else
-            echo "IMAGE_MISSING"
-            uname -m
-            head -2 /etc/os-release
-            command -v flutter || echo "no flutter"
-            command -v git || echo "no git"
-            command -v curl || echo "no curl"
-            command -v python3 || echo "no python3"
-          fi
+      - run: 'echo hello'
