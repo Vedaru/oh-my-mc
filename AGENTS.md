@@ -236,7 +236,9 @@ re-add it. `arch_compat` only has to handle the macOS-arm64 case below.
 
 ## CI (two systems, by necessity)
 
-* **Forgejo** (`.forgejo/workflows/ci.yml`) builds `linux-x64` + `linux-arm64` and runs the gate.
+* **Forgejo** (`.forgejo/workflows/ci.yml`) builds `linux-x64` and runs the gate; the
+  `linux-arm64` build is `.forgejo/workflows/arm64.yml`, dispatch-only while the aarch64
+  runner is down (see the runner trap below).
   Both runners are Linux: `glibc` = aarch64, `glibc-amd64` = x86_64. No macOS/Windows runner exists.
 * **GitHub** (`.github/workflows/ci.yml`) builds `windows-x64` + `macos-arm64`. Those jobs clone
   `https://git.vedaru.cn/Vedaru/oh-my-mc.git` (public, anonymous clone works) so both systems build
@@ -269,12 +271,25 @@ re-add it. `arch_compat` only has to handle the macOS-arm64 case below.
   dev sandbox (aarch64) cannot do a plain `flutter build linux --release` at all,
   even though `flutter doctor` reports the Linux toolchain as fine - the check
   the doctor performs is not the one the icon tree-shaker needs.
-* **The `glibc` (aarch64) runner is separate from `glibc-amd64`.** When only
-  `build-linux-arm64` fails, and it fails within a second or two rather than
-  timing out, the job never started - check the runner before the workflow. A
-  useful discriminator: gate and build-linux-x64 share `glibc-amd64` and will
-  still pass on the same commit, and `git diff <last-green>..HEAD --
-  .forgejo/workflows/ci.yml` being empty rules out a workflow cause.
+* **The `glibc` (aarch64) runner is down, and no repo fix exists for it.**
+  Since 2026-10-21 every job on `runs-on: glibc` fails in exactly **1s**, including
+  a throwaway `run: 'echo hello'`, so the container is never created and no step
+  runs. It was green on `4bee9c9a` (71s) with a byte-identical workflow.
+  `continue-on-error: true` is **not honoured** (job still concludes `failure`),
+  so a build cannot be kept green while the runner is dead - do not try.
+  The arm64 job therefore lives in `.forgejo/workflows/arm64.yml` behind
+  `workflow_dispatch` and is out of the push pipeline:
+  `POST /api/v1/repos/Vedaru/oh-my-mc/actions/workflows/arm64.yml/dispatches`
+  with `{"ref":"master"}`. Dispatch it to check whether the runner is back; a
+  green run republishes the arm64 asset into the same `rolling` release.
+  Diagnostic ladder that actually discriminates (in order): is the failure
+  duration ~1s (never started) vs minutes (real build failure); does a
+  `run: 'echo hello'` job on that label fail too; do gate/`build-linux-x64` on
+  `glibc-amd64` pass on the same commit; is `ci.yml` identical to the last green
+  commit. There is **no log endpoint** in this Forgejo API (only
+  `/actions/tasks`), and web log pages require a session login that a token
+  cannot supply - so probe workflows that write their findings to an issue
+  comment are the only way to see what a job saw.
 * **The runner image avoids the SDK download, but a stale `dist/` does not.**
   CI installs nothing; each job's `flutter` comes from the image. The old
   per-job `fetch_flutter_sdk.sh` / `assemble_arm64_toolchain.sh` paths are only

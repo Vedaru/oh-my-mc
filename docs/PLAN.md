@@ -255,6 +255,10 @@ cannot.
 | `build-linux-x64` | `glibc-amd64` | `flutter build linux --release` | `tool/verify_binary_arch.dart` → ELF64/x64 |
 | `build-linux-arm64` | `glibc` | `flutter build linux --release --no-tree-shake-icons` | ELF `e_machine == 0xb7` (aarch64) |
 
+The arm64 job lives in `.forgejo/workflows/arm64.yml` (dispatch-only) while the aarch64
+runner is down: every job on the `glibc` label fails in 1s, including `echo hello`. Leaving
+it in the push pipeline made each push red for a reason unrelated to the commit.
+
 The gate deliberately runs on the amd64 runner with a stock SDK: a gate that
 depends on the hand-assembled arm64 toolchain is a gate you learn to ignore.
 
