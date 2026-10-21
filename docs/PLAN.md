@@ -36,7 +36,11 @@ I checked each repository at the API/metadata level, not just reading the README
 | Repo state | 1.7k ★, last push 2023-03-22 |
 | Verdict | **Does not resolve under Dart 3.** `<3.0.0` upper bound is a hard pub failure. |
 
-**Decision:** use the maintained Dart-3 fork **`flutter_staggered_animations_plus` 1.0.4** (`sdk >=3.0.0 <4.0.0`, `flutter >=3.10.0`, published 2026-10-16). Same public API (`AnimationLimiter`, `AnimationConfiguration.staggeredList/staggeredGrid/staggeredColumn`, `SlideAnimation`, `FadeInAnimation`, `ScaleAnimation`, `FlipAnimation`, `SlideAnimationConfiguration`), so every technique from the original docs/examples transfers verbatim. If the fork ever regresses, the fallback is a ~200-line in-repo vendored copy (library is MIT, single-file `AnimationLimiter` + 4 animation widgets) — we keep the import behind `lib/ui/motion/stagger.dart` so a swap is a one-file change.
+**Decision:** use the maintained Dart-3 fork **`flutter_staggered_animations_plus` 1.0.4** (`sdk >=3.0.0 <4.0.0`, `flutter >=3.10.0`, published 2026-10-16). Public API verified against the installed source: `AnimationLimiter`, `AnimationConfiguration.synchronized/staggeredList/staggeredGrid/toStaggeredList`, `SlideAnimation`, `FadeInAnimation`, `ScaleAnimation`, `FlipAnimation`.
+
+> **Correction (probed 2026-10-21):** there is **no `SlideAnimationConfiguration`** and **no `staggeredColumn`** — an earlier draft of this section listed both. Use `AnimationConfiguration.toStaggeredList` for columns. Also note the fork has **no total stagger cap**: `delay` defaults to `duration ~/ 6` per item, so long lists crawl unless we pass an explicit delay. See `docs/PLAN-M1-M4.md` §0.2–0.3.
+
+If the fork ever regresses, the fallback is a ~200-line in-repo vendored copy (library is MIT, single-file `AnimationLimiter` + 4 animation widgets) — we keep the import behind `lib/ui/motion/stagger.dart` so a swap is a one-file change.
 
 ### 2.2 `felixblaschke/simple_animations` — ✅ use it
 
@@ -134,6 +138,14 @@ dev_dependencies:
 ```
 
 **Resolved and verified** — `flutter pub get` succeeded with 149 packages on Flutter 3.47.7 / Dart 3.13.5.
+
+> **Critical (probed 2026-10-21): Flutter 3.47 split Material out of the SDK.** `fluent_ui 4.17.0`,
+> `animations 3.0.0` and `go_router 18.1.1` all depend on the standalone **`material_ui`** package,
+> while `package:flutter/material.dart` still ships as a parallel copy. The two are **different type
+> universes** — `ThemeData`, `Theme`, `MaterialLocalizations` are distinct classes with the same names,
+> and mixing them silently gives two independent theme/localization trees. **Import law: content code
+> imports `package:material_ui/material_ui.dart`; nothing imports `package:flutter/material.dart`.**
+> Add `material_ui` as a direct dependency. Details: `docs/PLAN-M1-M4.md` §0.1.
 
 Notes / rejected candidates:
 - `flutter_staggered_animations` **rejected** (Dart 2 only, §2.1).
@@ -383,8 +395,12 @@ Instance = directory + `instance.json` (freezed): id, name, icon, gameVersion, l
 class Durations { static const xfast=120ms, fast=200ms, base=280ms, slow=420ms, ambient=2400ms; }
 class Curves_ { static const enter=Curves.easeOutCubic, exit=Curves.easeInCubic,
                             emphasise=Curves.easeOutQuint, spring=Curves.easeOutBack; }
-class Stagger { static const step=40ms, maxTotal=320ms; }   // capped so long lists don't crawl
+class Stagger { static const step=40ms, maxTotal=320ms, maxAnimatedIndex=24; }
 ```
+
+`maxTotal` / `maxAnimatedIndex` are **ours, not the package's** — `flutter_staggered_animations_plus`
+has no cap and defaults to `duration ~/ 6` per item (`docs/PLAN-M1-M4.md` §0.3). The wrapper
+computes `step = min(step, maxTotal ~/ itemCount)` and renders items past `maxAnimatedIndex` at rest.
 
 Single source of truth; no ad-hoc `Duration(milliseconds: ...)` anywhere else (enforced by a grep-based CI check, since a lint can't express it).
 
@@ -401,7 +417,12 @@ Single source of truth; no ad-hoc `Duration(milliseconds: ...)` anywhere else (e
 
 ### 6.3 Reduced motion & performance rules
 
-- `MotionScope` reads (a) `MediaQuery.disableAnimations`, (b) a "UI animations" setting; when off, all durations collapse to 0 and loops freeze on a representative frame. Setting is surfaced in `PageSetupUI`-equivalent.
+- **Neither animation package reads `disableAnimations`** (verified by grep + runtime probe,
+  `docs/PLAN-M1-M4.md` §0.4). So `MotionScope` must **wrap** the engines rather than configure
+  them: when motion is off, `StaggerItem` renders its child with no `AnimationConfiguration` at
+  all, and `AmbientLoop` renders one steady frame without creating a ticker.
+- `MotionScope` reads (a) `MediaQuery.disableAnimations`, (b) a "UI animations" setting; the two
+  are OR'd, and the setting can only ever reduce motion. Surfaced in `PageSetupUI`-equivalent.
 - Every animated list item wrapped in `RepaintBoundary`; stagger index passed from the builder, never re-derived in a `setState`.
 - Long lists: animate on first paint only (`_hasAnimated` flag per screen), not on scroll.
 - Debug: `AnimationDeveloperTools` (simple_animations) toggled by `--dart-define=MOTION_DEBUG=true`.
@@ -414,10 +435,10 @@ Single source of truth; no ad-hoc `Duration(milliseconds: ...)` anywhere else (e
 | Shell | Nav rail indicator slides with `Curves.easeOutQuint`; content cross-fades via `AnimatedSwitcher` (no jarring rebuild) |
 | Launch (home) | Big version card: staggered hero cloud background (`LoopAnimationBuilder` 12 s drift), play button `MovieTween` press feedback, hover lift `AnimatedScale`, "launching" state → pulsing dot (`MirrorAnimationBuilder`) + log console slide-up |
 | Instance list | `AnimationConfiguration.staggeredGrid` 3-column cards, fade+slide (50 px, 375 ms, 40 ms step); icon `Hero` into detail |
-| Instance detail | Tab content `staggeredColumn`; mod toggles `AnimatedSwitcher` + `ScaleTransition`; danger-zone delete uses `OpenContainer`→dialog |
+| Instance detail | Tab content `AnimationConfiguration.toStaggeredList`; mod toggles `AnimatedSwitcher` + `ScaleTransition`; danger-zone delete uses `OpenContainer`→dialog |
 | Download/install | Staged progress: `PlayAnimationBuilder` fills the bar to *reported* progress with a 200 ms trailing catch-up so it never snaps; per-file rows stagger in as they start; speed graph drawn with a `LoopAnimationBuilder`-driven shimmer while throttled |
 | Version picker | `staggeredList`, filter chips animate width (`AnimatedSize`); snapshot/release tags `FadeInAnimation` |
-| Setup | Section cards `staggeredColumn`; sliders/toggles Fluent or M3 by theme; save button `MovieTween` success morph (check draw-on) |
+| Setup | Section cards `AnimationConfiguration.toStaggeredList`; sliders/toggles Fluent or M3 by theme; save button `MovieTween` success morph (check draw-on) |
 | Log drawer | Bottom sheet `SharedAxisTransition`; new lines `AnimatedList` + subtle highlight fade for warnings |
 
 ---
