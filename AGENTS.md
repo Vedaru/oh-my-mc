@@ -121,3 +121,27 @@ re-add it. `arch_compat` only has to handle the macOS-arm64 case below.
   1.20.1 → Java 17, 88 libs. 1.12.2 → Java 8, 39 libs, 5 native libs, legacy args.
 - Mojang's Java runtime manifest covers `linux`, `linux-i386`, `mac-os`, `mac-os-arm64`, `windows-arm64`,
   `windows-x64`, `windows-x86` — so the JRE is never our arm64 problem. LWJGL is.
+
+## CI (two systems, by necessity)
+
+* **Forgejo** (`.forgejo/workflows/ci.yml`) builds `linux-x64` + `linux-arm64` and runs the gate.
+  Both runners are Linux: `glibc` = aarch64, `glibc-amd64` = x86_64. No macOS/Windows runner exists.
+* **GitHub** (`.github/workflows/ci.yml`) builds `windows-x64` + `macos-arm64`. Those jobs clone
+  `https://git.vedaru.cn/Vedaru/oh-my-mc.git` (public, anonymous clone works) so both systems build
+  the same commit. Push to both remotes: `git push forgejo master && git push github master`.
+* Heavy logic lives in `tool/ci/*.sh`, not YAML, so it can be run and tested locally:
+  * `fetch_flutter_sdk.sh <dest> [ver]` — 1.5 GB tarball, retries + resumes + mirrors (CN mirror is
+    ~8-22 MB/s and reachable; a bare curl died at 7 min with "Recv failure: Connection reset by peer").
+  * `assemble_arm64_toolchain.sh <dest> [ver]` — the hybrid SDK recipe above, automated. Verified
+    from scratch on aarch64: rebuilds the tool natively, then `flutter build linux --release` gives
+    an ELF with `e_machine=0xb7`.
+  * `package_linux.sh <root> <target>` / `publish_release.sh <root> <target> <sha>` — rolling releases
+    tagged `rolling-linux-x64` / `rolling-linux-arm64`.
+
+### Traps that cost real time
+* `tar -tzf ... | grep -q NAME` under `set -o pipefail` **fails on a good archive**: grep exits at the
+  first match, tar takes SIGPIPE, pipeline status is non-zero. Capture the listing first.
+* The Forgejo release API returns `{"message":"repo is empty"}` until the first push lands.
+* Job logs are not in the REST API. Fetch them from the web UI:
+  `https://git.vedaru.cn/<owner>/<repo>/actions/runs/<n>/jobs/<i>/logs`.
+* `assert s.count(x)` against YAML written by hand is fragile — rewrite the file instead of patching it.

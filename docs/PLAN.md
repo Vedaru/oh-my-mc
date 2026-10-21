@@ -181,21 +181,42 @@ Rule: `core/` never imports `package:flutter`. Every launcher decision (what to 
 
 `flutter_staggered_animations_plus` and `simple_animations` are MIT (safe). Material Components repo is docs (safe). **PCL is not open source** — its license restricts distribution and the repo README frames the code as a synchronized snapshot for reference. So: no code, XAML, strings, or icon assets copied; feature parity is a functional goal, and our strings/art/UX are original. This also means the plan's §7 screens are "same capabilities", not "same pixels".
 
-### 3.5 Release targets — Windows x64, Linux x64, macOS arm64
+### 3.5 Release targets — Windows x64, Linux x64 + arm64, macOS arm64
 
-Verified against the Flutter 3.47.7 tool and live infra, not assumed:
+Verified against the Flutter 3.47.7 tool and live infra, not assumed. Two CI
+systems, because neither can do the whole matrix: the Forgejo instance has only
+Linux runners, and Flutter cannot cross-compile a desktop app from Linux to
+Windows or macOS at all.
 
-| Target | Artifact | Build host | Notes |
+| Target | Artifact | Built on | Notes |
 |---|---|---|---|
-| `windows-x64` | `oh-my-mc-windows-x64.zip` | `windows-latest` (x64) | |
-| `linux-x64` | `oh-my-mc-linux-x64.tar.gz` | `ubuntu-24.04` (x64) | |
-| `macos-arm64` | `oh-my-mc-macos-arm64.zip` | `macos-14` (arm64) | arm-only via `flutter config --enable-macos-arm64-only` |
+| `windows-x64` | `oh-my-mc-windows-x64.zip` | GitHub `windows-latest` (x64) | |
+| `linux-x64` | `oh-my-mc-linux-x64.tar.gz` | Forgejo `glibc-amd64` (x86_64) | native |
+| `linux-arm64` | `oh-my-mc-linux-arm64.tar.gz` | Forgejo `glibc` (aarch64) | native, hand-assembled SDK |
+| `macos-arm64` | `oh-my-mc-macos-arm64.zip` | GitHub `macos-14` (arm64) | arm-only via `flutter config --enable-macos-arm64-only` |
 
-Scope decision (explicit): **no Windows arm64 and no Linux arm64 builds.** arm64 is supported on macOS only.
+Scope decision (explicit): **no Windows arm64 build** — there is no Flutter SDK
+for it (see consequence 2), and no runner that could build one anyway.
+
+`linux-arm64` is restored to the matrix. It was previously dropped on the
+evidence that no arm64 Linux artifacts existed, but that evidence was about
+*downloadable SDKs*, not about buildability: an aarch64 runner exists on this
+instance and the toolchain can be assembled by hand (consequence 2). The build is
+verified end-to-end on an aarch64 host, and CI asserts the produced ELF's
+`e_machine` is `0xb7` / aarch64 before packaging.
 
 Consequence 1 — **we cannot cross-compile from here.** `flutter build linux --target-platform linux-x64` on this arm64 box fails with *"cross-building only supported on Linux x64 hosts"*. So x64 artifacts come from x64 runners; this sandbox proves macOS-adjacent arm64 logic only. CI is a build dependency, not release polish.
 
-Consequence 2 — **Flutter ships no arm64 Windows or Linux SDK.** Audited all three release manifests: `releases_linux.json` and `releases_windows.json` contain **zero** arm64 archives; only `releases_macos.json` has them. Electron-style "just build on an arm64 runner" does not work for Windows/Linux Flutter. Dropping those two targets therefore removes a genuinely unsupported build path rather than a merely untested one — the matrix is now entirely on tool-supported ground.
+Consequence 2 — **Flutter ships no arm64 Windows or Linux SDK.** Audited all three release manifests: `releases_linux.json` and `releases_windows.json` contain **zero** arm64 archives; only `releases_macos.json` has them. So there is nothing to download that runs on an aarch64 Linux host.
+
+For Linux that is a packaging gap rather than an impossibility. The working recipe, verified on an aarch64 host and automated in `tool/ci/assemble_arm64_toolchain.sh`:
+
+1. extract the **x64** tarball (the only tarball there is);
+2. replace `bin/cache/dart-sdk` with a native arm64 Dart SDK of the **exact matching patch version** (3.13.5 for Flutter 3.47.7; 3.13.6 aborts with *"Invalid SDK hash"*), keeping the x64 copy as `dart-sdk-x64`;
+3. place `artifacts/engine/linux-arm64/` by hand from the engine hash in `bin/internal/engine.version`, copying `const_finder.dart.snapshot` from the x64 artifacts (arch-independent kernel code) and accepting that **`font-subset` has no arm64 build** — hence `--no-tree-shake-icons`;
+4. delete the prebuilt `flutter_tools.snapshot` so the tool recompiles natively on first run; the x64 snapshot dies with *"Snapshot not compatible with the current VM configuration"*.
+
+For Windows the same trick is not available when the SDK itself is absent and there is no arm64 Windows runner, so `windows-arm64` stays out of scope.
 
 Consequence 3 — **the macOS app is arm-only, but the *game* it launches may not be arm-capable.** Launcher architecture and Minecraft runtime architecture are independent problems:
 
@@ -207,16 +228,44 @@ Consequence 3 — **the macOS app is arm-only, but the *game* it launches may no
 
 So **MC ≤1.12.2 cannot run on macOS arm64.** Verified: 1.12.2's manifest lists only `natives-linux|osx|windows`; LWJGL 2 was never built for arm64 on any OS. PCL is Windows-x64-only and never faced this. Our launcher treats it as a diagnosable, explained refusal (`LaunchBlocker`) surfaced *before* the Play button, not an opaque JVM stacktrace. Intel Macs are out of scope, so no Rosetta fallback path is built.
 
-Because we now ship no arm64 Linux and no arm64 Windows, **the LWJGL3 `natives-linux-arm64` classifier patch is no longer needed** — a real simplification. `arch_compat` shrinks to the macOS-arm64 LWJGL2 check.
+Because `linux-arm64` *is* shipped after all, the classification is: **LWJGL3 `natives-linux-arm64` is present in the manifest for MC ≥1.13**, so launcher-side patching is still unnecessary — the game resolves it itself. `arch_compat` therefore stays small and is limited to one rule, the macOS-arm64 LWJGL2 refusal. Linux arm64 needs no special case: LWJGL2 has no arm64 natives there either, but no arm64 Linux target existed when that was last checked, and it is a *launch-time diagnosable blocker*, not a packaging concern.
 
 #### 3.5.1 CI matrix
 
+Two workflows, one per system, each building the targets the other structurally
+cannot.
+
+**Forgejo — `.forgejo/workflows/ci.yml`** (Linux only; both runners are Linux)
+
 | Job | Runner | Command | Verification |
 |---|---|---|---|
-| `analyze` + `test` | `ubuntu-24.04` | `dart format --set-exit-if-changed`, `flutter analyze --fatal-infos`, `flutter test` | gates the builds |
+| `gate` | `glibc-amd64` | `dart format --set-exit-if-changed`, `flutter analyze --fatal-infos`, `flutter test` | gates both builds |
+| `build-linux-x64` | `glibc-amd64` | `flutter build linux --release` | `tool/verify_binary_arch.dart` → ELF64/x64 |
+| `build-linux-arm64` | `glibc` | `flutter build linux --release --no-tree-shake-icons` | ELF `e_machine == 0xb7` (aarch64) |
+
+The gate deliberately runs on the amd64 runner with a stock SDK: a gate that
+depends on the hand-assembled arm64 toolchain is a gate you learn to ignore.
+
+Instance constraints that shape that file (all measured, see §4): no
+`actions/checkout` and no marketplace actions (github.com unreachable, and no node
+in the runner image) — checkout is a `git clone` over `127.0.0.1:3000`; a per-job
+`container:` block is ignored, so the toolchain is installed in-job; the SDK
+download needs retry + resume because a bare `curl` of the 1.5 GB tarball dies
+with *"curl: (56) Recv failure: Connection reset by peer"*.
+
+**GitHub — `.github/workflows/ci.yml`** (Windows + macOS, which Forgejo cannot build)
+
+| Job | Runner | Command | Verification |
+|---|---|---|---|
 | `build windows-x64` | `windows-latest` | `flutter build windows --release` | `tool/verify_binary_arch.dart` → PE/AMD64 |
-| `build linux-x64` | `ubuntu-24.04` | `flutter build linux --release` | `tool/verify_binary_arch.dart` → ELF64/x64 |
 | `build macos-arm64` | `macos-14` | `flutter config --enable-macos-arm64-only` + `flutter build macos --release` | `lipo -archs` must contain `arm64` and must **not** contain `x86_64` |
+
+Those jobs clone the **Forgejo** repository rather than trusting GitHub's copy, so
+a green run on either system describes the same commit. Artifacts are attached as
+workflow artifacts there; Forgejo publishes rolling releases
+(`rolling-linux-x64`, `rolling-linux-arm64`) via `tool/ci/publish_release.sh`,
+which reads the release back and refuses to report success unless the asset is
+actually attached.
 
 `tool/verify_binary_arch.dart` exists so a silently mis-targeted binary can never be published under an arch-specific name — it parses the ELF/PE/Mach-O headers itself (14 unit tests, including the arm64-rejected-as-x64 case) instead of trusting the build log.
 
@@ -421,7 +470,7 @@ Instance model/store (`instance.json`), staggered grid, hero to detail, play but
 
 ### M5 — Real launch end-to-end
 MS device-code auth, offline auth, `launch()` with real argv, process spawn + streaming, stop/kill, playtime tracking, **`LaunchBlocker` surfacing for arch-compat refusals (§3.5.2)**.
-**Acceptance:** on Windows x64 CI, install + launch `1.20.1` offline with a stub main class replaced by a tiny Java "echo args" harness (no game assets needed) → assert argv contains every expected token and process exits 0; then one manual real launch documented in `AGENTS.md`. On Linux arm64 CI, assert the same argv for a 1.20.1 profile *with* the patched `natives-linux-arm64` entries present and the LWJGL2-on-arm64 case blocked rather than launched.
+**Acceptance:** on Windows x64 CI, install + launch `1.20.1` offline with a stub main class replaced by a tiny Java "echo args" harness (no game assets needed) → assert argv contains every expected token and process exits 0; then one manual real launch documented in `AGENTS.md`. On Linux arm64 CI, assert the same argv for a 1.20.1 profile — the manifest already carries `natives-linux-arm64`, so nothing is patched client-side — and assert the LWJGL2-on-arm64 case is blocked rather than launched.
 
 ### M6 — Download UI + version/loader installers
 Version picker (staggered), install queue with staged animated progress, Fabric/Quilt profile API, Forge/NeoForge installer import, OptiFine.
@@ -456,7 +505,7 @@ Mocks are limited to: process spawning (until M5) and the OS clock. Everything e
 |---|---|---|
 | `flutter_staggered_animations_plus` is a single-maintainer fork | package disappears | mitigation: `stagger.dart` indirection + MIT vendoring escape hatch (≈200 LOC) |
 | `simple_animations` needs Flutter ≥3.44 | blocks older SDKs | we pin 3.47.7; documented in README |
-| **No arm64 Linux Flutter SDK upstream** (§4) | this dev sandbox needs a hand-built toolchain | native-Dart-SDK swap, documented in `AGENTS.md`; CI is unaffected because no shipped target builds on arm64 Linux |
+| **No arm64 Linux Flutter SDK upstream** (§4) | the dev sandbox *and* the aarch64 CI runner both need a hand-built toolchain | automated as `tool/ci/assemble_arm64_toolchain.sh`, verified from scratch on aarch64; `build-linux-arm64` uses it, and the gate runs on amd64 with a stock SDK so a red gate never means "the hand-built SDK broke" |
 | **No arm64 `font-subset`** | icon tree-shaking unavailable on the arm64 dev box | `--no-tree-shake-icons` locally only; CI x64 runners tree-shake normally. Cosmetic (larger icon font) |
 | **MC ≤1.12.2 has no arm64 LWJGL2 natives** (§3.5.2) | those versions cannot run on macOS arm64 | product-level honesty: `LaunchBlocker` + crash-analyzer diagnosis; never ship a silent crash. Intel Macs out of scope, so no Rosetta fallback |
 | **macOS arm-only drops Intel Macs entirely** | some users cannot run the launcher | accepted product decision; PCL's own install base is overwhelmingly Windows. Reversible with one config flag if it ever matters |
