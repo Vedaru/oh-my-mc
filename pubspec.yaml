@@ -1,0 +1,65 @@
+name: oh_my_mc
+description: "Oh My MC - a fluent, animation-first Minecraft launcher"
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # --- motion -------------------------------------------------------------
+  flutter_staggered_animations_plus: ^1.0.4
+  simple_animations: ^5.3.0
+  animations: ^3.0.0
+
+  # --- shell / chrome -----------------------------------------------------
+  fluent_ui: ^4.17.0
+  window_manager: ^0.5.2
+  flutter_acrylic: ^1.1.4
+
+  # --- state / routing ----------------------------------------------------
+  flutter_riverpod: ^3.4.3
+  go_router: ^18.1.1
+
+  # --- data / models ------------------------------------------------------
+  freezed_annotation: ^3.1.0
+  json_annotation: ^4.12.0
+
+  # --- io / net -----------------------------------------------------------
+  dio: ^5.11.1
+  crypto: ^3.0.7
+  archive: ^4.5.2
+  path: ^1.9.0
+  path_provider: ^2.1.6
+  file_picker: ^13.1.0
+  shared_preferences: ^2.5.6
+  flutter_secure_storage: ^11.2.0
+  url_launcher: ^6.3.3
+  system_info2: ^4.1.0
+  process_run: ^1.4.1
+  oauth2: ^2.0.5
+
+  # --- ui extras ----------------------------------------------------------
+  lucide_icons: ^0.257.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  build_runner: ^2.16.2
+  freezed: ^4.0.3
+  json_serializable: ^6.9.0
+  riverpod_generator: ^4.0.7
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+  msix: ^3.18.0
+
+flutter:
+  uses-material-design: true
+  generate: true

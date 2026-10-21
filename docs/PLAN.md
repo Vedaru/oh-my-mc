@@ -1,0 +1,494 @@
+# oh my mc — Flutter Minecraft Launcher: Implementation Plan
+
+**Status:** M0 complete (toolchain installed, project scaffolded, `flutter test` + `flutter build linux --release` green on arm64)
+**Repo state:** `master`, no commits yet
+**Targets:** Windows x64 · Windows arm64 · Linux x64 · Linux arm64 · macOS universal (§3.5)
+**Date:** 2026-10-21
+
+---
+
+## 1. What we're building
+
+A desktop Minecraft launcher written in Dart/Flutter with a fluent, motion-first UI:
+
+- **Fluent Animations** — staggered list/grid entrances, choreographed multi-property transitions, looping ambient motion, shared-element navigation — no dead frames, respects reduced-motion.
+- **Material 3 design language** — plus Windows-native chrome (Mica-like translucency, custom title bar) via `fluent_ui`.
+- **PCL-class functionality** — the launcher feature set of Plain Craft Launcher: version install (vanilla + Forge/NeoForge/Fabric/Quilt/OptiFine), instance management, mod management, Java detection, download mirroring, offline + Microsoft login, crash analysis, log console.
+
+### Non-goals (v1)
+
+- Multiplayer/social features, skin editing, modpack publishing.
+- The EasyTier "Link" tunnel (LAN discovery only in v1 — see §11).
+- Copying PCL code or assets — see licensing note in §3.4.
+
+---
+
+## 2. Reference audit (what each link actually gives us)
+
+I checked each repository at the API/metadata level, not just reading the README, because two of the four links do **not** mean what they appear to mean.
+
+### 2.1 `The-ring-io/flutter_staggered_animations` — ❌ cannot be used as-is
+
+| Fact | Value |
+|---|---|
+| Latest version | 1.1.1 (published 2022-08-23) |
+| SDK constraint | `>=2.17.0 <3.0.0` |
+| Repo state | 1.7k ★, last push 2023-03-22 |
+| Verdict | **Does not resolve under Dart 3.** `<3.0.0` upper bound is a hard pub failure. |
+
+**Decision:** use the maintained Dart-3 fork **`flutter_staggered_animations_plus` 1.0.4** (`sdk >=3.0.0 <4.0.0`, `flutter >=3.10.0`, published 2026-10-16). Same public API (`AnimationLimiter`, `AnimationConfiguration.staggeredList/staggeredGrid/staggeredColumn`, `SlideAnimation`, `FadeInAnimation`, `ScaleAnimation`, `FlipAnimation`, `SlideAnimationConfiguration`), so every technique from the original docs/examples transfers verbatim. If the fork ever regresses, the fallback is a ~200-line in-repo vendored copy (library is MIT, single-file `AnimationLimiter` + 4 animation widgets) — we keep the import behind `lib/ui/motion/stagger.dart` so a swap is a one-file change.
+
+### 2.2 `felixblaschke/simple_animations` — ✅ use it
+
+| Fact | Value |
+|---|---|
+| Latest version | 5.3.0 (2026-05-23) |
+| Constraints | `sdk ^3.12.0`, `flutter >=3.44.0` |
+| Modules | `animation_builder` (`CustomAnimationBuilder`, `PlayAnimationBuilder`, `LoopAnimationBuilder`, `MirrorAnimationBuilder`), `movie_tween`, `animation_mixin`, `animation_controller_extension`, `animation_developer_tools` |
+
+This is our **non-staggered** motion engine: `MovieTween` for multi-property choreography, `LoopAnimationBuilder` for ambient/background motion, `PlayAnimationBuilder` for progress/reveal, `MirrorAnimationBuilder` for pulse states, and `animation_developer_tools` behind a debug flag. Flutter ≥3.44 requirement is fine (we pin 3.47.7).
+
+### 2.3 `material-components/material-components-flutter` — ⚠️ docs only, not a package
+
+The repo contains **no Dart source** — only `docs/components/*.md` (backdrop, banners, bottom sheets, cards, chips, data tables, dialogs, FAB, nav drawer/rail, progress indicators, sliders, snackbars, tabs, text fields, tooltips, …), a docsite, and a README redirecting to `package:flutter/material.dart`. It is a **design/spec reference**, not a dependency.
+
+**Decision:** treat it as the **component inventory + usage-guideline reference** for the Material 3 layer. Concretely: `ThemeData(useMaterial3: true)` with an explicit `ColorScheme.fromSeed` + typography scale, and each component we build is checked against the matching `docs/components/*.md` guidance (e.g. cards → elevation/state-layer rules, progress → linear vs circular usage, tabs → fixed vs scrollable). Do **not** add it as a pub dependency (nothing to resolve).
+
+### 2.4 `Meloong-Git/PCL` — ⚠️ behavior reference only (license restricts reuse)
+
+| Fact | Value |
+|---|---|
+| Stars / language | 8.4k ★ / VB.NET (WPF + a custom animation module `ModAnimation.vb`) |
+| Layout | `Plain Craft Launcher 2/{Modules,Pages,Controls,Forms}`, `Modules/{Base,Minecraft,Resource,ThirdParty}` |
+| License | 《PCL 分发有限许可》 + "reasonable use guidelines" — **not** an OSI license; distribution and code reuse are restricted |
+
+**Decision:** mine it for **feature semantics and module boundaries only** (public API names + behavior), then reimplement in Dart. We do **not** copy code, XAML, string tables, or art. The module surface I extracted that defines our service boundaries:
+
+- `ModLaunch.vb` → `McLaunchStart`, `McLoginInput`, `McLoginMojangUuid`, `McLoginName`, `McLoginLegacyUuid`, `McLoginAble`, `McLaunchLog`
+- `ModMinecraft.vb` → `Load`, `Check`, `RefreshInfo`, `McLibListGetWithJson`, `McLibNetFilesFromTokens`, `McAssetsGetIndex`, `McJsonRuleCheck`, `McFolderLauncherProfilesJsonCreate`
+- `ModDownload.vb` → `DlClientListGet`, `DlClientJarGet`, `DlClientAssetIndexGet`, `DlSourceOrder`, `DlSourceAssetsGet`, `DlSourceLibraryGet`, `DlModRequest`, `DlVersionListOrder`, `DlForgeVersion*`, `DlNeoForgeListBmclapiMain`
+- `ModJava.vb` → `JavaInit`, `UpdateJavaLists`, `ManuallySearchJava`, `SelectOrDownloadJava`, `GetJavaRequirement`
+- `ModModpack.vb` → `ModpackInstall`; `ModCrash.vb` → `Analyze`/`Collect`/`Import`/`Prepare`; `ModWatcher.vb` → `Kill`
+- `Pages/*` → screen inventory: `PageLaunch`, `PageDownload{Install,Modify,Resource}`, `PageInstance{Overall,Setup,Mod,Export}`, `PageSetup{Launch,Link,System,UI}`, `PageSpeed*`, `PageOther`
+
+`ModAnimation.vb` (aa* helpers: `AaOpacity`, `AaScale`, `AaTranslateX/Y`, `AaScaleTransform`, `AaRotateTransform`, `AaTextAppear`, `AniStart/AniStop`, timer-driven) is worth reading as a **technique** reference: it is exactly the imperative-animation style that `simple_animations` replaces declaratively for us.
+
+### 2.5 External APIs verified reachable from this sandbox
+
+| Endpoint | Result |
+|---|---|
+| `piston-meta.mojang.com/mc/game/version_manifest_v2.json` | 200 — latest release **26.3**, latest snapshot 26.4-snapshot-5, 920 versions |
+| `launchermeta.mojang.com/mc/game/version_manifest_v2.json` | 200 |
+| `bmclapi2.bangbang93.com/mc/game/version_manifest_v2.json` | 302 (redirect; usable as mirror base) |
+| `meta.fabricmc.net/v2/versions/loader` | 200 |
+| `api.modrinth.com/v2/search` | 200 |
+| `api.minecraftservices.com/minecraft/profile` | 401 without token (expected) |
+
+Version-JSON shapes confirmed (this drives §5.4):
+- Modern (26.3, 1.20.1): `arguments.jvm`/`arguments.game` with `{rules, value}` objects, `javaVersion.majorVersion` 25 / 17, **no** `natives` classifiers (LWJGL3 natives are ordinary artifacts).
+- Legacy (1.12.2, 1.8.9): `minecraftArguments` string, `javaVersion` 8, 5 libraries with `natives` + `downloads.classifiers` (`natives-windows`/`-linux`/`-osx`), asset index ids `1.12`/`1.8` → legacy virtual assets.
+
+---
+
+## 3. Technical decisions
+
+### 3.1 Runtime & SDK
+
+| Item | Choice | Reason |
+|---|---|---|
+| Flutter | **3.47.7 stable** (Dart 3.13.5) | latest stable; satisfies `simple_animations` (≥3.44) |
+| Null safety / lints | `flutter_lints ^6.0.0`, `analysis_options.yaml` with `strict-casts`, `strict-raw-types` | catches launcher-critical type bugs early |
+| Platforms | 6 release targets: `windows` ×{x64, arm64}, `linux` ×{x64, arm64}, `macos` universal (x64+arm64) | launcher needs filesystem + process spawning; user requirement — see §3.5 |
+
+### 3.2 Package set (versions verified on pub.dev today)
+
+```yaml
+dependencies:
+  flutter: {sdk: flutter}
+  flutter_localizations: {sdk: flutter}     # zh_Hans + en_US at minimum (PCL is Chinese-first)
+  flutter_staggered_animations_plus: ^1.0.4 # 2.1 — stagger/motion building blocks
+  simple_animations: ^5.3.0                 # 2.2 — MovieTween, loop/mirror/play builders
+  animations: ^3.0.0                        # Material motion (shared axis, container transform)
+  fluent_ui: ^4.17.0                        # Windows-native chrome + Fluent controls
+  window_manager: ^0.5.2                    # window size/min-size/title-bar
+  flutter_acrylic: ^1.1.4                   # Mica/acrylic backdrop (win10/11), no-op elsewhere
+  go_router: ^18.1.1                        # declarative routing + deep links
+  flutter_riverpod: ^3.4.3                  # state + DI (no BuildContext coupling in services)
+  freezed_annotation: ^3.1.0 / json_annotation: ^4.12.0
+  dio: ^5.11.1                              # HTTP with progress, cancel tokens, retry
+  crypto: ^3.0.7                            # sha1/sha256 verification
+  archive: ^4.5.2                           # zip for modpack import/export
+  path: ^1.9.0 / path_provider: ^2.1.6
+  file_picker: ^13.1.0
+  shared_preferences: ^2.5.6                # light settings; instances live on disk as JSON
+  flutter_secure_storage: ^11.2.0           # MS refresh/access tokens
+  url_launcher: ^6.3.3
+  system_info2: ^4.1.0                      # RAM/CPU for JVM arg defaults
+  process_run: ^1.4.1                       # process spawn + stdout/stderr streams
+  oauth2: ^2.0.5                            # PKCE for MS device-code/authorization flow
+  lucide_icons: ^0.257.0                    # crisp UI icon set
+dev_dependencies:
+  flutter_test, build_runner: ^2.16.2, freezed: ^4.0.3,
+  json_serializable, riverpod_generator: ^4.0.7, flutter_lints: ^6.0.0,
+  flutter_launcher_icons: ^0.14.4, msix: ^3.18.0
+```
+
+**Resolved and verified** — `flutter pub get` succeeded with 149 packages on Flutter 3.47.7 / Dart 3.13.5.
+
+Notes / rejected candidates:
+- `flutter_staggered_animations` **rejected** (Dart 2 only, §2.1).
+- `flutter_animate` (4.5.2, stale 2024) not needed — `simple_animations` + staggered fork cover it; fewer animation engines = fewer races on one `AnimationController`.
+- No pub package exists for Minecraft launching (`minecraft_launcher_lib`, `mcauth`, `minecraft_ping` → not found; `craft_launcher_core`/`dart_minecraft` are immature). **We implement the launch pipeline ourselves** — that's the core of the project anyway.
+- **`build_runner` is pinned to `^2.16.2`, not `^2.17.x`.** Real solver conflict, found by running it: `build_runner >=2.17.1` needs `build >=5.0.0 <5.1.0`, while `riverpod_generator >=3.0.0` (incl. 4.0.7) needs `build <5.0.0`. Pub's own suggestion is the 2.16.2 pin, which resolves cleanly with `freezed 4.0.3`.
+- `google_fonts` dropped: it fetches fonts at runtime by default, which is wrong for an offline-capable launcher. We bundle fonts as assets instead (also avoids a network dependency on first paint).
+
+### 3.3 Architecture: layered, testable core
+
+```
+lib/
+  main.dart                     # bootstrap: window_manager + acrylic, ProviderScope, router
+  app/                          # shell, theme, router, localization, motion scope
+    theme/{tokens.dart, app_theme.dart, fluent_bridge.dart}
+    motion/{motion.dart, stagger.dart, reduced_motion.dart, movie_presets.dart}
+    router.dart
+  core/                         # PURE DART. no Flutter imports -> 100% unit-testable
+    mc/
+      version_manifest.dart     # manifest fetch + cache + mirror fallback
+      version_json.dart         # version JSON model incl. arguments/rules/assetIndex
+      version_resolver.dart     # inheritance chain, modloader merge
+      rules.dart                # os/arch/features rule evaluation
+      library_graph.dart        # deps, natives extraction, classpath build
+      asset_index.dart          # objects download + legacy virtual assets
+      jvm_args.dart             # arg template expansion, memory defaults
+      java_requirement.dart     # per-version java major -> java manager query
+      launcher_profiles.dart    # launcher_profiles.json interop
+    auth/
+      offline_auth.dart         # deterministic offline UUID (name -> uuid v3 style)
+      msa_device_code.dart      # XBL/XSTS/Minecraft token chain
+    net/{downloader.dart, mirror.dart, hash_cache.dart}
+    instance/{instance.dart, instance_store.dart}
+    mods/{mod_scanner.dart, modrinth_client.dart, toml_parser?}
+    crash/{crash_report.dart, crash_analyzer.dart}
+  data/                         # providers / repositories wired to core
+  ui/
+    shell/{app_shell.dart, nav_rail.dart, title_bar.dart, log_drawer.dart}
+    launch/ instance/ download/ setup/ speed/ shared/
+```
+
+Rule: `core/` never imports `package:flutter`. Every launcher decision (what to download, what command line to build) is a pure function over JSON → unit-testable without a widget tree, which is exactly where launchers break.
+
+### 3.4 Licensing
+
+`flutter_staggered_animations_plus` and `simple_animations` are MIT (safe). Material Components repo is docs (safe). **PCL is not open source** — its license restricts distribution and the repo README frames the code as a synchronized snapshot for reference. So: no code, XAML, strings, or icon assets copied; feature parity is a functional goal, and our strings/art/UX are original. This also means the plan's §7 screens are "same capabilities", not "same pixels".
+
+### 3.5 Six release targets — what it actually costs
+
+Verified against the Flutter 3.47.7 tool and the live Mojang/Maven infra, not assumed:
+
+| Target | Launcher app | Build host | Notes |
+|---|---|---|---|
+| Windows x64 | ✅ | `windows-latest` | separate artifact from arm64 (§3.5.1) |
+| Windows arm64 | ✅ | `windows-11-arm` | engine `windows-arm64/artifacts.zip` confirmed HTTP 200 |
+| Linux x64 | ✅ | `ubuntu-24.04` | cross-build from x64 host |
+| Linux arm64 | ✅ | `ubuntu-24.04-arm` | **built and verified aarch64 ELF locally** (§4) |
+| macOS universal | ✅ | `macos-14`+ | tool defaults to universal (x64+arm64) in release mode — **one** artifact, not two |
+
+Consequence 1 — **we cannot cross-compile from here.** `flutter build linux --target-platform linux-x64` on this arm64 box fails with *"cross-building only supported on Linux x64 hosts"*. So the 6 targets need a 4-job CI matrix (`windows-latest`, `windows-11-arm`, `ubuntu-24.04`, `ubuntu-24.04-arm`) + macOS. CI is not optional polish — it is the only place x64 Windows/Linux artifacts can be produced.
+
+Consequence 2 — **the arm64 gap is in Minecraft itself, not in us.** This is the finding that matters for a launcher:
+
+| Game-side component | arm64 Linux | arm64 macOS | arm64 Windows |
+|---|---|---|---|
+| Mojang Java runtime | ✅ `linux` (arch-specific build) | ✅ `mac-os-arm64` | ✅ `windows-arm64` |
+| LWJGL **3** natives (MC ≥1.13) | ⚠️ **not in Mojang's manifest** — only `natives-linux`, `natives-macos-arm64`, `natives-windows-arm64` appear | ✅ | ✅ |
+| LWJGL **2** natives (MC ≤1.12.2) | ❌ no such artifact exists anywhere | ❌ | ❌ |
+
+So: **MC ≤1.12.2 cannot run on any arm64 OS** — those versions ship LWJGL2, which was never built for arm64 (verified: Mojang's 1.12.2 manifest only lists `natives-linux|osx|windows`). PCL is Windows-x64-only, so it never had to solve this. Our launcher must therefore treat "arm64 host + LWJGL2 version" as a **diagnosable, explained refusal** in the crash analyzer, not a mystery stacktrace.
+
+For LWJGL3-on-Linux-arm64 the natives *do* exist on Maven Central (`natives-linux-arm64` returns 200 for lwjgl, -glfw, -openal, -opengl, -stb, -tinyfd, -jemalloc at both 3.3.1 and 3.4.3) — Mojang just doesn't reference them. So we inject a **compatibility library patch** when `arch == arm64 && os == linux && lwjgl3`, rewriting the classifier. `lwjgl-freetype:natives-linux-arm64` exists only from 3.4.x, so for 3.3.x we drop that one library and warn (it only affects in-game font rendering, not boot).
+
+#### 3.5.1 Release matrix
+
+| Artifact | Runner | Command |
+|---|---|---|
+| `oh-my-mc-windows-x64.zip` | `windows-latest` | `flutter build windows --release` |
+| `oh-my-mc-windows-arm64.zip` | `windows-11-arm` | `flutter build windows --release` (host arch decides; tool has `windows_arm64` → `ARM64` cmake path) |
+| `oh-my-mc-linux-x64.tar.gz` | `ubuntu-24.04` | `flutter build linux --release` |
+| `oh-my-mc-linux-arm64.tar.gz` | `ubuntu-24.04-arm` | `flutter build linux --release --no-tree-shake-icons` |
+| `oh-my-mc-macos-universal.zip` | `macos-14`+ | `flutter build macos --release` |
+
+`--no-tree-shake-icons` is only required on arm64 hosts (missing `font-subset` binary, §4); the x64 jobs can tree-shake normally.
+
+Because the runner's own architecture decides the Windows artifact, the two Windows jobs are the *same* command — the matrix axis is the runner, not a flag. This is simpler than it sounds and avoids any `--target-platform` guessing.
+
+#### 3.5.2 Game-runtime compatibility layer
+
+This is the module that makes 6 targets real rather than nominal. `core/mc/arch_compat.dart` runs after version resolution and before the library graph is finalised:
+
+```dart
+enum HostArch { x64, arm64 }
+enum HostOs { windows, linux, macos }
+
+/// true when the version needs LWJGL2, which has no arm64 build anywhere.
+bool isUnsupportedOnArm64(VersionJson v) =>
+    v.libraries.any((l) => l.name.startsWith('org.lwjgl.lwjgl:lwjgl-platform'));
+
+/// Linux arm64 is missing from Mojang's manifest but present on Maven Central.
+List<Library> patchLwjglForLinuxArm64(List<Library> libs);
+```
+
+Rules, all unit-testable from fixtures already captured (1.12.2 = LWJGL2, 1.20.1/26.3 = LWJGL3):
+1. `arm64 && lwjgl2` → block launch with a specific message and offer "install an x64 build" advice. Recorded as a first-class `LaunchBlocker`, surfaced in the UI *before* the Play button, not after a crash.
+2. `arm64 && linux && lwjgl3` → rewrite `<maven>:<name>:<ver>:natives-linux` → `natives-linux-arm64`, sourced from Maven Central instead of `libraries.minecraft.net`.
+3. `lwjgl-freetype` on `3.3.x` + arm64-linux → drop + warn (natives only exist from 3.4.x).
+4. `arm64 && windows/macos` → no patching needed; the natives are already in the manifest.
+
+---
+
+## 4. Environment constraints (measured, not assumed)
+
+Status after M0 bootstrap — every item below was executed, not guessed:
+
+- **Host is `aarch64`** (`uname -m`), Debian 13 trixie. This mattered more than expected: **Flutter publishes no arm64 Linux SDK** (the release manifest contains zero `arm` archives; both plausible arm64 URLs 404).
+- **Workaround that works:** the `flutter` tool is a Dart kernel snapshot, so it is architecture-independent — only its bundled Dart SDK is not. So: extract the x64 `flutter_linux_3.47.7-stable.tar.xz`, replace `bin/cache/dart-sdk` with the **native arm64 Dart 3.13.5** SDK, delete the stale x64 `flutter_tools.snapshot` (it fails with *"Snapshot not compatible with the current VM configuration"*), and let `bin/internal/shared.sh` rebuild it natively. Result: `Flutter 3.47.7 • Dart 3.13.5` running natively on arm64. Hack, but self-contained and documented in `AGENTS.md`.
+- **Dart patch version must match the engine exactly.** Dart 3.13.6 → `flutter_tester` dies with *"Invalid SDK hash"*. Pin 3.13.5, which is what the SDK's `bin/internal` expects.
+- **arm64 engine artifacts are under-populated.** `linux-arm64/artifacts.zip` lacks `const_finder.dart.snapshot` and `font-subset`. `const_finder` is arch-independent kernel code, so copying it from `linux-x64` is safe; `font-subset` is a native ELF with no arm64 build, so **arm64 builds need `--no-tree-shake-icons`** until upstream fills the gap. Consequences are cosmetic-only (larger icon font), and this must be in the CI recipe (§3.5.1).
+- **Linux desktop toolchain: now fully installed and proven.** `libgtk-3-dev 3.24.49`, `pkg-config`, `cmake 3.31.6`, `ninja 1.12.1`, `clang 19.1.7`, `libsecret-1-dev 0.21.7`, `unzip`. Two real blockers hit and fixed: (a) `libpng-dev` wanted `libpng16-16t64=…u5` while `…u6` was installed → `--allow-downgrades`; (b) `flutter_secure_storage_linux` requires `libsecret-1>=0.18.4`.
+- **`flutter build linux --release` succeeds**: `build/linux/arm64/release/bundle/oh_my_mc`, ELF64 **aarch64**, 24 MB. So the Linux-arm64 target is proven at the binary level on day one, not just planned.
+- **`flutter test` passes** (`flutter_tester` is native arm64). This is the primary local verification loop — no `DISPLAY` needed.
+- **No `DISPLAY`**, so windowed runs still happen in CI or on the user's machine. Consequence unchanged: local loop is `flutter analyze` + `flutter test` + `flutter build linux`; visual sign-off is the user's (or CI screenshots).
+- **Cross-compilation is impossible here**: `--target-platform linux-x64` from arm64 → *"cross-building only supported on Linux x64 hosts"*. Hence the runner-per-arch matrix in §3.5.1.
+- **Disk/RAM**: 127 GB free, 23 GB RAM — enough for the SDK, pub cache, and parallel builds.
+
+---
+
+## 5. Core engine design (the part that must be right)
+
+### 5.1 Version manifest + mirrors
+
+```dart
+abstract class VersionSource {
+  Future<VersionManifest> fetchManifest({bool force = false});
+  Future<VersionJson> fetchVersion(String id);
+  Uri rewrite(Uri officialUrl);        // mirror substitution
+}
+```
+- Cache in `<data>/meta/manifest.json` (TTL 30 min, ETag-aware).
+- `MirrorChain` = `[Official, BMCLAPI]` with `rewrite()` mapping `piston-meta`/`libraries.minecraft.net`/`resources.download.minecraft.net` → mirror hosts, ordered by user setting (`DlSourceOrder` equivalent). Health-check switch on 3 consecutive failures.
+
+### 5.2 Version resolution (vanilla + modloader inheritance)
+
+```dart
+VersionResolution resolve(String versionId, {InstanceMeta? meta});
+// returns: resolvedLibraries, resolvedGameArgs, resolvedJvmArgs,
+//          mainClass, assetIndex, javaMajor, mergesApplied
+```
+- Walk `inheritsFrom` chain (Forge/Fabric/OptiFine install into a child version dir); parent-first merge with the standard rules: `libraries` dedupe by `group:artifact` keeping the **last/highest** entry, `arguments.*` append, `mainClass` overrides, `assetIndex` inherits unless overridden.
+- Modloader installers: Fabric/Quilt via `meta.fabricmc.net/v2/versions/loader/{game}/{loader}/profile/json`; Forge/NeoForge via installer jar `--installClient` into a scratch dir then import the produced version JSON (no GUI); OptiFine by reusing the downloaded jar's installer with the same trick.
+
+### 5.3 Rules & library graph
+
+```dart
+bool ruleAllows(List<Rule>? rules, RuleContext ctx); // os.name/os.arch/os.version, features
+```
+`RuleContext` is injectable (`{os: windows, arch: x86_64, features: {has_custom_resolution: true}}`) so tests cover every OS without a VM. Natives: legacy `natives` + `classifiers[<os>-<arch>]` → extract `.dll/.so/.dylib` into `natives/` and append `-Djava.library.path`; modern versions need no extraction. Deduplicate by `group:artifact[:classifier]`, prefer `downloads.artifact`, fall back to maven URL synthesis, verify SHA-1 with `HashCache` (skip re-hash if mtime+size match).
+
+### 5.4 Assets
+
+Modern: `objects/<first2>/<hash>` from `resources.download.minecraft.net`. Legacy (`assetIndex.id` = `1.8`, `1.12`, `pre-1.7`): download `virtual/legacy` tree and, for `map_to_resources` indexes, mirror into `<instance>/resources`. Total ~480 MB for latest — must be resumable and concurrency-limited (see 5.6).
+
+### 5.5 Java management
+
+```dart
+class JavaManager {
+  Future<List<JavaRuntime>> scan();       // registry/PATH/common dirs; `java -XshowSettings:properties -version`
+  Future<JavaRuntime?> findFor(int major); // per-version javaVersion.majorVersion
+  Future<JavaRuntime> download(int major); // Mojang java-runtime manifest or Adoptium
+}
+```
+Cache each runtime's `{path, version, arch}` keyed by file identity, not path. UI shows the requirement (`Java 25 required`) and blocks launch with a one-click "Download Java 25".
+
+### 5.6 Downloader
+
+`Downloader` = priority queue (`meta > libraries > assets > mods`), N workers (default 32 metadata / 8 large files), per-host rate limits, exponential backoff, `CancelToken` per task group, aggregate progress (`bytesDone / bytesTotal`, `filesDone/filesTotal`, `speed`, `eta`) exposed as a `Stream<DownloadProgress>`. Every file: temp `.part` → hash check → atomic rename. This stream feeds the animated progress UI (§6.4) directly.
+
+### 5.7 Auth
+
+- **Offline**: `name` → stable v3-style UUID; no network.
+- **Microsoft**: device-code flow (`oauth2` PKCE → `login.microsoftonline.com/consumers/oauth2/v2.0/devicecode`) → XBL (`user.auth.xboxlive.com`) → XSTS (`xsts.auth.xboxlive.com`) → `api.minecraftservices.com/authentication/login_with_xbox` → `/minecraft/profile` for name/UUID. Tokens in `flutter_secure_storage`, silent refresh before expiry. Device code is chosen because a Game Bar/OAuth-window flow can't be tested headlessly here.
+
+### 5.8 Launch
+
+```dart
+Future<LaunchHandle> launch(Instance inst) // builds argv, spawns, streams logs
+```
+- Expand `${auth_player_name} ${version_name} ${game_directory} ${assets_root} ${assets_index_name} ${auth_uuid} ${auth_access_token} ${user_type} ${version_type} ${resolution_width/height} ${natives_directory} ${launcher_name} ${launcher_version} ${classpath} ${classpath_separator}` (+ legacy `minecraftArguments` path).
+- Defaults: `-Xmx` from instance/settings vs `system_info2` RAM, G1 flags per version, `-Dfile.encoding=UTF-8`, `-Djava.library.path`, `-cp` join with platform separator.
+- Spawn with cwd = game dir, capture stdout/stderr → `Stream<String>` → log console + `crash_analyzer`; report exit code; `kill()` tree on "stop".
+
+### 5.9 Instances, mods, modpacks
+
+Instance = directory + `instance.json` (freezed): id, name, icon, gameVersion, loader{type,version}, javaPath override, memory, jvmArgs, resolution, playTime, lastPlayed, modsEnabled, isolation flag. Scanner reads `mods/*.jar` → `fabric.mod.json` / `META-INF/mods.toml` / `mcmod.info` (jar read via `archive`), enabled/disabled via `.disabled` suffix. Modrinth client: search, version filtering by `game_versions` + `loaders`, dependency resolution, install with hash verify. Modpack import: `.zip`/`.mrpack` → `modrinth.index.json` → plan + download.
+
+---
+
+## 6. Motion & design system (the "fluent animations" part)
+
+### 6.1 Motion tokens (`ui/motion/motion.dart`)
+
+```dart
+class Durations { static const xfast=120ms, fast=200ms, base=280ms, slow=420ms, ambient=2400ms; }
+class Curves_ { static const enter=Curves.easeOutCubic, exit=Curves.easeInCubic,
+                            emphasise=Curves.easeOutQuint, spring=Curves.easeOutBack; }
+class Stagger { static const step=40ms, maxTotal=320ms; }   // capped so long lists don't crawl
+```
+
+Single source of truth; no ad-hoc `Duration(milliseconds: ...)` anywhere else (enforced by a grep-based CI check, since a lint can't express it).
+
+### 6.2 The two engines, used for different jobs
+
+| Job | Engine | Technique |
+|---|---|---|
+| List/grid/column entrances | `flutter_staggered_animations_plus` | `AnimationLimiter(child: ListView.builder(... AnimationConfiguration.staggeredList(position: i, duration: 375ms, child: SlideAnimation(verticalOffset: 50, curve: easeOutCubic, child: FadeInAnimation(child: card)))))` |
+| Ambient/background (parallax layers, aurora gradient, floating title particles) | `simple_animations` | `LoopAnimationBuilder<double>(tween: Tween(0,1), duration: 8s, builder: ...)` |
+| Reveal/hold (progress, victory state) | `simple_animations` | `PlayAnimationBuilder`, `MirrorAnimationBuilder` (pulsing launch dot) |
+| Multi-property choreography (press feedback: scale+lift+glow+tint together) | `simple_animations` | `MovieTween()..scene(0s).tween('scale', Tween(1,0.97))..scene(0s).tween('glow', Tween(0,1))..scene(200ms).tween('scale', Tween(0.97,1))` |
+| Page ↔ detail continuity | `animations` package | `SharedAxisTransition` / `OpenContainer`, plus a `Hero` on instance icon |
+| Window/element chrome | Flutter implicit | `AnimatedContainer/AnimatedOpacity/AnimatedSwitcher` for cheap state changes |
+
+### 6.3 Reduced motion & performance rules
+
+- `MotionScope` reads (a) `MediaQuery.disableAnimations`, (b) a "UI animations" setting; when off, all durations collapse to 0 and loops freeze on a representative frame. Setting is surfaced in `PageSetupUI`-equivalent.
+- Every animated list item wrapped in `RepaintBoundary`; stagger index passed from the builder, never re-derived in a `setState`.
+- Long lists: animate on first paint only (`_hasAnimated` flag per screen), not on scroll.
+- Debug: `AnimationDeveloperTools` (simple_animations) toggled by `--dart-define=MOTION_DEBUG=true`.
+
+### 6.4 Concrete animation catalogue (per screen, so review is concrete)
+
+| Screen | Animation |
+|---|---|
+| Splash/boot | Logo `MovieTween` (scale 0.85→1, blur 8→0, opacity 0→1) + mirrored glow ring; then `SharedAxisTransition.vertical` into shell |
+| Shell | Nav rail indicator slides with `Curves.easeOutQuint`; content cross-fades via `AnimatedSwitcher` (no jarring rebuild) |
+| Launch (home) | Big version card: staggered hero cloud background (`LoopAnimationBuilder` 12 s drift), play button `MovieTween` press feedback, hover lift `AnimatedScale`, "launching" state → pulsing dot (`MirrorAnimationBuilder`) + log console slide-up |
+| Instance list | `AnimationConfiguration.staggeredGrid` 3-column cards, fade+slide (50 px, 375 ms, 40 ms step); icon `Hero` into detail |
+| Instance detail | Tab content `staggeredColumn`; mod toggles `AnimatedSwitcher` + `ScaleTransition`; danger-zone delete uses `OpenContainer`→dialog |
+| Download/install | Staged progress: `PlayAnimationBuilder` fills the bar to *reported* progress with a 200 ms trailing catch-up so it never snaps; per-file rows stagger in as they start; speed graph drawn with a `LoopAnimationBuilder`-driven shimmer while throttled |
+| Version picker | `staggeredList`, filter chips animate width (`AnimatedSize`); snapshot/release tags `FadeInAnimation` |
+| Setup | Section cards `staggeredColumn`; sliders/toggles Fluent or M3 by theme; save button `MovieTween` success morph (check draw-on) |
+| Log drawer | Bottom sheet `SharedAxisTransition`; new lines `AnimatedList` + subtle highlight fade for warnings |
+
+---
+
+## 7. Screen inventory (PCL capability parity → our routes)
+
+| Route | Capability | v1 |
+|---|---|---|
+| `/launch` | Version select, account chip, play/stop, quick settings, news/announce | ✅ |
+| `/instances` | Grid/list of instances, create/import/export/delete/clone, loader + version | ✅ |
+| `/instances/:id` | Overview, mods (enable/disable/delete/add), settings (memory, JVM args, resolution, java, isolation) | ✅ |
+| `/download` | Version list (release/snapshot/old), loader install, optifine, resource/mod search (Modrinth) | ✅ |
+| `/download/install` | Task queue with staged progress, pause/cancel/retry | ✅ |
+| `/setup` | Launch (memory, args, window), Java management, download source/mirror, UI (theme, motion toggle, language) | ✅ |
+| `/speed` | Download speed test / mirror health | ⏳ v1.1 |
+| `/logs` | Live log console + crash analysis result | ✅ |
+
+---
+
+## 8. Milestones
+
+Each milestone ends with a green `dart analyze` + `flutter test` and a demoable artifact. No milestone depends on unfinished work in a later one.
+
+### M0 — Bootstrap & verification harness — **DONE**
+Flutter 3.47.7 installed natively on this arm64 host (§4), project scaffolded as `oh_my_mc`/`io.ohmy` for `windows,linux,macos`, `pubspec.yaml` pinned and resolving (149 packages), Linux desktop toolchain installed, `flutter analyze` clean, `flutter test` green, `flutter build linux --release` producing an aarch64 bundle.
+**Acceptance met:** all four commands run successfully; the arm64/x64 matrix and its constraints are documented (§3.5) before any feature code was written.
+
+### M0.5 — CI matrix (moved *ahead* of feature work, deliberately)
+The 6-target requirement makes CI a build dependency, not release polish: x64 Windows/Linux artifacts can only be produced on x64 runners (§3.5). What lands here: `.github/workflows/ci.yml` with an `analyze`+`test` job on `ubuntu-24.04`, and a `build` matrix over `windows-latest`, `windows-11-arm`, `ubuntu-24.04`, `ubuntu-24.04-arm`, `macos-14`, each uploading its artifact, with the arm64 Linux job passing `--no-tree-shake-icons`.
+**Acceptance:** all 5 jobs green; every artifact downloadable; the Linux and Windows arm64 zips contain their expected `ELF64 aarch64` / `ARM64 PE` binaries (checked with a small `tool/verify_arch.dart` so a silently-x64 artifact can never ship).
+
+### M1 — Core MC engine (pure Dart, no UI)
+`version_manifest`, `version_json`, `rules`, `version_resolver`, `library_graph`, `asset_index`, `jvm_args`, `java_requirement`, **`arch_compat`** (§3.5.2).
+**Acceptance:** golden-JSON unit tests using **trimmed real fixtures** captured from 26.3 (modern, Java 25, no natives), 1.20.1 (Java 17), 1.12.2 + 1.8.9 (legacy args, natives classifiers, virtual assets) plus synthetic Forge/Fabric `inheritsFrom` chains. Assertions: exact argv for a fixed account/instance, exact classpath ordering + dedupe, correct natives set per **(os, arch)** pair, correct `javaMajor` per version, correct asset policy per index type, and `arch_compat` blocks LWJGL2-on-arm64 while patching LWJGL3-linux-arm64.
+
+### M2 — Downloader + Java manager + install pipeline
+Priority queue, sha1 verify, `.part`→rename, mirror chain with failover, cancel/retry, `Stream<DownloadProgress>`; Java scan/download.
+**Acceptance:** unit tests with a local `HttpServer` fixture (404 → mirror retry, hash mismatch → re-download once then fail, cancel mid-flight leaves no `.part`); integration test installs a real vanilla version into a temp dir and asserts file count/hashes, marked `@Tags(['network'])`.
+
+### M3 — Design system + motion foundation + shell
+Tokens, theme (M3 seed + Fluent bridge), `MotionScope`, `stagger.dart`, `movie_presets.dart`, title bar, nav rail, splash, log drawer.
+**Acceptance:** widget tests for reduced-motion collapse (pump with `disableAnimations: true` → no transient frames), stagger order (item N's controller starts before N+1), and golden tests at 3 keyframes per screen shell.
+
+### M4 — UI vertical slice: launch screen + instance list
+Instance model/store (`instance.json`), staggered grid, hero to detail, play button states, log console wired to a fake `LaunchHandle`.
+**Acceptance:** widget test taps play → state transitions idle→preparing→running→exited with fake process; golden tests; list of 200 items scrolls at 60 fps (verified via `--profile` trace on Windows CI, screenshot diff only).
+
+### M5 — Real launch end-to-end
+MS device-code auth, offline auth, `launch()` with real argv, process spawn + streaming, stop/kill, playtime tracking, **`LaunchBlocker` surfacing for arch-compat refusals (§3.5.2)**.
+**Acceptance:** on Windows x64 CI, install + launch `1.20.1` offline with a stub main class replaced by a tiny Java "echo args" harness (no game assets needed) → assert argv contains every expected token and process exits 0; then one manual real launch documented in `AGENTS.md`. On Linux arm64 CI, assert the same argv for a 1.20.1 profile *with* the patched `natives-linux-arm64` entries present and the LWJGL2-on-arm64 case blocked rather than launched.
+
+### M6 — Download UI + version/loader installers
+Version picker (staggered), install queue with staged animated progress, Fabric/Quilt profile API, Forge/NeoForge installer import, OptiFine.
+**Acceptance:** installer unit tests against captured profile JSON; UI test asserts progress bar never regresses (monotonic invariant on the catch-up animator); cancel leaves instance dir clean.
+
+### M7 — Instance management, mods, modpacks, crash analysis, polish
+Mod scanner (fabric.mod.json / mods.toml / mcmod.info), enable/disable, Modrinth search/install/deps, modpack import/export, crash analyzer rules, setup screens, i18n (en + zh_Hans), **per-platform packaging** (`msix` on Windows, `.tar.gz` on Linux, `.dmg`/`.zip` on macOS), launcher icons, README.
+**Acceptance:** mod-scan fixtures for all three metadata formats; modpack round-trip test (export → import → identical plan); crash fixtures (Java stacktrace, OOM, mod-mixin, wrong-Java, **arm64+LWGJ2 unsupported**) map to expected diagnoses; the full 5-artifact release set produced by the matrix with arch verified on each.
+
+### M8 (v1.1 backlog)
+Speed test page, multi-account switcher UI, per-instance screenshots/gallery, skin preview, update checker, Linux/macOS packaging hardening.
+
+---
+
+## 9. Testing strategy
+
+| Layer | Tool | Notes |
+|---|---|---|
+| Pure core | `flutter_test` (no widgets) | golden JSON fixtures trimmed from real manifests; the highest-value tests |
+| Widgets/motion | `flutter_test` + `matchesGoldenFile` | keyframe goldens; reduced-motion variants |
+| Network | local `HttpServer` fixtures | no mocking of our own classes — real Dio against a real socket |
+| Integration | `integration_test` on Windows CI | install + stub-launch 1.20.1 |
+| Static | `dart analyze` (strict), `dart format --set-exit-if-changed`, custom `tool/check_tokens.dart` | forbids raw `Duration(`/`Curves.` outside motion tokens |
+
+Mocks are limited to: process spawning (until M5) and the OS clock. Everything else runs real code paths.
+
+---
+
+## 10. Risks & mitigations
+
+| Risk | Impact | Mitigation |
+|---|---|---|
+| `flutter_staggered_animations_plus` is a single-maintainer fork | package disappears | mitigation: `stagger.dart` indirection + MIT vendoring escape hatch (≈200 LOC) |
+| `simple_animations` needs Flutter ≥3.44 | blocks older SDKs | we pin 3.47.7; documented in README |
+| **No arm64 Linux Flutter SDK upstream** (§4) | can't run Flutter on arm64 Linux | native-Dart-SDK swap, documented in `AGENTS.md`; the `ubuntu-24.04-arm` CI job will use the same swap, verified for real the first time that job runs in M0.5 |
+| **No arm64 `font-subset`** | icon tree-shaking unavailable on arm64 | `--no-tree-shake-icons` on arm64 jobs only; cosmetic (larger icon font) |
+| **MC ≤1.12.2 has no arm64 LWJGL2 natives** (§3.5.2) | those versions cannot run on arm64 at all | product-level honesty: `LaunchBlocker` + crash-analyzer diagnosis; never ship a silent crash |
+| **Linux-arm64 LWJGL3 natives absent from Mojang manifest** | MC 1.13+ would fail to start on Linux arm64 | classifier patch to Maven Central; covered by unit fixtures |
+| 6-target matrix multiplies CI time and failure surface | slow feedback, flaky release | one reusable workflow + per-arch job; arm64 jobs split out so a Linux-arm64 break doesn't block x64; arch-verification step makes silent x64-in-arm64-zip impossible |
+| Version 26.x schema drift (Java 25, new arg forms) | launch failures | rules/args resolvers driven by fixtures for 26.3 **and** legacy; unknown fields preserved, unknown arg placeholders warn-not-crash |
+| PCL license restricts reuse | legal | behavior-only reimplementation, original assets/strings (§3.4) |
+| MS auth can't be fully tested headlessly | login regressions | device-code flow testable to the token-exchange boundary with a fake token endpoint; offline path always available |
+| 480 MB asset downloads in tests | slow CI | network-tagged tests excluded by default; opt-in job nightly |
+
+---
+
+## 11. Decisions locked
+
+All previously open questions are now answered (you chose "agent defaults"):
+
+1. **Name / id** — `oh_my_mc` / `io.ohmy`, display name **"oh my mc"**.
+2. **Window chrome** — Fluent shell (`fluent_ui` nav rail + Mica via `flutter_acrylic`), Material 3 for content components. Matches "fluent animations + Material design guidance".
+3. **Languages** — English + Chinese (`zh_Hans`) from the start, via `flutter_localizations` + ARB; every user-visible string goes through `AppLocalizations` from the first widget, not retrofitted in M7.
+4. **Auth scope** — offline + Microsoft device code in v1 (both), because an offline-only launcher can't join most servers.
+5. **Modloaders** — all five in v1: Fabric, Quilt, Forge, NeoForge, OptiFine.
+6. **Feature scope** — full PCL pre-2.99 surface (§7 inventory).
+7. **Platforms** — the 6-target matrix in §3.5, with arm64 runtime caveats surfaced in-product rather than hidden.
+
+Remaining judgement call I'll make myself unless you object: **LAN/"Link" tunnel** (PCL's EasyTier-based multiplayer). PCL ships a bundled `easytier` binary and talks to `uptime.easytier.cn`. Reproducing that means vendoring a third-party VPN binary per architecture, which cuts directly against the 6-target matrix and adds a security surface. Plan: **v1 ships LAN discovery/join on the local network only**; the EasyTier tunnel is deferred to the M8 backlog with a note. Say the word if you want it in v1 and I'll scope it separately.
+
+---
+
+## 12. Definition of done (v1)
+
+A user on **any of the six targets** can: launch the app → see an animated shell → log in (offline or MS) → install `1.20.1` (+Fabric) through the animated installer → create an instance with memory/Java settings → add a mod from Modrinth or drop in a jar → press Play and watch the log stream → stop the game → get a readable crash diagnosis if it fails — with all motion respecting the reduced-motion toggle, English or Chinese UI, and all 5 release artifacts produced and arch-verified by CI.
+
+Where a target genuinely cannot run a given game version (arm64 + MC ≤1.12.2, §3.5.2), the app says so clearly *before* launch and explains why, instead of failing with an opaque JVM error.
