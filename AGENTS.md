@@ -137,6 +137,35 @@ re-add it. `arch_compat` only has to handle the macOS-arm64 case below.
   touches the network, and it is run by hand (`dart run tool/smoke_download.dart 1.20.1
   [--mirror]`).
 
+## Motion layer (`lib/ui/motion/`)
+
+- **Neither engine can be switched off by configuration.** Verified in source:
+  `AnimationExecutor` always constructs an `AnimationController` and merely sets
+  `value = 1.0` when its limiter is inactive, and `LoopAnimationBuilder` always
+  starts a ticker. So "reduced motion" is a **wrapper** concern — the primitives
+  return the child / resting frame and never build the engine widget at all.
+  Assert this with `tester.binding.transientCallbackCount == 0`, not with a
+  zero-duration check, or you will pass while still allocating a controller.
+- **`hasScheduledFrame` is the wrong assertion for anything containing a
+  `ListView`.** A bare list schedules frames for its own scroll bookkeeping, so
+  the test fails on a tree that is genuinely idle. Use `transientCallbackCount`
+  when the claim is "no animation is running".
+- **Charge the stagger budget over the items that actually animate, not over the
+  list length.** `maxTotal ~/ itemCount` looks right and is badly wrong: a
+  1000-item list gets a 0.3 ms step, i.e. no visible cascade. Divide by
+  `min(itemCount, maxAnimatedIndex)` instead. Caught by the monotonicity test.
+- **The disabled path must render the *end* state.** `AmbientLoop` passes
+  `tween.end` to the builder when motion is off; passing `begin` would show the
+  start of the animation forever.
+- **Token rule is scoped to `lib/ui/`, not all of `lib/`.** `lib/core/net` has
+  `Duration` values for HTTP timeouts and retry backoff. Routing those through
+  motion tokens would make "reduce animations" disable a download timeout.
+  `tool/check_tokens.dart` therefore only inspects `lib/ui/`, excluding
+  `lib/ui/motion/` itself.
+- **Both gate scripts must be proven to fail.** A checker that never fires is
+  indistinguishable from a clean tree. `check_tokens` was verified by planting a
+  `Duration(milliseconds:)` in `lib/ui/` and confirming exit 1.
+
 ## Minecraft / platform facts that shape the code
 
 - **Library dedupe must key on `group:artifact:classifier`, never `group:artifact`.**

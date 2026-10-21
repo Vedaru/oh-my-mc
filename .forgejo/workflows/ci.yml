@@ -86,6 +86,11 @@ jobs:
           flutter pub get
           check "dart format" dart format --output=none --set-exit-if-changed lib test tool
           check "flutter analyze" flutter analyze --fatal-infos
+          # The import law and the motion-token rule are both things a Dart lint
+          # cannot express, so they are scripts. Run before the tests: a violation
+          # means the tree is structurally wrong, and it is cheaper to read.
+          check "import law" dart run tool/check_imports.dart
+          check "motion tokens" dart run tool/check_tokens.dart
           check "flutter test" flutter test
           if [ "$rc" -eq 0 ]; then echo "gate: PASS"; else echo "gate: FAIL"; fi
           exit "$rc"
