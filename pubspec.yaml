@@ -46,6 +46,7 @@ dependencies:
 
   # --- ui extras ----------------------------------------------------------
   lucide_icons: ^0.257.0
+  material_ui: ^1.8.0
 
 dev_dependencies:
   flutter_test:
