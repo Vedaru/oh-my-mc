@@ -97,6 +97,10 @@ but `FluentThemeData.brightness` defaults to `light` regardless of `themeMode`, 
 This is a real trap: it produces a light-on-light UI that a golden test would happily record
 as "correct".
 
+**Resolved in M3.2.** `AppTheme` passes `brightness` explicitly to `FluentThemeData` and derives the
+Material scheme from the same value, so one seed feeds both. Proven, not assumed: omitting the
+argument makes 4 unit tests fail and the dark golden differ by **100% of its pixels**.
+
 ---
 
 ## 1. Verified baseline (what actually works today)
