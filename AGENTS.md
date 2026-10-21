@@ -254,9 +254,12 @@ re-add it. `arch_compat` only has to handle the macOS-arm64 case below.
     inter-job file passing (which this instance cannot do - no
     `actions/upload-artifact`, since the action source is github.com).
   * `package_linux.sh <root> <target>` / `publish_release.sh <root> <target> <sha>` — ONE rolling
-    release tagged `rolling`, holding `oh-my-mc-linux-{x64,arm64}.tar.gz`. Each build job uploads
-    into it independently (no `actions/upload-artifact` on this instance) and the script deletes
-    only its own target's assets, so the two jobs cannot clobber each other.
+    release tagged `rolling`, holding `oh-my-mc-linux-{x64,arm64}-<commit>.tar.gz`. Each build job
+    uploads into it independently (no `actions/upload-artifact` on this instance). The script
+    **never deletes the release**, and only deletes assets whose name contains its own target, so
+    one failing job cannot remove the other architecture's good artifact. Assets carry their
+    commit in the name so a leftover from an older commit is visible rather than passed off as
+    current.
 
 ### Traps that cost real time
 * **`flutter build linux --release` fails on arm64 with "font-subset utility is
@@ -266,6 +269,12 @@ re-add it. `arch_compat` only has to handle the macOS-arm64 case below.
   dev sandbox (aarch64) cannot do a plain `flutter build linux --release` at all,
   even though `flutter doctor` reports the Linux toolchain as fine - the check
   the doctor performs is not the one the icon tree-shaker needs.
+* **The `glibc` (aarch64) runner is separate from `glibc-amd64`.** When only
+  `build-linux-arm64` fails, and it fails within a second or two rather than
+  timing out, the job never started - check the runner before the workflow. A
+  useful discriminator: gate and build-linux-x64 share `glibc-amd64` and will
+  still pass on the same commit, and `git diff <last-green>..HEAD --
+  .forgejo/workflows/ci.yml` being empty rules out a workflow cause.
 * **The runner image avoids the SDK download, but a stale `dist/` does not.**
   CI installs nothing; each job's `flutter` comes from the image. The old
   per-job `fetch_flutter_sdk.sh` / `assemble_arm64_toolchain.sh` paths are only
