@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Publish the single rolling release on this Forgejo instance.
 #
-#   publish_release.sh <repo-root> <target> <sha>     target: linux-x64 | linux-arm64
+#   publish_release.sh <repo-root> <target> <sha>     target: linux-x64
 #
 # There is ONE release, tagged `rolling`, holding one asset per target. Two
 # releases (one per architecture) meant two independent "latest" pointers, and
@@ -17,8 +17,8 @@
 #      that fails after the other succeeded must not remove the good artifact,
 #      or the release ends up serving one architecture for a commit built for
 #      two. This is not hypothetical: the first version of this script reset a
-#      release whose commit did not match, and an arm64 job dying in one second
-#      took the x64 asset with it.
+#      release whose commit did not match, and a second build job dying in one
+#      second took the x64 asset with it.
 #   2. replace only assets whose name contains this target.
 #   3. put the commit in every asset's name, so an asset left behind by an older
 #      commit is visible in the filename rather than silently passed off as
@@ -29,7 +29,7 @@
 set -euo pipefail
 
 root=${1:?repo root}
-target=${2:?target (linux-x64|linux-arm64)}
+target=${2:?target (linux-x64)}
 sha=${3:?commit sha}
 
 : "${FORGEJO_TOKEN:?FORGEJO_TOKEN is required}"
@@ -127,7 +127,7 @@ import re, sys
 # A name that does not carry a commit is reported as such. Guessing a commit out
 # of an arbitrary name is worse than admitting it is unknown: splitting on "-"
 # turns "oh-my-mc-linux-x64.tar.gz" into a commit called "x64".
-stamped = re.compile(r"^oh-my-mc-(linux-x64|linux-arm64)-([0-9a-f]{7,40})\.tar\.gz$")
+stamped = re.compile(r"^oh-my-mc-(linux-x64)-([0-9a-f]{7,40})\.tar\.gz$")
 rows = []
 for name in sys.stdin.read().splitlines():
     if not name or name.endswith(".sha256"):

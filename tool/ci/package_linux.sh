@@ -1,19 +1,18 @@
 #!/usr/bin/env bash
 # Stage a Linux release bundle as a relocatable tarball.
 #
-#   package_linux.sh <repo-root> <target>     target: linux-x64 | linux-arm64
+#   package_linux.sh <repo-root> <target>     target: linux-x64
 #
 # The Flutter bundle must be unpacked as a directory named `oh-my-mc`, not
 # `bundle`, because that is the name a user sees after extracting.
 set -euo pipefail
 
 root=${1:?repo root}
-target=${2:?target (linux-x64|linux-arm64)}
+target=${2:?target (linux-x64)}
 
 case "$target" in
-  linux-x64)   arch=x64 ;;
-  linux-arm64) arch=arm64 ;;
-  *) echo "unknown target: $target" >&2; exit 64 ;;
+  linux-x64) arch=x64 ;;
+  *) echo "unknown target: $target (only linux-x64 is shipped)" >&2; exit 64 ;;
 esac
 
 bundle="$root/build/linux/$arch/release/bundle"

@@ -236,19 +236,21 @@ re-add it. `arch_compat` only has to handle the macOS-arm64 case below.
 
 ## CI (two systems, by necessity)
 
-* **Forgejo** (`.forgejo/workflows/ci.yml`) builds `linux-x64` and runs the gate; the
-  `linux-arm64` build is `.forgejo/workflows/arm64.yml`, dispatch-only while the aarch64
-  runner is down (see the runner trap below).
-  Both runners are Linux: `glibc` = aarch64, `glibc-amd64` = x86_64. No macOS/Windows runner exists.
+* **Forgejo** (`.forgejo/workflows/ci.yml`) builds `linux-x64` and runs the gate.
+  No arm64 build exists anywhere any more: `linux-arm64` is **not a ship target** (see
+  "Ship targets"), so `.forgejo/workflows/arm64.yml` was deleted rather than parked
+  behind `workflow_dispatch`. Both runners are Linux: `glibc` = aarch64,
+  `glibc-amd64` = x86_64. No macOS/Windows runner exists.
 * **GitHub** (`.github/workflows/ci.yml`) builds `windows-x64` + `macos-arm64`. Those jobs clone
   `https://git.vedaru.cn/Vedaru/oh-my-mc.git` (public, anonymous clone works) so both systems build
   the same commit. Push to both remotes: `git push forgejo master && git push github master`.
 * Heavy logic lives in `tool/ci/*.sh`, not YAML, so it can be run and tested locally:
   * `fetch_flutter_sdk.sh <dest> [ver]` — 1.5 GB tarball, retries + resumes + mirrors (CN mirror is
     ~8-22 MB/s and reachable; a bare curl died at 7 min with "Recv failure: Connection reset by peer").
-  * `assemble_arm64_toolchain.sh <dest> [ver]` — the hybrid SDK recipe above, automated. Verified
-    from scratch on aarch64: rebuilds the tool natively, then `flutter build linux --release` gives
-    an ELF with `e_machine=0xb7`.
+  * `assemble_arm64_toolchain.sh <dest> [ver]` — the hybrid SDK recipe above, automated.
+    **This is dev-sandbox bootstrap only, not a CI or release path**: it exists because this
+    container is aarch64 and no arm64 Linux SDK is published. `linux-arm64` is not shipped, so
+    nothing in CI calls it. Keep it for the local build loop; do not wire it into a workflow.
   * `publish_release.sh` is race-safe in two ways, both learned from the drift it
     replaced: it **adopts** a release another job created a moment earlier
     instead of failing on the create race, and it deletes only assets matching
@@ -256,7 +258,7 @@ re-add it. `arch_compat` only has to handle the macOS-arm64 case below.
     inter-job file passing (which this instance cannot do - no
     `actions/upload-artifact`, since the action source is github.com).
   * `package_linux.sh <root> <target>` / `publish_release.sh <root> <target> <sha>` — ONE rolling
-    release tagged `rolling`, holding `oh-my-mc-linux-{x64,arm64}-<commit>.tar.gz`. Each build job
+    release tagged `rolling`, holding `oh-my-mc-linux-x64-<commit>.tar.gz`. Each build job
     uploads into it independently (no `actions/upload-artifact` on this instance). The script
     **never deletes the release**, and only deletes assets whose name contains its own target, so
     one failing job cannot remove the other architecture's good artifact. Assets carry their
@@ -266,8 +268,9 @@ re-add it. `arch_compat` only has to handle the macOS-arm64 case below.
 ### Traps that cost real time
 * **`flutter build linux --release` fails on arm64 with "font-subset utility is
   missing"** unless you pass `--no-tree-shake-icons`. The engine ships
-  `font-subset` only for `linux-x64`; the arm64 artifacts directory has none. The
-  CI arm64 job passes the flag for this reason. Note this also means this
+  `font-subset` only for `linux-x64`; the arm64 artifacts directory has none.
+  No CI job passes the flag, because no shipped Linux target is arm64 — this is
+  purely a **local build-loop** constraint. Note this also means this
   dev sandbox (aarch64) cannot do a plain `flutter build linux --release` at all,
   even though `flutter doctor` reports the Linux toolchain as fine - the check
   the doctor performs is not the one the icon tree-shaker needs.
@@ -277,11 +280,10 @@ re-add it. `arch_compat` only has to handle the macOS-arm64 case below.
   runs. It was green on `4bee9c9a` (71s) with a byte-identical workflow.
   `continue-on-error: true` is **not honoured** (job still concludes `failure`),
   so a build cannot be kept green while the runner is dead - do not try.
-  The arm64 job therefore lives in `.forgejo/workflows/arm64.yml` behind
-  `workflow_dispatch` and is out of the push pipeline:
-  `POST /api/v1/repos/Vedaru/oh-my-mc/actions/workflows/arm64.yml/dispatches`
-  with `{"ref":"master"}`. Dispatch it to check whether the runner is back; a
-  green run republishes the arm64 asset into the same `rolling` release.
+  This no longer costs anything: `linux-arm64` is not a ship target, so the
+  `arm64.yml` workflow was deleted instead of being kept dispatch-only. The dead
+  `glibc` label is still worth knowing about, because it is the reason a future
+  "just add an arm64 Linux build" idea cannot be implemented on this instance.
   Diagnostic ladder that actually discriminates (in order): is the failure
   duration ~1s (never started) vs minutes (real build failure); does a
   `run: 'echo hello'` job on that label fail too; do gate/`build-linux-x64` on
