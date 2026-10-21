@@ -1,5 +1,8 @@
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:oh_my_mc/app/providers.dart';
+import 'package:oh_my_mc/data/settings.dart';
 import 'package:oh_my_mc/l10n/l10n.dart';
 import 'package:oh_my_mc/main.dart';
 
@@ -7,6 +10,23 @@ import 'package:oh_my_mc/main.dart';
 /// two localization trees fails here rather than in the first frame a user sees.
 Future<void> _pumpApp(WidgetTester tester, {Locale? locale}) async {
   await tester.pumpWidget(OhMyMcApp(locale: locale));
+  await tester.pumpAndSettle();
+}
+
+/// Switches language the way `/setup` does: through the settings notifier.
+///
+/// Re-pumping with a different `locale:` argument no longer works by design -
+/// the store is the source of truth and is read once, at provider build - and a
+/// test that could still switch via the constructor would be testing a mechanism
+/// no user can reach.
+Future<void> _setLanguage(
+  WidgetTester tester,
+  LanguagePreference language,
+) async {
+  final context = tester.element(find.byType(NavigationView).first);
+  await ProviderScope.containerOf(context)
+      .read(appSettingsProvider.notifier)
+      .setLanguage(language);
   await tester.pumpAndSettle();
 }
 
@@ -40,10 +60,11 @@ void main() {
       'Launch',
     );
 
-    await _pumpApp(tester, locale: const Locale('zh'));
+    await _setLanguage(tester, LanguagePreference.chinese);
     expect(
       tester.element(find.byType(NavigationView).first).l10n.navLaunch,
       '启动',
+      reason: 'a language change must relocalize without a restart',
     );
   });
 
@@ -60,7 +81,7 @@ void main() {
       'Delete 1.20.4? This cannot be undone.',
     );
 
-    await _pumpApp(tester, locale: const Locale('zh'));
+    await _setLanguage(tester, LanguagePreference.chinese);
     final zh = tester.element(find.byType(NavigationView).first).l10n;
     expect(zh.instanceCount(0), '暂无实例');
     expect(zh.instanceCount(4), '4 个实例');
