@@ -2,9 +2,10 @@
 #
 # These two targets cannot be built on the Forgejo instance: both of its runners
 # are Linux (`glibc` = aarch64, `glibc-amd64` = x86_64), and Flutter cannot
-# cross-compile a Windows or macOS app from Linux at all. Linux x64/arm64 are
-# built on Forgejo (see .forgejo/workflows/ci.yml); this file covers only what
-# that instance structurally cannot do.
+# cross-compile a Windows or macOS app from Linux at all. Linux x64 is built on
+# Forgejo (see .forgejo/workflows/ci.yml); this file covers only what that
+# instance structurally cannot do. No arm64 Linux build exists on either system:
+# it is not a ship target.
 #
 # The source of truth is the Forgejo repository; this workflow clones it from the
 # public URL rather than trusting that GitHub's copy is current, so a green run
@@ -16,6 +17,11 @@ on:
     branches: [master, main]
   pull_request:
   workflow_dispatch:
+
+# The publish step creates a release and uploads assets, which the default
+# read-only GITHUB_TOKEN refuses ("Resource not accessible by integration").
+permissions:
+  contents: write
 
 env:
   FLUTTER_VERSION: 3.47.7

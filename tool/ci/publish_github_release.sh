@@ -51,7 +51,13 @@ src="$dist/oh-my-mc-$target.$ext"
 [ -f "$src" ] || { echo "no artifact at $src" >&2; exit 1; }
 stamped="$dist/oh-my-mc-$target-$short.$ext"
 cp "$src" "$stamped"
-( cd "$dist" && sha256sum "oh-my-mc-$target-$short.$ext" > "oh-my-mc-$target-$short.$ext.sha256" )
+# macOS has no `sha256sum` (it is GNU coreutils), so hash through python3, which
+# every runner has. Written as `<hash>  <name>` to match the Linux assets.
+( cd "$dist" && python3 -c '
+import hashlib, sys
+name = sys.argv[1]
+h = hashlib.sha256(open(name, "rb").read()).hexdigest()
+open(name + ".sha256", "w").write("%s  %s\n" % (h, name))' "oh-my-mc-$target-$short.$ext" )
 
 # Point the tag at this commit. A tag already at this commit answers 422, which is
 # not a failure.
