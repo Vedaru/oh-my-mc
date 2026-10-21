@@ -40,7 +40,7 @@ If `bin/cache` is ever wiped, redo the whole dance. Don't spend time re-deriving
 | `flutter build linux --release --no-tree-shake-icons` | produces `build/linux/arm64/release/bundle/oh_my_mc`, ELF64 **aarch64** |
 | `flutter build linux --target-platform linux-x64` | **fails** — *"cross-building only supported on Linux x64 hosts"* |
 
-So: x64 artifacts can only be produced on x64 runners (see `docs/PLAN.md` §3.5.1). This sandbox proves arm64 only.
+So x64 artifacts only come from x64 runners (`docs/PLAN.md` §3.5.1); this sandbox can only build arm64 Linux.
 
 ## System packages installed (needed for Linux desktop builds)
 
@@ -56,6 +56,18 @@ put `--install-prefix=/usr/local`.
 
 No `DISPLAY` → no windowed runs here. Visual verification is the user's job, or CI screenshots.
 
+## CI
+
+`.github/workflows/ci.yml` — `analyze` job (format check, `flutter analyze --fatal-infos`, `flutter test`) gates a
+3-target build matrix. Notes:
+- `tool/verify_binary_arch.dart --file=<bin> --expect=<linux-x64|windows-x64>` parses ELF/PE headers and exits
+  non-zero on mismatch. macOS uses `lipo -archs` instead and asserts arm64 present **and** x86_64 absent.
+- `--fatal-infos` is on, so an info-level lint fails CI. Run it locally before pushing.
+- The macOS job needs `flutter config --enable-macos-arm64-only`, otherwise release builds are universal.
+- `dart format --set-exit-if-changed` is enforced — and note `dart format` will happily reflow a brace-less
+  `if (...) return x;` into a multi-line form that then trips `curly_braces_in_flow_control_structures`.
+  Always use braces.
+
 ## Dependency gotcha
 
 `build_runner` must stay at **`^2.16.2`**. `>=2.17.1` needs `build >=5.0.0 <5.1.0`, but `riverpod_generator`
@@ -68,14 +80,24 @@ needs `build <5.0.0` → unsatisfiable. Don't "upgrade" it.
 - Respect reduced motion via `MotionScope` (collapses durations to 0).
 - Every user-visible string goes through `AppLocalizations` (en + zh_Hans). No hardcoded UI text.
 
+## Ship targets (decided — do not "helpfully" add more)
+
+**windows-x64, linux-x64, macos-arm64.** No Windows arm64, no Linux arm64. macOS is arm-only via
+`flutter config --enable-macos-arm64-only`.
+
+This is grounded, not arbitrary: Flutter publishes **zero** arm64 archives in `releases_linux.json` and
+`releases_windows.json` (only `releases_macos.json` has arm64). So arm64 Windows/Linux cannot even be built in CI.
+
+Consequence: the LWJGL3 `natives-linux-arm64` classifier patch that the plan used to need is **gone**. Don't
+re-add it. `arch_compat` only has to handle the macOS-arm64 case below.
+
 ## Minecraft / platform facts that shape the code
 
 - **MC ≤ 1.12.2 cannot run on arm64 at all** — they need LWJGL 2, which has no arm64 natives on any OS
-  (verified: 1.12.2's manifest lists only `natives-linux|osx|windows`). Block it with a clear message.
-- **Linux arm64 + MC ≥ 1.13**: Mojang's manifest omits `natives-linux-arm64`, but the jars **do** exist on
-  Maven Central (`org/lwjgl/*/<ver>/<name>-<ver>-natives-linux-arm64.jar`, HTTP 200 for 3.3.1 and 3.4.3 except
-  `lwjgl-freetype` which is 3.4+ only). Patch the classifier and source from Maven Central.
-- `libraries.minecraft.net` does **not** host the arm64 natives; use `repo1.maven.org` for those.
+  (verified: 1.12.2's manifest lists only `natives-linux|osx|windows`). Since macOS is our only arm64 target,
+  this means those versions are unlaunchable on Apple Silicon: block with a clear message *before* the Play button.
+- **macOS arm64 + MC ≥ 1.13 is fine** — `natives-macos-arm64` is already in the manifest; no patching.
+- **x64 targets need no library patching at all.**
 - Legacy versions use `minecraftArguments` (string) + `natives` classifiers; modern use `arguments.jvm/game`.
   Both shapes are already captured as fixtures targets in the plan.
 

@@ -1,0 +1,146 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: 3.47.7
+
+jobs:
+  analyze:
+    name: analyze + test
+    # x64 only: Flutter publishes no arm64 Linux SDK (releases_linux.json has
+    # zero arm64 archives), so the arm64 runner cannot run the tool at all.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install Linux desktop build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libgtk-3-dev libsecret-1-dev pkg-config cmake ninja-build clang
+
+      - run: flutter pub get
+
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed lib test tool
+
+      - run: flutter analyze --fatal-infos
+
+      - name: Run tests
+        run: flutter test --reporter expanded
+
+  build:
+    name: build ${{ matrix.target }}
+    needs: analyze
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: windows-x64
+            os: windows-latest
+          - target: linux-x64
+            os: ubuntu-24.04
+          - target: macos-arm64
+            os: macos-14
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install Linux desktop build deps
+        if: matrix.target == 'linux-x64'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libgtk-3-dev libsecret-1-dev pkg-config cmake ninja-build clang
+
+      - run: flutter pub get
+
+      # macOS ships arm-only per product decision. Windows/Linux are x64.
+      - name: Configure macOS arm-only
+        if: matrix.target == 'macos-arm64'
+        run: flutter config --enable-macos-arm64-only
+
+      - name: Build
+        shell: bash
+        run: |
+          case "${{ matrix.target }}" in
+            windows-x64) flutter build windows --release ;;
+            linux-x64)   flutter build linux   --release ;;
+            macos-arm64) flutter build macos   --release ;;
+          esac
+
+      - name: Verify binary architecture (Linux/Windows)
+        if: matrix.target != 'macos-arm64'
+        shell: bash
+        run: |
+          case "${{ matrix.target }}" in
+            linux-x64)   bin="build/linux/x64/release/bundle/oh_my_mc" ;;
+            windows-x64) bin="build/windows/x64/runner/Release/oh_my_mc.exe" ;;
+          esac
+          dart run tool/verify_binary_arch.dart --file="$bin" --expect="${{ matrix.target }}"
+
+      - name: Verify binary architecture (macOS)
+        if: matrix.target == 'macos-arm64'
+        shell: bash
+        run: |
+          bin="build/macos/Build/Products/Release/oh_my_mc.app/Contents/MacOS/oh_my_mc"
+          lipo -info "$bin"
+          # Fail loudly if a universal or x64 slice sneaks back in.
+          if lipo -archs "$bin" | grep -q x86_64; then
+            echo "::error::expected arm64-only binary, got: $(lipo -archs "$bin")"
+            exit 1
+          fi
+          lipo -archs "$bin" | grep -qw arm64
+
+      - name: Package (Linux)
+        if: matrix.target == 'linux-x64'
+        shell: bash
+        run: |
+          mkdir -p dist stage/oh-my-mc
+          cp -a build/linux/x64/release/bundle/. stage/oh-my-mc/
+          tar -czf "dist/oh-my-mc-${{ matrix.target }}.tar.gz" -C stage oh-my-mc
+
+      - name: Package (Windows)
+        if: matrix.target == 'windows-x64'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path build/windows/x64/runner/Release/* `
+            -DestinationPath "dist/oh-my-mc-${{ matrix.target }}.zip"
+
+      - name: Package (macOS)
+        if: matrix.target == 'macos-arm64'
+        shell: bash
+        run: |
+          mkdir -p dist
+          # ditto (not zip) to preserve symlinks and resource forks in the bundle.
+          ditto -c -k --sequesterRsrc --keepParent \
+            build/macos/Build/Products/Release/oh_my_mc.app \
+            "dist/oh-my-mc-${{ matrix.target }}.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: oh-my-mc-${{ matrix.target }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14

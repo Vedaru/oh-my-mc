@@ -1,8 +1,8 @@
 # oh my mc — Flutter Minecraft Launcher: Implementation Plan
 
-**Status:** M0 complete (toolchain installed, project scaffolded, `flutter test` + `flutter build linux --release` green on arm64)
-**Repo state:** `master`, no commits yet
-**Targets:** Windows x64 · Windows arm64 · Linux x64 · Linux arm64 · macOS universal (§3.5)
+**Status:** M0 + M0.5 complete (toolchain, scaffold, CI matrix, arch verifier)
+**Repo state:** `master`, M0 baseline committed
+**Targets:** Windows x64 · Linux x64 · macOS arm64 (§3.5)
 **Date:** 2026-10-21
 
 ---
@@ -98,7 +98,7 @@ Version-JSON shapes confirmed (this drives §5.4):
 |---|---|---|
 | Flutter | **3.47.7 stable** (Dart 3.13.5) | latest stable; satisfies `simple_animations` (≥3.44) |
 | Null safety / lints | `flutter_lints ^6.0.0`, `analysis_options.yaml` with `strict-casts`, `strict-raw-types` | catches launcher-critical type bugs early |
-| Platforms | 6 release targets: `windows` ×{x64, arm64}, `linux` ×{x64, arm64}, `macos` universal (x64+arm64) | launcher needs filesystem + process spawning; user requirement — see §3.5 |
+| Platforms | 3 release targets: `windows` x64, `linux` x64, `macos` arm64 | launcher needs filesystem + process spawning; arm64 limited to macOS — see §3.5 |
 
 ### 3.2 Package set (versions verified on pub.dev today)
 
@@ -181,67 +181,61 @@ Rule: `core/` never imports `package:flutter`. Every launcher decision (what to 
 
 `flutter_staggered_animations_plus` and `simple_animations` are MIT (safe). Material Components repo is docs (safe). **PCL is not open source** — its license restricts distribution and the repo README frames the code as a synchronized snapshot for reference. So: no code, XAML, strings, or icon assets copied; feature parity is a functional goal, and our strings/art/UX are original. This also means the plan's §7 screens are "same capabilities", not "same pixels".
 
-### 3.5 Six release targets — what it actually costs
+### 3.5 Release targets — Windows x64, Linux x64, macOS arm64
 
-Verified against the Flutter 3.47.7 tool and the live Mojang/Maven infra, not assumed:
+Verified against the Flutter 3.47.7 tool and live infra, not assumed:
 
-| Target | Launcher app | Build host | Notes |
+| Target | Artifact | Build host | Notes |
 |---|---|---|---|
-| Windows x64 | ✅ | `windows-latest` | separate artifact from arm64 (§3.5.1) |
-| Windows arm64 | ✅ | `windows-11-arm` | engine `windows-arm64/artifacts.zip` confirmed HTTP 200 |
-| Linux x64 | ✅ | `ubuntu-24.04` | cross-build from x64 host |
-| Linux arm64 | ✅ | `ubuntu-24.04-arm` | **built and verified aarch64 ELF locally** (§4) |
-| macOS universal | ✅ | `macos-14`+ | tool defaults to universal (x64+arm64) in release mode — **one** artifact, not two |
+| `windows-x64` | `oh-my-mc-windows-x64.zip` | `windows-latest` (x64) | |
+| `linux-x64` | `oh-my-mc-linux-x64.tar.gz` | `ubuntu-24.04` (x64) | |
+| `macos-arm64` | `oh-my-mc-macos-arm64.zip` | `macos-14` (arm64) | arm-only via `flutter config --enable-macos-arm64-only` |
 
-Consequence 1 — **we cannot cross-compile from here.** `flutter build linux --target-platform linux-x64` on this arm64 box fails with *"cross-building only supported on Linux x64 hosts"*. So the 6 targets need a 4-job CI matrix (`windows-latest`, `windows-11-arm`, `ubuntu-24.04`, `ubuntu-24.04-arm`) + macOS. CI is not optional polish — it is the only place x64 Windows/Linux artifacts can be produced.
+Scope decision (explicit): **no Windows arm64 and no Linux arm64 builds.** arm64 is supported on macOS only.
 
-Consequence 2 — **the arm64 gap is in Minecraft itself, not in us.** This is the finding that matters for a launcher:
+Consequence 1 — **we cannot cross-compile from here.** `flutter build linux --target-platform linux-x64` on this arm64 box fails with *"cross-building only supported on Linux x64 hosts"*. So x64 artifacts come from x64 runners; this sandbox proves macOS-adjacent arm64 logic only. CI is a build dependency, not release polish.
 
-| Game-side component | arm64 Linux | arm64 macOS | arm64 Windows |
+Consequence 2 — **Flutter ships no arm64 Windows or Linux SDK.** Audited all three release manifests: `releases_linux.json` and `releases_windows.json` contain **zero** arm64 archives; only `releases_macos.json` has them. Electron-style "just build on an arm64 runner" does not work for Windows/Linux Flutter. Dropping those two targets therefore removes a genuinely unsupported build path rather than a merely untested one — the matrix is now entirely on tool-supported ground.
+
+Consequence 3 — **the macOS app is arm-only, but the *game* it launches may not be arm-capable.** Launcher architecture and Minecraft runtime architecture are independent problems:
+
+| Game-side component | arm64 macOS |
+|---|---|
+| Mojang Java runtime (`mac-os-arm64`) | ✅ |
+| LWJGL **3** natives (MC ≥1.13) — `natives-macos-arm64` present in manifest | ✅ |
+| LWJGL **2** natives (MC ≤1.12.2) — no arm64 build exists anywhere | ❌ |
+
+So **MC ≤1.12.2 cannot run on macOS arm64.** Verified: 1.12.2's manifest lists only `natives-linux|osx|windows`; LWJGL 2 was never built for arm64 on any OS. PCL is Windows-x64-only and never faced this. Our launcher treats it as a diagnosable, explained refusal (`LaunchBlocker`) surfaced *before* the Play button, not an opaque JVM stacktrace. Intel Macs are out of scope, so no Rosetta fallback path is built.
+
+Because we now ship no arm64 Linux and no arm64 Windows, **the LWJGL3 `natives-linux-arm64` classifier patch is no longer needed** — a real simplification. `arch_compat` shrinks to the macOS-arm64 LWJGL2 check.
+
+#### 3.5.1 CI matrix
+
+| Job | Runner | Command | Verification |
 |---|---|---|---|
-| Mojang Java runtime | ✅ `linux` (arch-specific build) | ✅ `mac-os-arm64` | ✅ `windows-arm64` |
-| LWJGL **3** natives (MC ≥1.13) | ⚠️ **not in Mojang's manifest** — only `natives-linux`, `natives-macos-arm64`, `natives-windows-arm64` appear | ✅ | ✅ |
-| LWJGL **2** natives (MC ≤1.12.2) | ❌ no such artifact exists anywhere | ❌ | ❌ |
+| `analyze` + `test` | `ubuntu-24.04` | `dart format --set-exit-if-changed`, `flutter analyze --fatal-infos`, `flutter test` | gates the builds |
+| `build windows-x64` | `windows-latest` | `flutter build windows --release` | `tool/verify_binary_arch.dart` → PE/AMD64 |
+| `build linux-x64` | `ubuntu-24.04` | `flutter build linux --release` | `tool/verify_binary_arch.dart` → ELF64/x64 |
+| `build macos-arm64` | `macos-14` | `flutter config --enable-macos-arm64-only` + `flutter build macos --release` | `lipo -archs` must contain `arm64` and must **not** contain `x86_64` |
 
-So: **MC ≤1.12.2 cannot run on any arm64 OS** — those versions ship LWJGL2, which was never built for arm64 (verified: Mojang's 1.12.2 manifest only lists `natives-linux|osx|windows`). PCL is Windows-x64-only, so it never had to solve this. Our launcher must therefore treat "arm64 host + LWJGL2 version" as a **diagnosable, explained refusal** in the crash analyzer, not a mystery stacktrace.
-
-For LWJGL3-on-Linux-arm64 the natives *do* exist on Maven Central (`natives-linux-arm64` returns 200 for lwjgl, -glfw, -openal, -opengl, -stb, -tinyfd, -jemalloc at both 3.3.1 and 3.4.3) — Mojang just doesn't reference them. So we inject a **compatibility library patch** when `arch == arm64 && os == linux && lwjgl3`, rewriting the classifier. `lwjgl-freetype:natives-linux-arm64` exists only from 3.4.x, so for 3.3.x we drop that one library and warn (it only affects in-game font rendering, not boot).
-
-#### 3.5.1 Release matrix
-
-| Artifact | Runner | Command |
-|---|---|---|
-| `oh-my-mc-windows-x64.zip` | `windows-latest` | `flutter build windows --release` |
-| `oh-my-mc-windows-arm64.zip` | `windows-11-arm` | `flutter build windows --release` (host arch decides; tool has `windows_arm64` → `ARM64` cmake path) |
-| `oh-my-mc-linux-x64.tar.gz` | `ubuntu-24.04` | `flutter build linux --release` |
-| `oh-my-mc-linux-arm64.tar.gz` | `ubuntu-24.04-arm` | `flutter build linux --release --no-tree-shake-icons` |
-| `oh-my-mc-macos-universal.zip` | `macos-14`+ | `flutter build macos --release` |
-
-`--no-tree-shake-icons` is only required on arm64 hosts (missing `font-subset` binary, §4); the x64 jobs can tree-shake normally.
-
-Because the runner's own architecture decides the Windows artifact, the two Windows jobs are the *same* command — the matrix axis is the runner, not a flag. This is simpler than it sounds and avoids any `--target-platform` guessing.
+`tool/verify_binary_arch.dart` exists so a silently mis-targeted binary can never be published under an arch-specific name — it parses the ELF/PE/Mach-O headers itself (14 unit tests, including the arm64-rejected-as-x64 case) instead of trusting the build log.
 
 #### 3.5.2 Game-runtime compatibility layer
 
-This is the module that makes 6 targets real rather than nominal. `core/mc/arch_compat.dart` runs after version resolution and before the library graph is finalised:
+`core/mc/arch_compat.dart`, run after version resolution and before the library graph is finalised:
 
 ```dart
-enum HostArch { x64, arm64 }
-enum HostOs { windows, linux, macos }
-
-/// true when the version needs LWJGL2, which has no arm64 build anywhere.
-bool isUnsupportedOnArm64(VersionJson v) =>
+bool needsLwjgl2(VersionJson v) =>
     v.libraries.any((l) => l.name.startsWith('org.lwjgl.lwjgl:lwjgl-platform'));
 
-/// Linux arm64 is missing from Mojang's manifest but present on Maven Central.
-List<Library> patchLwjglForLinuxArm64(List<Library> libs);
+/// macOS arm64 has no LWJGL2 natives, so these versions are unlaunchable.
+LaunchBlocker? checkHostCompat(VersionJson v, HostOs os, HostArch arch);
 ```
 
-Rules, all unit-testable from fixtures already captured (1.12.2 = LWJGL2, 1.20.1/26.3 = LWJGL3):
-1. `arm64 && lwjgl2` → block launch with a specific message and offer "install an x64 build" advice. Recorded as a first-class `LaunchBlocker`, surfaced in the UI *before* the Play button, not after a crash.
-2. `arm64 && linux && lwjgl3` → rewrite `<maven>:<name>:<ver>:natives-linux` → `natives-linux-arm64`, sourced from Maven Central instead of `libraries.minecraft.net`.
-3. `lwjgl-freetype` on `3.3.x` + arm64-linux → drop + warn (natives only exist from 3.4.x).
-4. `arm64 && windows/macos` → no patching needed; the natives are already in the manifest.
+Rules (unit-testable from fixtures already captured: 1.12.2 = LWJGL2, 1.20.1/26.3 = LWJGL3):
+1. `macos && arm64 && lwjgl2` → block before launch, explain that the version predates arm64 support, and suggest a 1.13+ version. Never attempt the launch.
+2. `macos && arm64 && lwjgl3` → no patching needed; `natives-macos-arm64` is already in the manifest.
+3. `linux`/`windows` x64 → no patching needed at all (this is why dropping the arm64 targets removed a whole class of code).
 
 ---
 
@@ -402,13 +396,16 @@ Each milestone ends with a green `dart analyze` + `flutter test` and a demoable 
 Flutter 3.47.7 installed natively on this arm64 host (§4), project scaffolded as `oh_my_mc`/`io.ohmy` for `windows,linux,macos`, `pubspec.yaml` pinned and resolving (149 packages), Linux desktop toolchain installed, `flutter analyze` clean, `flutter test` green, `flutter build linux --release` producing an aarch64 bundle.
 **Acceptance met:** all four commands run successfully; the arm64/x64 matrix and its constraints are documented (§3.5) before any feature code was written.
 
-### M0.5 — CI matrix (moved *ahead* of feature work, deliberately)
-The 6-target requirement makes CI a build dependency, not release polish: x64 Windows/Linux artifacts can only be produced on x64 runners (§3.5). What lands here: `.github/workflows/ci.yml` with an `analyze`+`test` job on `ubuntu-24.04`, and a `build` matrix over `windows-latest`, `windows-11-arm`, `ubuntu-24.04`, `ubuntu-24.04-arm`, `macos-14`, each uploading its artifact, with the arm64 Linux job passing `--no-tree-shake-icons`.
-**Acceptance:** all 5 jobs green; every artifact downloadable; the Linux and Windows arm64 zips contain their expected `ELF64 aarch64` / `ARM64 PE` binaries (checked with a small `tool/verify_arch.dart` so a silently-x64 artifact can never ship).
+### M0.5 — CI matrix & arch verification — **DONE**
+The target set makes CI a build dependency, not release polish: x64 Windows/Linux artifacts can only be produced on x64 runners (§3.5). Landed `.github/workflows/ci.yml`: an `analyze` job (`dart format --set-exit-if-changed`, `flutter analyze --fatal-infos`, `flutter test`) gating a `build` matrix over `windows-latest`, `ubuntu-24.04`, `macos-14`, each verifying its own binary's architecture and uploading a packaged artifact.
+
+**Acceptance met locally:** `dart format --set-exit-if-changed` clean, `flutter analyze --fatal-infos` clean, 15/15 tests green, workflow YAML parses with the expected 3-target matrix. Remaining: first green run on GitHub (needs a pushed branch).
+
+`tool/verify_binary_arch.dart` is the part worth knowing about — it reads ELF/PE/Mach-O headers and exits non-zero on an arch mismatch, so "the build succeeded" can never be confused with "the build is the right architecture". Its own tests caught a real bug during development (I compared the Mach-O magic read little-endian against the big-endian constant, so every Mach-O binary was reported as `unknown`).
 
 ### M1 — Core MC engine (pure Dart, no UI)
 `version_manifest`, `version_json`, `rules`, `version_resolver`, `library_graph`, `asset_index`, `jvm_args`, `java_requirement`, **`arch_compat`** (§3.5.2).
-**Acceptance:** golden-JSON unit tests using **trimmed real fixtures** captured from 26.3 (modern, Java 25, no natives), 1.20.1 (Java 17), 1.12.2 + 1.8.9 (legacy args, natives classifiers, virtual assets) plus synthetic Forge/Fabric `inheritsFrom` chains. Assertions: exact argv for a fixed account/instance, exact classpath ordering + dedupe, correct natives set per **(os, arch)** pair, correct `javaMajor` per version, correct asset policy per index type, and `arch_compat` blocks LWJGL2-on-arm64 while patching LWJGL3-linux-arm64.
+**Acceptance:** golden-JSON unit tests using **trimmed real fixtures** captured from 26.3 (modern, Java 25, no natives), 1.20.1 (Java 17), 1.12.2 + 1.8.9 (legacy args, natives classifiers, virtual assets) plus synthetic Forge/Fabric `inheritsFrom` chains. Assertions: exact argv for a fixed account/instance, exact classpath ordering + dedupe, correct natives set per `(os, arch)` pair, correct `javaMajor` per version, correct asset policy per index type, and `arch_compat` blocks LWJGL2 on macOS arm64 while leaving LWJGL3 untouched.
 
 ### M2 — Downloader + Java manager + install pipeline
 Priority queue, sha1 verify, `.part`→rename, mirror chain with failover, cancel/retry, `Stream<DownloadProgress>`; Java scan/download.
@@ -459,11 +456,11 @@ Mocks are limited to: process spawning (until M5) and the OS clock. Everything e
 |---|---|---|
 | `flutter_staggered_animations_plus` is a single-maintainer fork | package disappears | mitigation: `stagger.dart` indirection + MIT vendoring escape hatch (≈200 LOC) |
 | `simple_animations` needs Flutter ≥3.44 | blocks older SDKs | we pin 3.47.7; documented in README |
-| **No arm64 Linux Flutter SDK upstream** (§4) | can't run Flutter on arm64 Linux | native-Dart-SDK swap, documented in `AGENTS.md`; the `ubuntu-24.04-arm` CI job will use the same swap, verified for real the first time that job runs in M0.5 |
-| **No arm64 `font-subset`** | icon tree-shaking unavailable on arm64 | `--no-tree-shake-icons` on arm64 jobs only; cosmetic (larger icon font) |
-| **MC ≤1.12.2 has no arm64 LWJGL2 natives** (§3.5.2) | those versions cannot run on arm64 at all | product-level honesty: `LaunchBlocker` + crash-analyzer diagnosis; never ship a silent crash |
-| **Linux-arm64 LWJGL3 natives absent from Mojang manifest** | MC 1.13+ would fail to start on Linux arm64 | classifier patch to Maven Central; covered by unit fixtures |
-| 6-target matrix multiplies CI time and failure surface | slow feedback, flaky release | one reusable workflow + per-arch job; arm64 jobs split out so a Linux-arm64 break doesn't block x64; arch-verification step makes silent x64-in-arm64-zip impossible |
+| **No arm64 Linux Flutter SDK upstream** (§4) | this dev sandbox needs a hand-built toolchain | native-Dart-SDK swap, documented in `AGENTS.md`; CI is unaffected because no shipped target builds on arm64 Linux |
+| **No arm64 `font-subset`** | icon tree-shaking unavailable on the arm64 dev box | `--no-tree-shake-icons` locally only; CI x64 runners tree-shake normally. Cosmetic (larger icon font) |
+| **MC ≤1.12.2 has no arm64 LWJGL2 natives** (§3.5.2) | those versions cannot run on macOS arm64 | product-level honesty: `LaunchBlocker` + crash-analyzer diagnosis; never ship a silent crash. Intel Macs out of scope, so no Rosetta fallback |
+| **macOS arm-only drops Intel Macs entirely** | some users cannot run the launcher | accepted product decision; PCL's own install base is overwhelmingly Windows. Reversible with one config flag if it ever matters |
+| 3-target matrix triples CI time and failure surface | slow feedback, flaky release | `fail-fast: false` so one platform can't mask the others; arch-verification step makes a mis-targeted artifact impossible to publish |
 | Version 26.x schema drift (Java 25, new arg forms) | launch failures | rules/args resolvers driven by fixtures for 26.3 **and** legacy; unknown fields preserved, unknown arg placeholders warn-not-crash |
 | PCL license restricts reuse | legal | behavior-only reimplementation, original assets/strings (§3.4) |
 | MS auth can't be fully tested headlessly | login regressions | device-code flow testable to the token-exchange boundary with a fake token endpoint; offline path always available |
@@ -489,6 +486,6 @@ Remaining judgement call I'll make myself unless you object: **LAN/"Link" tunnel
 
 ## 12. Definition of done (v1)
 
-A user on **any of the six targets** can: launch the app → see an animated shell → log in (offline or MS) → install `1.20.1` (+Fabric) through the animated installer → create an instance with memory/Java settings → add a mod from Modrinth or drop in a jar → press Play and watch the log stream → stop the game → get a readable crash diagnosis if it fails — with all motion respecting the reduced-motion toggle, English or Chinese UI, and all 5 release artifacts produced and arch-verified by CI.
+A user on **any of the three targets** can: launch the app → see an animated shell → log in (offline or MS) → install `1.20.1` (+Fabric) through the animated installer → create an instance with memory/Java settings → add a mod from Modrinth or drop in a jar → press Play and watch the log stream → stop the game → get a readable crash diagnosis if it fails — with all motion respecting the reduced-motion toggle, English or Chinese UI, and all 3 release artifacts produced and arch-verified by CI.
 
-Where a target genuinely cannot run a given game version (arm64 + MC ≤1.12.2, §3.5.2), the app says so clearly *before* launch and explains why, instead of failing with an opaque JVM error.
+Where a target genuinely cannot run a given game version (macOS arm64 + MC ≤1.12.2, §3.5.2), the app says so clearly *before* launch and explains why, instead of failing with an opaque JVM error.
