@@ -1,0 +1,269 @@
+# CI for oh my mc, on this instance's own runners.
+#
+# Everything unusual here is instance constraint, learned from the existing
+# workflows on this instance (linear-cli-rs, obscura, kuro, jev-project):
+#
+#   * `runs-on` selects a LABEL, and the label names an image. `glibc` is the
+#     aarch64 runner, `glibc-amd64` the x86_64 one. Both are Linux. There is no
+#     macOS or Windows runner on this instance, so those artifacts cannot come
+#     from here at all - see docs/PLAN.md 3.5.
+#   * No `actions/checkout` and no marketplace action: the default action source
+#     is github.com, unreachable here, and the label image has no node. The
+#     checkout is a plain `git clone` over loopback.
+#   * Cloudflare drops the TLS ClientHello from this host on the public name, so
+#     everything talks to 127.0.0.1:3000, never https://git.vedaru.cn.
+#   * A per-job `container:` block is ignored by this runner and Docker Hub is
+#     unreachable, so the image comes from the label and the toolchain is
+#     installed inside the job.
+#   * Only `forge.repository` and `forge.sha` are known-good expressions here.
+#
+# Flutter on aarch64: upstream publishes NO arm64 Linux SDK (releases_linux.json
+# has zero arm64 archives), so the aarch64 build assembles the same hybrid the
+# dev box uses: x64 tarball + native arm64 Dart SDK + natively rebuilt
+# flutter_tools snapshot + hand-placed linux-arm64 engine artifacts. That recipe
+# is recorded in AGENTS.md and reproduced below step for step. It is not a
+# preference; there is no arm64 SDK to download.
+name: ci
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Gate. Runs on the amd64 runner on purpose: stock Flutter works there with no
+  # hybrid assembly, so this is the fastest and most trustworthy signal. The
+  # arm64 job is the one with a hand-built toolchain, and a gate that depends on
+  # the fragile setup is a gate you learn to ignore.
+  # ---------------------------------------------------------------------------
+  gate:
+    runs-on: glibc-amd64
+    timeout-minutes: 60
+    steps:
+      - name: Install toolchain
+        run: |
+          set -eux
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update -y
+          apt-get install -y --no-install-recommends \
+              ca-certificates curl git unzip xz-utils python3 \
+              libgtk-3-dev libsecret-1-dev pkg-config \
+              cmake ninja-build clang
+          sdk="$RUNNER_TEMP/flutter"
+          rm -rf "$sdk" "$sdk.tar.xz"
+          base=https://storage.googleapis.com/flutter_infra_release/releases
+          curl -sSLo "$sdk.tar.xz" "$base/stable/linux/flutter_linux_3.47.7-stable.tar.xz"
+          tar -C "$RUNNER_TEMP" -xf "$sdk.tar.xz"
+          git config --global --add safe.directory "$sdk"
+          "$sdk/bin/flutter" --version
+          echo "$sdk/bin" >> "$GITHUB_PATH"
+
+      - name: Check out this repository
+        env:
+          FORGEJO_TOKEN: ${{ secrets.FORGEJO_TOKEN }}
+        run: |
+          set -euo pipefail
+          src="$RUNNER_TEMP/oh-my-mc"
+          rm -rf "$src"
+          helper='!f() { echo "username=x"; printf "password=%s\n" "$FORGEJO_TOKEN"; }; f'
+          git -c credential.helper= -c "credential.helper=$helper" \
+              clone --quiet --depth 1 \
+              http://127.0.0.1:3000/${{ forge.repository }}.git "$src"
+          echo "checked out $(git -C "$src" rev-parse HEAD)"
+          echo "SRC=$src" >> "$GITHUB_ENV"
+
+      - name: Gate - format, analyze, test
+        # Every check runs and the step fails once at the end, so a red run names
+        # everything that is wrong rather than only the first thing.
+        run: |
+          set -uo pipefail
+          cd "$SRC"
+          rc=0
+          check() {
+            local name="$1"; shift
+            echo "=== $name ==="
+            if "$@"; then echo "PASS: $name"; else echo "FAIL: $name"; rc=1; fi
+          }
+          flutter pub get
+          check "dart format" dart format --output=none --set-exit-if-changed lib test tool
+          check "flutter analyze" flutter analyze --fatal-infos
+          check "flutter test" flutter test
+          if [ "$rc" -eq 0 ]; then echo "gate: PASS"; else echo "gate: FAIL"; fi
+          exit "$rc"
+
+  # ---------------------------------------------------------------------------
+  # Linux x64. Native build on a native x64 host. Not cross-compiled: the tool
+  # refuses both directions (build_linux.dart: x64->arm64 "not currently
+  # supported", arm64->x64 "cross-building only supported on Linux x64 hosts").
+  # ---------------------------------------------------------------------------
+  build-linux-x64:
+    runs-on: glibc-amd64
+    needs: gate
+    timeout-minutes: 90
+    steps:
+      - name: Install toolchain
+        run: |
+          set -eux
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update -y
+          apt-get install -y --no-install-recommends \
+              ca-certificates curl git unzip xz-utils python3 \
+              libgtk-3-dev libsecret-1-dev pkg-config \
+              cmake ninja-build clang
+          sdk="$RUNNER_TEMP/flutter"
+          rm -rf "$sdk" "$sdk.tar.xz"
+          base=https://storage.googleapis.com/flutter_infra_release/releases
+          curl -sSLo "$sdk.tar.xz" "$base/stable/linux/flutter_linux_3.47.7-stable.tar.xz"
+          tar -C "$RUNNER_TEMP" -xf "$sdk.tar.xz"
+          git config --global --add safe.directory "$sdk"
+          echo "$sdk/bin" >> "$GITHUB_PATH"
+
+      - name: Check out this repository
+        env:
+          FORGEJO_TOKEN: ${{ secrets.FORGEJO_TOKEN }}
+        run: |
+          set -euo pipefail
+          src="$RUNNER_TEMP/oh-my-mc"
+          rm -rf "$src"
+          helper='!f() { echo "username=x"; printf "password=%s\n" "$FORGEJO_TOKEN"; }; f'
+          git -c credential.helper= -c "credential.helper=$helper" \
+              clone --quiet --depth 1 \
+              http://127.0.0.1:3000/${{ forge.repository }}.git "$src"
+          echo "SRC=$src" >> "$GITHUB_ENV"
+
+      - name: Build
+        run: |
+          set -euo pipefail
+          cd "$SRC"
+          flutter pub get
+          flutter build linux --release
+
+      - name: Verify the binary is really x64
+        run: |
+          set -euo pipefail
+          cd "$SRC"
+          bin=build/linux/x64/release/bundle/oh_my_mc
+          file "$bin"
+          dart run tool/verify_binary_arch.dart --file="$bin" --expect=linux-x64
+
+      - name: Package
+        run: bash "$SRC/tool/ci/package_linux.sh" "$SRC" linux-x64
+
+      - name: Publish rolling release
+        env:
+          FORGEJO_TOKEN: ${{ secrets.FORGEJO_TOKEN }}
+          FORGEJO_URL: http://127.0.0.1:3000
+          SHA: ${{ forge.sha }}
+        run: bash "$SRC/tool/ci/publish_release.sh" "$SRC" linux-x64 "$SHA"
+
+  # ---------------------------------------------------------------------------
+  # Linux arm64. Hand-assembled toolchain (see the header). Only published if the
+  # produced ELF really is aarch64.
+  # ---------------------------------------------------------------------------
+  build-linux-arm64:
+    runs-on: glibc
+    needs: gate
+    timeout-minutes: 120
+    steps:
+      - name: Assemble the arm64 Flutter toolchain
+        # `--no-tree-shake-icons` is not optional on arm64: the engine's
+        # `font-subset` binary has no arm64 build, so tree-shaking icons cannot
+        # run. Skipping it costs a larger icon font and nothing else.
+        run: |
+          set -eux
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update -y
+          apt-get install -y --no-install-recommends \
+              ca-certificates curl git unzip xz-utils python3 \
+              libgtk-3-dev libsecret-1-dev pkg-config \
+              cmake ninja-build clang
+          root="$RUNNER_TEMP/flutter"
+          rm -rf "$root" "$RUNNER_TEMP/flutter.tar.xz" "$RUNNER_TEMP/x64dart"
+          base=https://storage.googleapis.com/flutter_infra_release/releases
+          curl -sSLo "$RUNNER_TEMP/flutter.tar.xz" \
+              "$base/stable/linux/flutter_linux_3.47.7-stable.tar.xz"
+          tar -C "$RUNNER_TEMP" -xf "$RUNNER_TEMP/flutter.tar.xz"
+          git config --global --add safe.directory "$root"
+
+          # The tarball's Dart SDK is x64 and cannot execute here. Keep it (the
+          # tool wants it for host-side lookups) and put a native arm64 Dart in
+          # its place. The patch version must match the engine exactly or
+          # flutter_tester aborts with "Invalid SDK hash".
+          dartver=$(cat "$root/bin/cache/dart-sdk/version")
+          mv "$root/bin/cache/dart-sdk" "$RUNNER_TEMP/x64dart"
+          curl -sSLo "$RUNNER_TEMP/dartsdk.zip" \
+              "https://storage.googleapis.com/dart-archive/channels/stable/release/$dartver/sdk/dartsdk-linux-arm64-release.zip"
+          unzip -q "$RUNNER_TEMP/dartsdk.zip" -d "$RUNNER_TEMP/nativedart"
+          ln -s "$RUNNER_TEMP/nativedart/dart-sdk" "$root/bin/cache/dart-sdk"
+          "$root/bin/cache/dart-sdk/bin/dart" --version
+
+          # Engine artifacts: populate linux-arm64 by hand, and fill the two gaps
+          # upstream leaves - const_finder.dart.snapshot is arch-independent
+          # kernel code so the x64 copy is valid; font-subset simply does not
+          # exist for arm64 (hence --no-tree-shake-icons).
+          hash=$(cat "$root/bin/internal/engine.version")
+          arts="$root/bin/cache/artifacts/engine"
+          mkdir -p "$arts/linux-arm64" "$arts/linux-x64"
+          curl -sSLo "$RUNNER_TEMP/a-arm64.zip" \
+              "https://storage.googleapis.com/flutter_infra_release/flutter/$hash/linux-arm64/artifacts.zip"
+          curl -sSLo "$RUNNER_TEMP/a-x64.zip" \
+              "https://storage.googleapis.com/flutter_infra_release/flutter/$hash/linux-x64/artifacts.zip"
+          unzip -q -o "$RUNNER_TEMP/a-arm64.zip" -d "$arts/linux-arm64"
+          unzip -q -o "$RUNNER_TEMP/a-x64.zip"   -d "$arts/linux-x64"
+          if [ ! -f "$arts/linux-arm64/const_finder.dart.snapshot" ]; then
+            cp "$arts/linux-x64/const_finder.dart.snapshot" "$arts/linux-arm64/"
+          fi
+          printf '%s' "$hash" > "$arts/engine.stamp"
+
+          # The prebuilt flutter_tools snapshot is an x64 kernel blob and fails
+          # with "Snapshot not compatible with the current VM configuration".
+          # Drop it and the stamp so the tool recompiles natively on first run.
+          rm -f "$root/bin/cache/flutter_tools.snapshot" \
+                "$root/bin/cache/flutter_tools.stamp" \
+                "$root/bin/cache/flutter_tools.snapshot.json"
+          "$root/bin/flutter" --version
+          echo "$root/bin" >> "$GITHUB_PATH"
+
+      - name: Check out this repository
+        env:
+          FORGEJO_TOKEN: ${{ secrets.FORGEJO_TOKEN }}
+        run: |
+          set -euo pipefail
+          src="$RUNNER_TEMP/oh-my-mc"
+          rm -rf "$src"
+          helper='!f() { echo "username=x"; printf "password=%s\n" "$FORGEJO_TOKEN"; }; f'
+          git -c credential.helper= -c "credential.helper=$helper" \
+              clone --quiet --depth 1 \
+              http://127.0.0.1:3000/${{ forge.repository }}.git "$src"
+          echo "SRC=$src" >> "$GITHUB_ENV"
+
+      - name: Build
+        run: |
+          set -euo pipefail
+          cd "$SRC"
+          flutter pub get
+          flutter build linux --release --no-tree-shake-icons
+
+      - name: Verify the binary is really arm64
+        run: |
+          set -euo pipefail
+          cd "$SRC"
+          bin=build/linux/arm64/release/bundle/oh_my_mc
+          file "$bin"
+          # The verifier has no arm64 expectation by design (we don't ship any
+          # arm64 desktop target except macOS), so assert the header directly.
+          set -- $(od -An -tx1 -N20 "$bin")
+          [ "$1" = "7f" ] && [ "$8" = "b7" ] || {
+            echo "expected an ELF64 aarch64 binary (e_machine 0xb7), got: $*" >&2; exit 1; }
+
+      - name: Package
+        run: bash "$SRC/tool/ci/package_linux.sh" "$SRC" linux-arm64
+
+      - name: Publish rolling release
+        env:
+          FORGEJO_TOKEN: ${{ secrets.FORGEJO_TOKEN }}
+          FORGEJO_URL: http://127.0.0.1:3000
+          SHA: ${{ forge.sha }}
+        run: bash "$SRC/tool/ci/publish_release.sh" "$SRC" linux-arm64 "$SHA"
