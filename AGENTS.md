@@ -307,6 +307,15 @@ re-add it. `arch_compat` only has to handle the macOS-arm64 case below.
   per-job `fetch_flutter_sdk.sh` / `assemble_arm64_toolchain.sh` paths are only
   reachable by hand now, so they are not on any CI critical path - do not
   re-add them when a build "seems slow", the download was removed deliberately.
+* **Publishing a GitHub release needs `permissions: contents: write`.** Without it the
+  default `GITHUB_TOKEN` is read-only and release creation answers 403 *"Resource not
+  accessible by integration"*, which reads like a bad token rather than a missing
+  permission. Also: asset uploads live on **`uploads.github.com`**; posting to
+  `api.github.com/repos/{o}/{r}/releases/{id}/assets` answers 404 and looks like a
+  permissions bug too.
+* **`sha256sum` does not exist on macOS** (GNU coreutils). Anything shared with the
+  macOS job must hash via `python3`/`shasum`. The python3 form is byte-identical to
+  `sha256sum` output, so the `.sha256` files stay comparable across targets.
 * `tar -tzf ... | grep -q NAME` under `set -o pipefail` **fails on a good archive**: grep exits at the
   first match, tar takes SIGPIPE, pipeline status is non-zero. Capture the listing first.
 * The Forgejo release API returns `{"message":"repo is empty"}` until the first push lands.
