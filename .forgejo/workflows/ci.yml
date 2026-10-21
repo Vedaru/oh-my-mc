@@ -1,6 +1,15 @@
 # CI for oh my mc, on this instance's own runners.
 #
-# Everything unusual here is instance constraint, learned from the workflows that
+# The toolchain is NOT installed here any more. Both runners now launch jobs in
+# `ci-runner:3.47.7-<arch>`, an image built on each host by Vedaru/ci-images that
+# has Flutter 3.47.7 (x64, and the hand-assembled arm64), Rust 1.98.1, Node 22 +
+# pnpm, Go, the C/C++ toolchains, and the desktop dev libraries already in it.
+# Before that, each of these three jobs paid ~4 minutes of apt plus a 1.5 GB
+# Flutter SDK download; the arm64 job additionally downloaded a Dart SDK and
+# engine artifacts and compiled the tool snapshot. `cat
+# /etc/ci-image-versions.txt` in any job prints exactly what is installed.
+#
+# Everything else here is instance constraint, learned from the workflows that
 # already work here (linear-cli-rs, obscura, kuro, jev-project):
 #
 #   * `runs-on` selects a LABEL, and the label names an image. `glibc` is the
@@ -8,19 +17,18 @@
 #     macOS or Windows runner on this instance, so those artifacts cannot come
 #     from here at all - see .github/workflows/ci.yml and docs/PLAN.md 3.5.
 #   * No `actions/checkout` and no marketplace action: the default action source
-#     is github.com, unreachable here, and the label image has no node. The
-#     checkout is a plain `git clone` over loopback.
+#     is github.com, unreachable here. The checkout is a plain `git clone` over
+#     loopback.
 #   * Cloudflare drops the TLS ClientHello from this host on the public name, so
 #     everything talks to 127.0.0.1:3000, never https://git.vedaru.cn.
-#   * A per-job `container:` block is ignored by this runner and Docker Hub is
-#     unreachable, so the image comes from the label and the toolchain is
-#     installed inside the job.
+#   * A per-job `container:` block is ignored by this runner, so the image comes
+#     from the label.
 #   * Only `forge.repository` and `forge.sha` are known-good expressions here.
 #
-# The heavy lifting lives in tool/ci/*.sh rather than in YAML so it can be run and
-# tested outside CI. Each of those scripts was exercised locally before being
-# wired in; the first real run failed on a bare `curl` of the 1.5 GB SDK, which is
-# why fetch_flutter_sdk.sh retries and resumes.
+# The scripts in tool/ci/ stay: package_linux.sh and publish_release.sh are used
+# below, and fetch_flutter_sdk.sh / assemble_arm64_toolchain.sh remain the
+# documented, runnable description of how the arm64 SDK arrangement works for
+# anyone building this project outside this instance.
 name: ci
 
 on:
@@ -40,15 +48,14 @@ jobs:
     runs-on: glibc-amd64
     timeout-minutes: 60
     steps:
-      - name: Install build dependencies
+      - name: Show the runner image
+        # First thing in every job: an image older than expected is the most
+        # common cause of a confusing toolchain failure.
         run: |
-          set -eux
-          export DEBIAN_FRONTEND=noninteractive
-          apt-get update -y
-          apt-get install -y --no-install-recommends \
-              ca-certificates curl git unzip xz-utils python3 \
-              libgtk-3-dev libsecret-1-dev pkg-config \
-              cmake ninja-build clang
+          set -eu
+          cat /etc/ci-image-versions.txt
+          uname -m
+          command -v flutter dart clang gcc g++ cmake ninja
 
       - name: Check out this repository
         env:
@@ -63,12 +70,6 @@ jobs:
               http://127.0.0.1:3000/${{ forge.repository }}.git "$src"
           echo "checked out $(git -C "$src" rev-parse HEAD)"
           echo "SRC=$src" >> "$GITHUB_ENV"
-
-      - name: Fetch the Flutter SDK
-        run: |
-          set -euo pipefail
-          bash "$SRC/tool/ci/fetch_flutter_sdk.sh" "$RUNNER_TEMP" 3.47.7
-          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
 
       - name: Gate - format, analyze, test
         # Every check runs and the step fails once at the end, so a red run names
@@ -99,15 +100,11 @@ jobs:
     needs: gate
     timeout-minutes: 90
     steps:
-      - name: Install build dependencies
+      - name: Show the runner image
         run: |
-          set -eux
-          export DEBIAN_FRONTEND=noninteractive
-          apt-get update -y
-          apt-get install -y --no-install-recommends \
-              ca-certificates curl git unzip xz-utils python3 \
-              libgtk-3-dev libsecret-1-dev pkg-config \
-              cmake ninja-build clang
+          set -eu
+          cat /etc/ci-image-versions.txt
+          uname -m
 
       - name: Check out this repository
         env:
@@ -121,12 +118,6 @@ jobs:
               clone --quiet --depth 1 \
               http://127.0.0.1:3000/${{ forge.repository }}.git "$src"
           echo "SRC=$src" >> "$GITHUB_ENV"
-
-      - name: Fetch the Flutter SDK
-        run: |
-          set -euo pipefail
-          bash "$SRC/tool/ci/fetch_flutter_sdk.sh" "$RUNNER_TEMP" 3.47.7
-          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
 
       - name: Build
         run: |
@@ -155,23 +146,20 @@ jobs:
         run: bash "$SRC/tool/ci/publish_release.sh" "$SRC" linux-x64 "$SHA"
 
   # ---------------------------------------------------------------------------
-  # Linux arm64. Hand-assembled toolchain, because upstream ships no arm64 SDK.
-  # assemble_arm64_toolchain.sh documents and reproduces the arrangement.
+  # Linux arm64. The runner image carries the hand-assembled aarch64 toolchain,
+  # because upstream ships no arm64 Linux SDK (the arrangement is documented by
+  # tool/ci/assemble_arm64_toolchain.sh and reproduced at image build time).
   # ---------------------------------------------------------------------------
   build-linux-arm64:
     runs-on: glibc
     needs: gate
     timeout-minutes: 120
     steps:
-      - name: Install build dependencies
+      - name: Show the runner image
         run: |
-          set -eux
-          export DEBIAN_FRONTEND=noninteractive
-          apt-get update -y
-          apt-get install -y --no-install-recommends \
-              ca-certificates curl git unzip xz-utils python3 \
-              libgtk-3-dev libsecret-1-dev pkg-config \
-              cmake ninja-build clang
+          set -eu
+          cat /etc/ci-image-versions.txt
+          uname -m
 
       - name: Check out this repository
         env:
@@ -185,12 +173,6 @@ jobs:
               clone --quiet --depth 1 \
               http://127.0.0.1:3000/${{ forge.repository }}.git "$src"
           echo "SRC=$src" >> "$GITHUB_ENV"
-
-      - name: Assemble the arm64 Flutter toolchain
-        run: |
-          set -euo pipefail
-          bash "$SRC/tool/ci/assemble_arm64_toolchain.sh" "$RUNNER_TEMP" 3.47.7
-          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
 
       - name: Build
         # --no-tree-shake-icons is not optional here: the engine's font-subset
