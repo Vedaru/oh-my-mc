@@ -247,10 +247,30 @@ re-add it. `arch_compat` only has to handle the macOS-arm64 case below.
   * `assemble_arm64_toolchain.sh <dest> [ver]` — the hybrid SDK recipe above, automated. Verified
     from scratch on aarch64: rebuilds the tool natively, then `flutter build linux --release` gives
     an ELF with `e_machine=0xb7`.
-  * `package_linux.sh <root> <target>` / `publish_release.sh <root> <target> <sha>` — rolling releases
-    tagged `rolling-linux-x64` / `rolling-linux-arm64`.
+  * `publish_release.sh` is race-safe in two ways, both learned from the drift it
+    replaced: it **adopts** a release another job created a moment earlier
+    instead of failing on the create race, and it deletes only assets matching
+    its own target. Two jobs therefore converge on one release without any
+    inter-job file passing (which this instance cannot do - no
+    `actions/upload-artifact`, since the action source is github.com).
+  * `package_linux.sh <root> <target>` / `publish_release.sh <root> <target> <sha>` — ONE rolling
+    release tagged `rolling`, holding `oh-my-mc-linux-{x64,arm64}.tar.gz`. Each build job uploads
+    into it independently (no `actions/upload-artifact` on this instance) and the script deletes
+    only its own target's assets, so the two jobs cannot clobber each other.
 
 ### Traps that cost real time
+* **`flutter build linux --release` fails on arm64 with "font-subset utility is
+  missing"** unless you pass `--no-tree-shake-icons`. The engine ships
+  `font-subset` only for `linux-x64`; the arm64 artifacts directory has none. The
+  CI arm64 job passes the flag for this reason. Note this also means this
+  dev sandbox (aarch64) cannot do a plain `flutter build linux --release` at all,
+  even though `flutter doctor` reports the Linux toolchain as fine - the check
+  the doctor performs is not the one the icon tree-shaker needs.
+* **The runner image avoids the SDK download, but a stale `dist/` does not.**
+  CI installs nothing; each job's `flutter` comes from the image. The old
+  per-job `fetch_flutter_sdk.sh` / `assemble_arm64_toolchain.sh` paths are only
+  reachable by hand now, so they are not on any CI critical path - do not
+  re-add them when a build "seems slow", the download was removed deliberately.
 * `tar -tzf ... | grep -q NAME` under `set -o pipefail` **fails on a good archive**: grep exits at the
   first match, tar takes SIGPIPE, pipeline status is non-zero. Capture the listing first.
 * The Forgejo release API returns `{"message":"repo is empty"}` until the first push lands.

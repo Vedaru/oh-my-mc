@@ -274,10 +274,13 @@ with *"curl: (56) Recv failure: Connection reset by peer"*.
 
 Those jobs clone the **Forgejo** repository rather than trusting GitHub's copy, so
 a green run on either system describes the same commit. Artifacts are attached as
-workflow artifacts there; Forgejo publishes rolling releases
-(`rolling-linux-x64`, `rolling-linux-arm64`) via `tool/ci/publish_release.sh`,
-which reads the release back and refuses to report success unless the asset is
-actually attached.
+workflow artifacts there; Forgejo publishes a **single** rolling release tagged
+`rolling`, holding one asset per Linux architecture (both built from the same
+commit), via `tool/ci/publish_release.sh`. That script reads the release back and
+refuses to report success unless the asset is actually attached, and only ever
+replaces assets for its own target, so the two build jobs cannot clobber each
+other. They are split into one release because two per-arch releases had two
+independent "latest" pointers that drifted apart.
 
 `tool/verify_binary_arch.dart` exists so a silently mis-targeted binary can never be published under an arch-specific name — it parses the ELF/PE/Mach-O headers itself (14 unit tests, including the arm64-rejected-as-x64 case) instead of trusting the build log.
 
