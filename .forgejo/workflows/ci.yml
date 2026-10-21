@@ -31,15 +31,6 @@
 # anyone building this project outside this instance.
 name: ci
 
-# Two pushes in quick succession would otherwise run two pairs of build jobs, and
-# both pairs publish into the same rolling release. The publish script tolerates
-# that, but the older run could still finish last and leave the release pointing
-# at a commit that is no longer master. Cancelling the superseded run is the
-# honest behaviour: its artifacts were never going to be the current ones.
-concurrency:
-  group: ci-${{ forge.ref }}
-  cancel-in-progress: true
-
 on:
   push:
     branches: [master, main]
