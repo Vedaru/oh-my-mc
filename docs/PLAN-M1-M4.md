@@ -1,5 +1,10 @@
 # Implementation Plan — M1 → M4 (core engine, motion foundation, first real screens)
 
+> **Superseded in part.** `docs/PLAN-M3.4-M5.md` audits this document against the code and
+> corrects it: M2's planner and downloader were never connected, natives are never extracted,
+> and no state layer exists. Read this file for design *rationale* (§0 traps, §3 motion
+> architecture), and read the newer file for *status and next steps*.
+
 **Status:** proposed, ready to execute
 **Builds on:** `docs/PLAN.md` (M0 + M0.5 complete)
 **Date:** 2026-10-21

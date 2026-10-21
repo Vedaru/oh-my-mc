@@ -73,6 +73,12 @@ No `DISPLAY` → no windowed runs here. Visual verification is the user's job, o
 `build_runner` must stay at **`^2.16.2`**. `>=2.17.1` needs `build >=5.0.0 <5.1.0`, but `riverpod_generator`
 needs `build <5.0.0` → unsatisfiable. Don't "upgrade" it.
 
+## Where the plan lives
+
+`docs/PLAN.md` (product scope, targets, §7 screens), `docs/PLAN-M1-M4.md` (§0 package traps and
+the motion architecture — still the rationale of record), and `docs/PLAN-M3.4-M5.md` (**current
+status and next steps**: it audits the older plan against the code).
+
 ## Architecture rules
 
 - `lib/core/**` must not import `package:flutter` (it must stay pure-Dart testable).
