@@ -1,0 +1,30 @@
+# Temporary diagnostic: does the aarch64 runner start a container at all?
+name: probe
+on:
+  workflow_dispatch:
+jobs:
+  probe:
+    runs-on: glibc
+    timeout-minutes: 5
+    steps:
+      - name: Gather what the runner can tell us
+        env:
+          FORGEJO_TOKEN: ${{ secrets.FORGEJO_TOKEN }}
+        run: |
+          set +e
+          {
+            echo "uname: $(uname -m 2>&1)"
+            echo "--- os-release"; head -2 /etc/os-release 2>&1
+            echo "--- ci-image-versions"; cat /etc/ci-image-versions.txt 2>&1 | head -6
+            echo "--- flutter"; command -v flutter 2>&1; flutter --version 2>&1 | head -2
+            echo "--- pwd"; pwd 2>&1
+            echo "--- RUNNER_TEMP=$RUNNER_TEMP"
+            echo "--- df"; df -h / 2>&1 | tail -1
+          } > /tmp/probe.txt 2>&1
+          cat /tmp/probe.txt
+          out=$(cat /tmp/probe.txt)
+          payload=$(python3 -c 'import json,sys; print(json.dumps({"body":"probe on glibc:\n\n```\n"+sys.argv[1]+"\n```"}))' "$out")
+          curl -sS -o /dev/null -w "comment HTTP %{http_code}\n" -X POST \
+            -H "Authorization: token $FORGEJO_TOKEN" -H "Content-Type: application/json" \
+            -d "$payload" \
+            "http://127.0.0.1:3000/api/v1/repos/${{ forge.repository }}/issues/1/comments"
