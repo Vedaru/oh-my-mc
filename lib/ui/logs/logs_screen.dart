@@ -7,6 +7,7 @@ import 'package:oh_my_mc/ui/components/app_button.dart';
 import '../../core/launch/launch_handle.dart';
 import '../../data/launch_providers.dart';
 import '../../l10n/l10n.dart';
+import '../components/page_body.dart';
 import '../motion/motion.dart';
 import '../shell/shell_icons.dart';
 import '../theme/app_theme.dart';
@@ -72,60 +73,58 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
         )
         .toList();
 
-    return MotionEntrance(
-      children: [
-        m3.Padding(
-          padding: const m3.EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: m3.Row(
-            children: [
-              m3.Expanded(
-                child: m3.Text(l10n.logsTitle, style: AppTheme.title(context)),
-              ),
-              if (session.log.isNotEmpty)
-                AppButton(
-                  key: const m3.ValueKey('logs-copy'),
-                  onPressed: () => _copy(context, session.log),
-                  style: AppButtonStyle.outlined,
-                  size: AppButtonSize.sm,
-                  icon: const m3.Icon(ShellIcons.copy, size: 14),
-                  label: m3.Text(l10n.logsCopy),
-                ),
-            ],
+    return PageBody(
+      scrollable: false,
+      child: MotionEntrance(
+        children: [
+          PageTitle(
+            l10n.logsTitle,
+            trailing: session.log.isNotEmpty
+                ? AppButton(
+                    key: const m3.ValueKey('logs-copy'),
+                    onPressed: () => _copy(context, session.log),
+                    style: AppButtonStyle.outlined,
+                    size: AppButtonSize.sm,
+                    icon: const m3.Icon(ShellIcons.copy, size: 14),
+                    label: m3.Text(l10n.logsCopy),
+                  )
+                : null,
           ),
-        ),
-        m3.Padding(
-          padding: const m3.EdgeInsets.symmetric(horizontal: 16),
-          child: m3.Row(
-            children: [
-              m3.Expanded(
-                child: AppTextField(
-                  key: const m3.ValueKey('logs-search'),
-                  controller: _search,
-                  hint: l10n.logsSearchHint,
-                  leading: const m3.Icon(ShellIcons.search, size: 15),
-                  onChanged: (_) => setState(() {}),
+          m3.Padding(
+            padding: const m3.EdgeInsets.only(bottom: 12),
+            child: m3.Row(
+              children: [
+                m3.SizedBox(
+                  // Fixed, not `Expanded` + `ConstrainedBox`: an Expanded hands
+                  // down tight constraints, which silently override a maxWidth -
+                  // that is how this field used to stretch across the page.
+                  width: 380,
+                  child: AppTextField(
+                    key: const m3.ValueKey('logs-search'),
+                    controller: _search,
+                    hint: l10n.logsSearchHint,
+                    leading: const m3.Icon(ShellIcons.search, size: 15),
+                    onChanged: (_) => setState(() {}),
+                  ),
                 ),
-              ),
-              const m3.SizedBox(width: 12),
-              AppSwitch(
-                value: _filter == LogFilter.errors,
-                onChanged: (errors) => setState(() {
-                  _filter = errors ? LogFilter.errors : LogFilter.all;
-                }),
-                label: l10n.logsOnlyErrors,
-              ),
-              const m3.SizedBox(width: 8),
-              m3.Text(
-                l10n.logsOnlyErrors,
-                style: AppTheme.body(context)
-                    .copyWith(color: scheme.onSurfaceVariant),
-              ),
-            ],
+                const m3.SizedBox(width: 12),
+                AppSwitch(
+                  value: _filter == LogFilter.errors,
+                  onChanged: (errors) => setState(() {
+                    _filter = errors ? LogFilter.errors : LogFilter.all;
+                  }),
+                  label: l10n.logsOnlyErrors,
+                ),
+                const m3.SizedBox(width: 8),
+                m3.Text(
+                  l10n.logsOnlyErrors,
+                  style: AppTheme.body(context)
+                      .copyWith(color: scheme.onSurfaceVariant),
+                ),
+              ],
+            ),
           ),
-        ),
-        m3.Expanded(
-          child: m3.Padding(
-            padding: const m3.EdgeInsets.fromLTRB(16, 8, 16, 16),
+          m3.Expanded(
             child: _Lines(
               lines: visible,
               // Distinguishes "nothing has run" from "your filter hides
@@ -135,8 +134,8 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
                   : l10n.logsNoMatches,
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -249,12 +248,29 @@ class _LinesState extends State<_Lines> {
     final warning = AppTheme.status(context).warning;
 
     if (widget.lines.isEmpty) {
-      return m3.Center(
-        child: m3.Text(
-          widget.emptyText,
-          key: const m3.ValueKey('logs-empty'),
-          style: AppTheme.caption(context)
-              .copyWith(color: scheme.onSurfaceVariant),
+      return m3.Container(
+        decoration: m3.BoxDecoration(
+          color: scheme.surfaceContainerLow,
+          borderRadius: m3.BorderRadius.circular(16),
+        ),
+        child: m3.Center(
+          child: m3.Column(
+            mainAxisSize: m3.MainAxisSize.min,
+            children: [
+              m3.Icon(
+                ShellIcons.document,
+                size: 32,
+                color: scheme.onSurfaceVariant,
+              ),
+              const m3.SizedBox(height: 12),
+              m3.Text(
+                widget.emptyText,
+                key: const m3.ValueKey('logs-empty'),
+                style: AppTheme.caption(context)
+                    .copyWith(color: scheme.onSurfaceVariant),
+              ),
+            ],
+          ),
         ),
       );
     }

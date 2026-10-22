@@ -358,7 +358,9 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text('游戏版本'), findsOneWidget);
+    // The page title is the navigation label ("下载"), not the screen's old
+    // interior heading: every page names itself the way the rail names it.
+    expect(find.text('下载'), findsOneWidget);
     expect(find.text('已安装'), findsOneWidget);
     expect(find.text('Versions'), findsNothing);
     expect(find.text('Installed'), findsNothing);

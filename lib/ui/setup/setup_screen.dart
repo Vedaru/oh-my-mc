@@ -11,6 +11,7 @@ import '../shell/shell_icons.dart';
 import '../theme/app_theme.dart';
 import 'java_panel.dart';
 import '../components/app_radio_group.dart';
+import '../components/page_body.dart';
 import '../components/app_slider.dart';
 import '../components/app_switch.dart';
 import '../components/app_text_field.dart';
@@ -29,99 +30,96 @@ class SetupScreen extends ConsumerWidget {
     final settings = ref.watch(appSettingsProvider);
     final notifier = ref.read(appSettingsProvider.notifier);
 
-    return MotionEntrance(
-      children: [
-        m3.Padding(
-          padding: const m3.EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: m3.Text(l10n.navSetup, style: AppTheme.title(context)),
-        ),
-        m3.Expanded(
-          child: m3.ListView(
-            padding: const m3.EdgeInsets.fromLTRB(16, 0, 16, 16),
+    return PageBody(
+      child: MotionEntrance(
+        children: [
+          PageTitle(l10n.navSetup),
+          _Section(
+            title: l10n.setupLanguage,
             children: [
-              _Section(
-                title: l10n.setupLanguage,
-                children: [
-                  _SettingRow(
-                    label: l10n.setupLanguage,
-                    hint: l10n.setupLanguageHint,
-                    child: _Choice<LanguagePreference>(
-                      keyPrefix: 'language',
-                      value: settings.language,
-                      options: {
-                        LanguagePreference.system: l10n.themeSystem,
-                        LanguagePreference.english: l10n.languageEnglish,
-                        LanguagePreference.chinese: l10n.languageChinese,
-                      },
-                      onChanged: notifier.setLanguage,
-                    ),
-                  ),
-                ],
-              ),
-              const m3.SizedBox(height: 12),
-              _Section(
-                title: l10n.setupUi,
-                children: [
-                  _SettingRow(
-                    label: l10n.setupThemeMode,
-                    hint: l10n.setupThemeHint,
-                    child: _Choice<ThemePreference>(
-                      keyPrefix: 'theme',
-                      value: settings.theme,
-                      options: {
-                        ThemePreference.system: l10n.themeSystem,
-                        ThemePreference.light: l10n.themeLight,
-                        ThemePreference.dark: l10n.themeDark,
-                      },
-                      onChanged: notifier.setTheme,
-                    ),
-                  ),
-                  _SettingRow(
-                    label: l10n.setupMotion,
-                    hint: l10n.setupMotionHint,
-                    child: m3.Row(
-                      children: [
-                        AppSwitch(
-                          key: const m3.ValueKey('setup-motion'),
-                          value: settings.uiAnimations,
-                          // Turning this on cannot override the OS accessibility
-                          // setting: MotionScope ORs them.
-                          onChanged: notifier.setUiAnimations,
-                          label: l10n.setupMotion,
-                        ),
-                        const m3.SizedBox(width: 10),
-                        m3.Text(
-                          settings.uiAnimations
-                              ? l10n.setupMotionOn
-                              : l10n.setupMotionOff,
-                          style: AppTheme.body(context),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const m3.SizedBox(height: 12),
-              _Section(
-                title: l10n.setupLaunch,
-                children: [
-                  _PlayerNameRow(settings: settings),
-                  _GlobalMemoryRow(settings: settings),
-                ],
-              ),
-              const m3.SizedBox(height: 12),
-              _Section(
-                title: l10n.setupJava,
-                children: const [JavaRuntimeList()],
+              _SettingRow(
+                label: l10n.setupLanguage,
+                hint: l10n.setupLanguageHint,
+                child: _Choice<LanguagePreference>(
+                  keyPrefix: 'language',
+                  value: settings.language,
+                  options: {
+                    LanguagePreference.system: l10n.themeSystem,
+                    LanguagePreference.english: l10n.languageEnglish,
+                    LanguagePreference.chinese: l10n.languageChinese,
+                  },
+                  onChanged: notifier.setLanguage,
+                ),
               ),
             ],
           ),
-        ),
-      ],
+          const m3.SizedBox(height: 16),
+          _Section(
+            title: l10n.setupUi,
+            children: [
+              _SettingRow(
+                label: l10n.setupThemeMode,
+                hint: l10n.setupThemeHint,
+                child: _Choice<ThemePreference>(
+                  keyPrefix: 'theme',
+                  value: settings.theme,
+                  options: {
+                    ThemePreference.system: l10n.themeSystem,
+                    ThemePreference.light: l10n.themeLight,
+                    ThemePreference.dark: l10n.themeDark,
+                  },
+                  onChanged: notifier.setTheme,
+                ),
+              ),
+              _SettingRow(
+                label: l10n.setupMotion,
+                hint: l10n.setupMotionHint,
+                child: m3.Row(
+                  children: [
+                    // Matches the radio group's own inset, so the switch and the
+                    // radio buttons above it align on one vertical line.
+                    const m3.SizedBox(width: 8),
+                    AppSwitch(
+                      key: const m3.ValueKey('setup-motion'),
+                      value: settings.uiAnimations,
+                      // Turning this on cannot override the OS accessibility
+                      // setting: MotionScope ORs them.
+                      onChanged: notifier.setUiAnimations,
+                      label: l10n.setupMotion,
+                    ),
+                    const m3.SizedBox(width: 10),
+                    m3.Text(
+                      settings.uiAnimations
+                          ? l10n.setupMotionOn
+                          : l10n.setupMotionOff,
+                      style: AppTheme.body(context),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const m3.SizedBox(height: 16),
+          _Section(
+            title: l10n.setupLaunch,
+            children: [
+              _PlayerNameRow(settings: settings),
+              _GlobalMemoryRow(settings: settings),
+            ],
+          ),
+          const m3.SizedBox(height: 16),
+          _Section(title: l10n.setupJava, children: const [JavaRuntimeList()]),
+        ],
+      ),
     );
   }
 }
 
+/// A titled group of settings.
+///
+/// One filled surface per group, MD3's `surfaceContainerLow` at a 16 px radius
+/// with no outline: the border this used to carry drew a box around every group,
+/// which on a dark theme read as six unrelated panels rather than one page.
 class _Section extends StatelessWidget {
   const _Section({required this.title, required this.children});
 
@@ -132,20 +130,22 @@ class _Section extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = m3.Theme.of(context).colorScheme;
     return m3.Container(
-      padding: const m3.EdgeInsets.all(14),
+      padding: const m3.EdgeInsets.fromLTRB(20, 16, 20, 20),
       decoration: m3.BoxDecoration(
         color: scheme.surfaceContainerLow,
-        borderRadius: m3.BorderRadius.circular(14),
-        border: m3.Border.all(color: scheme.outlineVariant),
+        borderRadius: m3.BorderRadius.circular(16),
       ),
       child: m3.Column(
         crossAxisAlignment: m3.CrossAxisAlignment.stretch,
         children: [
-          m3.Text(title, style: AppTheme.label(context)),
-          const m3.SizedBox(height: 10),
-          for (final child in children) ...[
-            child,
-            const m3.SizedBox(height: 10),
+          m3.Text(
+            title,
+            style: AppTheme.title(context).copyWith(color: scheme.onSurface),
+          ),
+          const m3.SizedBox(height: 16),
+          for (var i = 0; i < children.length; i++) ...[
+            if (i > 0) const m3.SizedBox(height: 16),
+            children[i],
           ],
         ],
       ),
@@ -172,7 +172,7 @@ class _SettingRow extends StatelessWidget {
       crossAxisAlignment: m3.CrossAxisAlignment.start,
       children: [
         m3.SizedBox(
-          width: 200,
+          width: 180,
           child: m3.Column(
             crossAxisAlignment: m3.CrossAxisAlignment.start,
             children: [

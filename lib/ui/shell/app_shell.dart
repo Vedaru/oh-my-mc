@@ -64,11 +64,12 @@ List<ShellDestination> destinationsFor(AppLocalizations l10n) => [
 /// `onDestinationSelected` as a request removes the possibility of the two
 /// disagreeing.
 ///
-/// The rail is permanently [m3.NavigationRail.extended] on purpose. The collapsible variants animate their own width, which would make
-/// the body's constraints depend on a control inside the rail - a layout that
-/// works until someone collapses it on a narrow window. A launcher is not short
-/// of horizontal space at its minimum window size, so labels are always visible
-/// and the body is always [Expanded].
+/// The rail is **fixed-width with the label under each icon**
+/// ([m3.NavigationRailLabelType.all]). Two decisions, one reason each: an
+/// extended, beside-the-icon rail spent 216 px on five two-character labels, and
+/// a collapsible rail animates its own width, which would make the body's
+/// constraints depend on a control inside it. A fixed compact rail keeps the
+/// icons and their names together and keeps the body's width a constant.
 class AppShell extends StatelessWidget {
   const AppShell({required this.location, required this.child, super.key});
 
@@ -82,32 +83,54 @@ class AppShell extends StatelessWidget {
     final l10n = context.l10n;
     final destinations = destinationsFor(l10n);
     final selected = selectedIndexFor(destinations, location);
+    final scheme = m3.Theme.of(context).colorScheme;
 
-    return m3.Column(
-      children: [
-        const _ShellHeader(),
-        m3.Expanded(
-          child: m3.Row(
-            children: [
-              m3.NavigationRail(
-                extended: true,
-                minExtendedWidth: 216,
-                selectedIndex: selected,
-                onDestinationSelected: (index) =>
-                    context.go(destinations[index].location),
-                destinations: [
-                  for (final destination in destinations)
-                    m3.NavigationRailDestination(
-                      icon: m3.Icon(destination.icon),
-                      label: m3.Text(destination.label(l10n)),
-                    ),
-                ],
-              ),
-              m3.Expanded(child: child),
-            ],
+    // The `Scaffold` is not decoration: without it there is no `Material`
+    // ancestor for the page, so every ink splash asserts ("No Material widget
+    // found") and any text that does not carry an explicit style falls back to
+    // MaterialApp's 48 px red error style. It also supplies the themed
+    // background, which a bare Column does not paint at all.
+    return m3.Scaffold(
+      body: m3.Column(
+        children: [
+          const _ShellHeader(),
+          m3.Expanded(
+            child: m3.Row(
+              children: [
+                m3.NavigationRail(
+                  // Labels sit *under* their icon (MD3 `labelType.all`) instead
+                  // of beside it: the destinations then read as a stack of tabs,
+                  // and the rail stops charging the page 216 px of width for five
+                  // two-character labels. The width stays constant, so the body's
+                  // constraints still do not depend on a control inside the rail -
+                  // this is a fixed-width rail, not a collapsible one.
+                  labelType: m3.NavigationRailLabelType.all,
+                  minWidth: 88,
+                  selectedIndex: selected,
+                  onDestinationSelected: (index) =>
+                      context.go(destinations[index].location),
+                  destinations: [
+                    for (final destination in destinations)
+                      m3.NavigationRailDestination(
+                        icon: m3.Icon(destination.icon),
+                        label: m3.Text(destination.label(l10n)),
+                      ),
+                  ],
+                ),
+                // Material 3 puts a divider between a rail and the content it
+                // navigates; without it the page's cards look like they belong to
+                // the rail.
+                m3.VerticalDivider(
+                  width: 1,
+                  thickness: 1,
+                  color: scheme.outlineVariant,
+                ),
+                m3.Expanded(child: child),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -145,7 +168,7 @@ int selectedIndexFor(List<ShellDestination> destinations, String location) {
 class _ShellHeader extends StatelessWidget {
   const _ShellHeader();
 
-  static const height = 44.0;
+  static const height = 48.0;
 
   @override
   Widget build(BuildContext context) {
@@ -163,7 +186,7 @@ class _ShellHeader extends StatelessWidget {
           bottom: m3.BorderSide(color: scheme.outlineVariant, width: 1),
         ),
       ),
-      padding: const m3.EdgeInsets.symmetric(horizontal: 16),
+      padding: const m3.EdgeInsets.symmetric(horizontal: 20),
       child: m3.Row(
         children: [
           m3.Icon(ShellIcons.instance, size: 18, color: scheme.primary),

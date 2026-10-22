@@ -46,6 +46,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noInstanceSelected => '未选择实例';
 
   @override
+  String get launchEmptyHint => '先在「实例」页新建一个，再回到这里启动。';
+
+  @override
   String get instanceCreate => '新建实例';
 
   @override

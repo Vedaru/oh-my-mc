@@ -12,6 +12,7 @@
   "stopButton": "停止",
   "launching": "正在启动…",
   "noInstanceSelected": "未选择实例",
+  "launchEmptyHint": "先在「实例」页新建一个，再回到这里启动。",
   "instanceCreate": "新建实例",
   "instanceImport": "导入",
   "instanceExport": "导出",

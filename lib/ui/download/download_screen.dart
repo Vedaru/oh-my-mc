@@ -10,6 +10,7 @@ import '../../data/install_providers.dart';
 import '../../l10n/l10n.dart';
 import '../components/app_banner.dart';
 import '../components/hover_row.dart';
+import '../components/page_body.dart';
 import '../components/skeleton_block.dart';
 import '../motion/motion.dart';
 import '../shell/shell_icons.dart';
@@ -74,47 +75,55 @@ class _DownloadScreenState extends ConsumerState<DownloadScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final list = ref.watch(versionListProvider);
     final install = ref.watch(installControllerProvider);
     final installed = ref.watch(installedVersionsProvider);
     final query = _search.text.trim().toLowerCase();
 
-    return m3.Column(
-      crossAxisAlignment: m3.CrossAxisAlignment.stretch,
-      children: [
-        _Toolbar(
-          search: _search,
-          snapshots: _snapshots,
-          onSnapshots: (value) => setState(() => _snapshots = value),
-          onQuery: () => setState(() {}),
-        ),
-        if (install is! InstallIdle) _InstallPanel(state: install),
-        m3.Expanded(
-          child: switch (list) {
-            // A skeleton, not a spinner: the row rhythm is known, so the list
-            // can say "rows this size are coming" instead of "something is
-            // happening" (PLAN-M11 §3.1).
-            VersionListLoading() => const _VersionSkeleton(),
-            VersionListFailed(:final message) => _ListFailure(message: message),
-            VersionListReady(:final manifest, :final fromCache) => _VersionList(
-              versions: [
-                for (final v in manifest.versions)
-                  if (VersionRowData.of(v)
-                      .visible(showSnapshots: _snapshots, query: query))
-                    VersionRowData.of(v),
-              ],
-              query: query,
-              installed: installed,
-              stale: fromCache,
-              // A second install while one is running would race on the same
-              // `libraries/` tree; the rows are inert until it finishes.
-              busy: install is InstallRunning,
-              onInstall: (id) =>
-                  ref.read(installControllerProvider.notifier).install(id),
-            ),
-          },
-        ),
-      ],
+    return PageBody(
+      scrollable: false,
+      child: m3.Column(
+        crossAxisAlignment: m3.CrossAxisAlignment.stretch,
+        children: [
+          PageTitle(l10n.navDownload),
+          _Toolbar(
+            search: _search,
+            snapshots: _snapshots,
+            onSnapshots: (value) => setState(() => _snapshots = value),
+            onQuery: () => setState(() {}),
+          ),
+          if (install is! InstallIdle) _InstallPanel(state: install),
+          m3.Expanded(
+            child: switch (list) {
+              // A skeleton, not a spinner: the row rhythm is known, so the list
+              // can say "rows this size are coming" instead of "something is
+              // happening" (PLAN-M11 §3.1).
+              VersionListLoading() => const _VersionSkeleton(),
+              VersionListFailed(:final message) => _ListFailure(
+                message: message,
+              ),
+              VersionListReady(:final manifest, :final fromCache) =>
+                _VersionList(
+                  versions: [
+                    for (final v in manifest.versions)
+                      if (VersionRowData.of(v)
+                          .visible(showSnapshots: _snapshots, query: query))
+                        VersionRowData.of(v),
+                  ],
+                  query: query,
+                  installed: installed,
+                  stale: fromCache,
+                  // A second install while one is running would race on the same
+                  // `libraries/` tree; the rows are inert until it finishes.
+                  busy: install is InstallRunning,
+                  onInstall: (id) =>
+                      ref.read(installControllerProvider.notifier).install(id),
+                ),
+            },
+          ),
+        ],
+      ),
     );
   }
 }
@@ -137,20 +146,19 @@ class _Toolbar extends StatelessWidget {
     final l10n = context.l10n;
     final scheme = m3.Theme.of(context).colorScheme;
     return m3.Padding(
-      padding: const m3.EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: const m3.EdgeInsets.only(bottom: 12),
       child: m3.Row(
         children: [
-          m3.Text(l10n.downloadVersions, style: AppTheme.title(context)),
-          const m3.SizedBox(width: 16),
-          m3.Expanded(
-            child: m3.ConstrainedBox(
-              constraints: const m3.BoxConstraints(maxWidth: 340),
-              child: AppTextField(
-                controller: search,
-                hint: l10n.downloadSearchHint,
-                leading: const m3.Icon(ShellIcons.search, size: 15),
-                onChanged: (_) => onQuery(),
-              ),
+          m3.SizedBox(
+            // A fixed width, not ConstrainedBox: inside a Row an Expanded would
+            // hand down tight constraints and the cap would be ignored, which is
+            // how this field used to stretch across the whole page.
+            width: 380,
+            child: AppTextField(
+              controller: search,
+              hint: l10n.downloadSearchHint,
+              leading: const m3.Icon(ShellIcons.search, size: 15),
+              onChanged: (_) => onQuery(),
             ),
           ),
           const m3.SizedBox(width: 12),
@@ -209,7 +217,7 @@ class _VersionList extends StatelessWidget {
       children: [
         if (stale)
           m3.Padding(
-            padding: const m3.EdgeInsets.fromLTRB(16, 0, 16, 8),
+            padding: const m3.EdgeInsets.only(bottom: 8),
             child: AppBanner(
               severity: BannerSeverity.warning,
               message: l10n.downloadStaleCache,
@@ -218,7 +226,7 @@ class _VersionList extends StatelessWidget {
         m3.Expanded(
           child: StaggerList(
             itemCount: versions.length,
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            padding: EdgeInsets.zero,
             itemBuilder: (context, index) => _VersionRow(
               version: versions[index],
               installed: installed.contains(versions[index].id),
@@ -328,9 +336,9 @@ class _InstallPanel extends ConsumerWidget {
     };
 
     return m3.Padding(
-      padding: const m3.EdgeInsets.fromLTRB(16, 0, 16, 12),
+      padding: const m3.EdgeInsets.only(bottom: 12),
       child: m3.Container(
-        padding: const m3.EdgeInsets.all(14),
+        padding: const m3.EdgeInsets.all(16),
         decoration: m3.BoxDecoration(
           color: scheme.surfaceContainerHigh,
           borderRadius: m3.BorderRadius.circular(14),
@@ -624,7 +632,7 @@ class _VersionSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Skeleton(
       child: m3.ListView.builder(
-        padding: const m3.EdgeInsets.fromLTRB(16, 0, 16, 16),
+        padding: m3.EdgeInsets.zero,
         // Nothing here can scroll: there is no more content to reach.
         physics: const m3.NeverScrollableScrollPhysics(),
         itemCount: _rows,

@@ -1,8 +1,10 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart' as m3;
 import 'package:oh_my_mc/ui/components/app_button.dart';
 
+import '../../app/router.dart';
 import '../../core/instance/instance.dart';
 import '../../core/launch/launch_handle.dart';
 import '../../data/instance_providers.dart';
@@ -10,6 +12,7 @@ import '../../core/mc/arch_compat.dart';
 import '../../data/java_providers.dart';
 import '../../data/launch_providers.dart';
 import '../../l10n/l10n.dart';
+import '../components/page_body.dart';
 import '../motion/motion.dart';
 import '../instances/instance_card.dart';
 import '../setup/java_panel.dart';
@@ -40,26 +43,90 @@ class LaunchScreen extends ConsumerWidget {
 
     final busy = session.isBusy;
 
-    return MotionEntrance(
-      // One cascade for the page, not one per child: the launch screen has three
-      // blocks, and staggering each of their internals would take a second.
-      children: [
-        _Headline(instance: selected, session: session),
-        _PlayRow(
-          instance: selected,
-          session: session,
-          onPlay: selected == null || busy
-              ? null
-              : () => controller.launch(selected),
-          onStop: session.canStop ? controller.stop : null,
+    return PageBody(
+      maxWidth: 980,
+      scrollable: false,
+      child: MotionEntrance(
+        // One cascade for the page, not one per child: the launch screen has three
+        // blocks, and staggering each of their internals would take a second.
+        children: [
+          // Nothing selected is a state, not an empty log. Rendering the headline
+          // and a disabled Play button above the explanation only said the same
+          // thing twice, so the empty state replaces the whole page body.
+          if (selected == null)
+            const Expanded(child: _NothingSelected())
+          else ...[
+            _Headline(instance: selected, session: session),
+            const m3.SizedBox(height: 20),
+            _PlayRow(
+              instance: selected,
+              session: session,
+              onPlay: busy ? null : () => controller.launch(selected),
+              onStop: session.canStop ? controller.stop : null,
+            ),
+            // The refusal is the useful moment to offer Java: it explains itself
+            // in place, and a settings deep link at that point is a round trip
+            // the user will not take.
+            _JavaOfferArea(instance: selected, session: session),
+            const m3.SizedBox(height: 20),
+            // Flexible, not Expanded: an idle console keeps its own height.
+            Flexible(child: _LogTail(lines: session.log)),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// What the page says when no instance is selected.
+///
+/// A launcher's first run lands here, so this is the one screen that has to
+/// explain itself: a disabled Play button with no reason beside it is the most
+/// common first-run dead end.
+class _NothingSelected extends StatelessWidget {
+  const _NothingSelected();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final scheme = m3.Theme.of(context).colorScheme;
+
+    return m3.Center(
+      child: m3.ConstrainedBox(
+        constraints: const m3.BoxConstraints(maxWidth: 420),
+        child: m3.Column(
+          mainAxisSize: m3.MainAxisSize.min,
+          crossAxisAlignment: m3.CrossAxisAlignment.center,
+          children: [
+            m3.Icon(
+              ShellIcons.instance,
+              size: 44,
+              color: scheme.onSurfaceVariant,
+            ),
+            const m3.SizedBox(height: 16),
+            m3.Text(
+              l10n.noInstanceSelected,
+              textAlign: m3.TextAlign.center,
+              style: AppTheme.subtitle(context),
+            ),
+            const m3.SizedBox(height: 8),
+            m3.Text(
+              l10n.launchEmptyHint,
+              textAlign: m3.TextAlign.center,
+              style: AppTheme.caption(context)
+                  .copyWith(color: scheme.onSurfaceVariant),
+            ),
+            const m3.SizedBox(height: 20),
+            AppButton(
+              key: const m3.ValueKey('launch-open-instances'),
+              onPressed: () => context.go(Routes.instances),
+              style: AppButtonStyle.filled,
+              icon: const m3.Icon(ShellIcons.instance, size: 15),
+              label: m3.Text(l10n.navInstances),
+            ),
+          ],
         ),
-        // The refusal is the useful moment to offer Java: it explains itself in
-        // place, and a settings deep link at that point is a round trip the user
-        // will not take.
-        if (selected != null)
-          _JavaOfferArea(instance: selected, session: session),
-        Expanded(child: _LogTail(lines: session.log)),
-      ],
+      ),
     );
   }
 }
@@ -345,38 +412,73 @@ class _LogTailState extends State<_LogTail> {
     final l10n = context.l10n;
     final scheme = m3.Theme.of(context).colorScheme;
 
-    if (widget.lines.isEmpty) {
-      return m3.Center(
-        child: m3.Text(
-          l10n.logsEmpty,
-          style: AppTheme.caption(context)
-              .copyWith(color: scheme.onSurfaceVariant),
-        ),
-      );
-    }
-
     return m3.Container(
-      margin: const m3.EdgeInsets.only(top: 16),
       decoration: m3.BoxDecoration(
         color: scheme.surfaceContainerLow,
-        borderRadius: m3.BorderRadius.circular(10),
-        border: m3.Border.all(color: scheme.outlineVariant),
+        borderRadius: m3.BorderRadius.circular(16),
       ),
-      child: m3.ListView.builder(
-        controller: _controller,
-        padding: const m3.EdgeInsets.all(10),
-        itemCount: widget.lines.length,
-        itemBuilder: (context, index) {
-          final line = widget.lines[index];
-          return m3.Text(
-            line.text,
-            style: AppTheme.mono(context).copyWith(
-              color: line.channel == LogChannel.stderr
-                  ? scheme.error
-                  : scheme.onSurface,
+      child: m3.Column(
+        crossAxisAlignment: m3.CrossAxisAlignment.stretch,
+        // An idle console is as tall as its own message; a live one fills the
+        // space it was given.
+        mainAxisSize: widget.lines.isEmpty
+            ? m3.MainAxisSize.min
+            : m3.MainAxisSize.max,
+        children: [
+          // The console has a header so it reads as a panel that is waiting for
+          // output, not as a hole in the page.
+          m3.Padding(
+            padding: const m3.EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: m3.Row(
+              children: [
+                m3.Text(l10n.navLogs, style: AppTheme.subtitle(context)),
+                const m3.Spacer(),
+                if (widget.lines.isNotEmpty)
+                  m3.Text(
+                    '${widget.lines.length}',
+                    style: AppTheme.caption(context)
+                        .copyWith(color: scheme.onSurfaceVariant),
+                  ),
+              ],
             ),
-          );
-        },
+          ),
+          if (widget.lines.isEmpty)
+            m3.Padding(
+              padding: const m3.EdgeInsets.fromLTRB(16, 4, 16, 16),
+              child: m3.Text(
+                l10n.logsEmpty,
+                style: AppTheme.caption(context)
+                    .copyWith(color: scheme.onSurfaceVariant),
+              ),
+            )
+          else
+            m3.Expanded(
+              child: m3.Container(
+                margin: const m3.EdgeInsets.fromLTRB(12, 0, 12, 12),
+                decoration: m3.BoxDecoration(
+                  color: scheme.surfaceContainerLowest,
+                  borderRadius: m3.BorderRadius.circular(10),
+                  border: m3.Border.all(color: scheme.outlineVariant),
+                ),
+                child: m3.ListView.builder(
+                  controller: _controller,
+                  padding: const m3.EdgeInsets.all(12),
+                  itemCount: widget.lines.length,
+                  itemBuilder: (context, index) {
+                    final line = widget.lines[index];
+                    return m3.Text(
+                      line.text,
+                      style: AppTheme.mono(context).copyWith(
+                        color: line.channel == LogChannel.stderr
+                            ? scheme.error
+                            : scheme.onSurface,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

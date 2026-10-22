@@ -148,6 +148,18 @@ directory and `test/shots/` are now git-ignored.)
 - All durations/curves come from `lib/ui/motion/motion.dart`; no inline `Duration(` / `Curves.` elsewhere.
 - Respect reduced motion via `MotionScope` (collapses durations to 0).
 - Every user-visible string goes through `AppLocalizations` (en + zh_Hans). No hardcoded UI text.
+- **The shell owns the `Scaffold`.** `AppShell` is the only widget that introduces `Material` for a
+  page. Without it an `InkWell` asserts on first paint and every `Text` without an explicit style
+  inherits `MaterialApp`'s debug error style - 48 px, red, yellow double underline - so a missing
+  ancestor looks like a styling disaster rather than a one-line structural bug.
+  `test/ui/shell_material_test.dart` pins it per route.
+- **Screens use `PageBody` / `PageTitle`**, never their own outer padding. That is what keeps the six
+  pages on one grid: 24 px page padding, a 1040 px content cap, and one title style.
+- **The rail is fixed-width with the label under the icon** (`NavigationRailLabelType.all`). Do not
+  switch it back to `extended:` (216 px spent on five two-character labels) and do not make it
+  collapsible (the body's constraints would then depend on a control inside the rail).
+- **A card is one filled surface**: `surfaceContainerLow`, 16 px radius, no outline; only a selected
+  item carries a border. Boxed cards on a dark surface read as unrelated panels.
 - **`material_ui` (`m3`) is the only style package.** `material_3_expressive` (`m3e`) was removed in
   `PLAN-M11` W7 — do not reintroduce it, and do not import `package:flutter/material.dart` (a second tree).
   If a control needs a variant `material_ui` lacks, add a wrapper in `lib/ui/components/`, never an

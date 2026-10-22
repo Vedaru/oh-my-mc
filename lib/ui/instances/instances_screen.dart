@@ -10,6 +10,7 @@ import '../../data/instance_providers.dart';
 import '../../data/launch_providers.dart';
 import '../../l10n/l10n.dart';
 import '../components/app_banner.dart';
+import '../components/page_body.dart';
 import '../components/skeleton_block.dart';
 import '../motion/motion.dart';
 import '../shell/shell_icons.dart';
@@ -40,25 +41,33 @@ class InstancesScreen extends ConsumerWidget {
     final notifier = ref.read(instanceListProvider.notifier);
     final session = ref.watch(launchControllerProvider);
 
-    return switch (state) {
-      // A grid-shaped skeleton rather than a centred spinner: the shape is
-      // known, so the placeholder can occupy the space the cards will
-      // (PLAN-M11 §3.1).
-      InstanceListLoading() => const _GridSkeleton(),
-      InstanceListFailed(:final message) => _Failure(message: message),
-      InstanceListReady(:final instances, :final selectedId, :final skipped) =>
-        _Grid(
-          instances: instances,
-          selectedId: selectedId,
-          skipped: skipped,
-          session: session,
-          onSelect: notifier.select,
-          onLaunch: (instance) => _launch(context, ref, instance),
-          onOpen: (instance) => (onOpen ?? _defaultOpen(context))(instance),
-          onCreate: () => _createInstance(context, ref),
-          onDelete: (instance) => _delete(context, ref, instance),
-        ),
-    };
+    return PageBody(
+      maxWidth: 1200,
+      scrollable: false,
+      child: switch (state) {
+        // A grid-shaped skeleton rather than a centred spinner: the shape is
+        // known, so the placeholder can occupy the space the cards will
+        // (PLAN-M11 §3.1).
+        InstanceListLoading() => const _GridSkeleton(),
+        InstanceListFailed(:final message) => _Failure(message: message),
+        InstanceListReady(
+          :final instances,
+          :final selectedId,
+          :final skipped,
+        ) =>
+          _Grid(
+            instances: instances,
+            selectedId: selectedId,
+            skipped: skipped,
+            session: session,
+            onSelect: notifier.select,
+            onLaunch: (instance) => _launch(context, ref, instance),
+            onOpen: (instance) => (onOpen ?? _defaultOpen(context))(instance),
+            onCreate: () => _createInstance(context, ref),
+            onDelete: (instance) => _delete(context, ref, instance),
+          ),
+      },
+    );
   }
 
   /// Starts [instance] and goes to the launch screen.
@@ -166,18 +175,17 @@ class _Grid extends StatelessWidget {
       crossAxisAlignment: m3.CrossAxisAlignment.stretch,
       children: [
         if (skipped > 0) _SkippedBanner(count: skipped),
-        m3.Padding(
-          padding: const m3.EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: m3.Row(
+        PageTitle(
+          l10n.navInstances,
+          trailing: m3.Row(
+            mainAxisSize: m3.MainAxisSize.min,
             children: [
-              m3.Text(l10n.navInstances, style: AppTheme.title(context)),
-              const m3.SizedBox(width: 8),
               m3.Text(
                 l10n.instanceCount(instances.length),
                 style: AppTheme.caption(context)
                     .copyWith(color: scheme.onSurfaceVariant),
               ),
-              const m3.Spacer(),
+              const m3.SizedBox(width: 12),
               AppButton(
                 onPressed: onCreate,
                 style: AppButtonStyle.filled,
@@ -200,7 +208,7 @@ class _Grid extends StatelessWidget {
                   .clamp(1, 6);
 
               return m3.GridView.builder(
-                padding: const m3.EdgeInsets.all(16),
+                padding: m3.EdgeInsets.zero,
                 gridDelegate: m3.SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: columns,
                   mainAxisSpacing: 12,

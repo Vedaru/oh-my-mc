@@ -13,16 +13,79 @@ import 'package:oh_my_mc/data/settings.dart';
 import 'package:oh_my_mc/main.dart';
 import 'package:path/path.dart' as p;
 
+/// Loads a font so the shots contain glyphs instead of boxes.
+///
+/// Best-effort on purpose: a headless box may ship no fonts at all, and that must
+/// not fail the harness (only make it less readable). `SHOT_FONT=<path>` wins,
+/// then any TTF/OTF under the usual font directories. A CJK face is needed for
+/// the zh shots; without one those render as tofu and the layout is still valid.
 Future<void> _loadFonts() async {
-  for (final entry in {
-    'Roboto': '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
-    'Segoe UI': '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
-  }.entries) {
-    final bytes = File(entry.value).readAsBytesSync();
-    final loader = FontLoader(entry.key)
+  final font = _findFont();
+  if (font == null) {
+    // ignore: avoid_print
+    print(
+      'shots: no font found (set SHOT_FONT=<path>); text will render as boxes',
+    );
+    return;
+  }
+  final bytes = File(font).readAsBytesSync();
+  for (final family in ['Roboto', 'Segoe UI']) {
+    final loader = FontLoader(family)
       ..addFont(Future.value(ByteData.sublistView(bytes)));
     await loader.load();
   }
+
+  // Material's own glyph font ships with the SDK, not with this package, and a
+  // test binding loads neither: without it every `Icons.*` in the shots is a
+  // square, which reads as "the icons are broken" when they are not.
+  final icons = _findIconFont();
+  if (icons == null) {
+    // ignore: avoid_print
+    print('shots: MaterialIcons font not found; icons will render as boxes');
+    return;
+  }
+  final iconLoader = FontLoader(
+    'MaterialIcons',
+  )..addFont(Future.value(ByteData.sublistView(File(icons).readAsBytesSync())));
+  await iconLoader.load();
+}
+
+/// The SDK's glyph font, found by walking up from the test runner's own binary
+/// (`<flutter>/bin/cache/dart-sdk/bin/dart` -> `<flutter>/bin/cache/artifacts/…`).
+String? _findIconFont() {
+  final fromEnv = Platform.environment['SHOT_ICON_FONT'];
+  if (fromEnv != null && File(fromEnv).existsSync()) return fromEnv;
+  var dir = File(Platform.resolvedExecutable).parent;
+  for (var i = 0; i < 8; i++) {
+    final candidate = File(
+      p.join(
+        dir.path,
+        'cache',
+        'artifacts',
+        'material_fonts',
+        'MaterialIcons-Regular.otf',
+      ),
+    );
+    if (candidate.existsSync()) return candidate.path;
+    if (dir.parent.path == dir.path) break;
+    dir = dir.parent;
+  }
+  return null;
+}
+
+String? _findFont() {
+  final fromEnv = Platform.environment['SHOT_FONT'];
+  if (fromEnv != null && File(fromEnv).existsSync()) return fromEnv;
+  for (final dir in ['/usr/share/fonts', '/usr/local/share/fonts']) {
+    final root = Directory(dir);
+    if (!root.existsSync()) continue;
+    for (final entity in root.listSync(recursive: true)) {
+      if (entity is! File) continue;
+      final path = entity.path.toLowerCase();
+      if (path.endsWith('.ttf') || path.endsWith('.otf')) return entity.path;
+    }
+  }
+  return null;
 }
 
 Instance _instance(String id, String name, String version, {DateTime? last}) =>
@@ -125,6 +188,33 @@ void main() {
 
   testWidgets('setup', (tester) async {
     await shoot(tester, '/setup', 'setup');
+  });
+
+  // The zh shots exist because the two languages have different string lengths:
+  // a row that fits in English can clamp or wrap in Chinese, and the screenshots
+  // that get reported by hand are usually the Chinese ones.
+  testWidgets('setup zh', (tester) async {
+    await shoot(
+      tester,
+      '/setup',
+      'setup-zh',
+      settings: const AppSettings(
+        language: LanguagePreference.chinese,
+        theme: ThemePreference.dark,
+      ),
+    );
+  });
+
+  testWidgets('launch zh', (tester) async {
+    await shoot(
+      tester,
+      '/launch',
+      'launch-zh',
+      settings: const AppSettings(
+        language: LanguagePreference.chinese,
+        theme: ThemePreference.dark,
+      ),
+    );
   });
 
   testWidgets('logs', (tester) async {

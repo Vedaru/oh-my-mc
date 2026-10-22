@@ -515,15 +515,29 @@ void main() {
   });
 
   group('launch screen', () {
-    testWidgets('with no instance the play button is disabled', (tester) async {
-      await pumpScreen(tester, const LaunchScreen());
+    testWidgets(
+      'with no instance the page explains itself instead of disabling '
+      'a dead button',
+      (tester) async {
+        await pumpScreen(tester, const LaunchScreen());
 
-      expect(find.text('No instance selected'), findsOneWidget);
-      final button = tester.widget<AppButton>(
-        find.byKey(const ValueKey('play')),
-      );
-      expect(button.onPressed, isNull);
-    });
+        expect(find.text('No instance selected'), findsOneWidget);
+        // The empty state replaces the whole body: a Play button that can never be
+        // pressed is the first-run dead end this screen used to be.
+        expect(find.byKey(const ValueKey('play')), findsNothing);
+        expect(
+          find.text(
+            'Create one on the Instances page, then launch it from '
+            'here.',
+          ),
+          findsOneWidget,
+        );
+        final action = tester.widget<AppButton>(
+          find.byKey(const ValueKey('launch-open-instances')),
+        );
+        expect(action.onPressed, isNotNull);
+      },
+    );
 
     testWidgets('starting shows the launching state and disables play', (
       tester,

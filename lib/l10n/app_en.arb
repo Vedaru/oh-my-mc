@@ -48,6 +48,10 @@
   "@noInstanceSelected": {
     "description": "Placeholder when the instance list is empty."
   },
+  "launchEmptyHint": "Create one on the Instances page, then launch it from here.",
+  "@launchEmptyHint": {
+    "description": "Shown on the launch screen while no instance is selected, under the title."
+  },
   "instanceCreate": "New instance",
   "@instanceCreate": {
     "description": "Creates a new instance."
@@ -324,14 +328,20 @@
   "@instanceArgsPreview": {
     "description": "How many arguments the current text parses to, so a quoting mistake is visible before launch.",
     "placeholders": {
-      "count": {"type": "int", "example": "2"}
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
     }
   },
   "instanceArgsPreviewList": "Will pass: {args}",
   "@instanceArgsPreviewList": {
     "description": "The arguments as the launcher will pass them, one per entry, after parsing quotes.",
     "placeholders": {
-      "args": {"type": "String", "example": "-Xmx4G, -XX:+UseG1GC"}
+      "args": {
+        "type": "String",
+        "example": "-Xmx4G, -XX:+UseG1GC"
+      }
     }
   },
   "instanceNameLabel": "Name",
@@ -416,9 +426,18 @@
   "@instanceJavaTestOk": {
     "description": "Result of a successful JVM probe.",
     "placeholders": {
-      "major": {"type": "int", "example": "17"},
-      "version": {"type": "String", "example": "17.0.9"},
-      "vendor": {"type": "String", "example": "Eclipse Adoptium"}
+      "major": {
+        "type": "int",
+        "example": "17"
+      },
+      "version": {
+        "type": "String",
+        "example": "17.0.9"
+      },
+      "vendor": {
+        "type": "String",
+        "example": "Eclipse Adoptium"
+      }
     }
   },
   "instanceJavaTestNoVendor": "an unnamed vendor",
@@ -752,120 +771,6 @@
   },
   "javaManagedTitle": "Downloaded Java runtimes",
   "@javaManagedTitle": {
-    "description": "Heading over the list of Java runtimes the launcher downloaded, in setup."
-  },
-  "javaManagedEmpty": "None yet. They appear here after the launcher downloads one.",
-  "@javaManagedEmpty": {
-    "description": "Shown when the launcher has not downloaded any Java runtime."
-  },
-  "javaManagedItem": "Java {major} ({version})",
-  "@javaManagedItem": {
-    "description": "One installed Java runtime. {major} is the Java major version, {version} the runtime's own version name.",
-    "placeholders": {
-      "major": {
-        "type": "int"
-      },
-      "version": {
-        "type": "String"
-      }
-    }
-  },
-  "javaManagedDiskUse": "{size} on disk",
-  "@javaManagedDiskUse": {
-    "description": "Disk usage of one installed Java runtime. {size} is an already-formatted byte amount.",
-    "placeholders": {
-      "size": {
-        "type": "String"
-      }
-    }
-  },
-  "javaDelete": "Delete",
-  "@javaDelete": {
-    "description": "Button that deletes a downloaded Java runtime."
-  },
-  "javaDeleteConfirm": "Delete this Java {major} runtime? Versions that need it will ask to download it again.",
-  "@javaDeleteConfirm": {
-    "description": "Confirmation before deleting a downloaded Java runtime. {major} is the Java major version.",
-    "placeholders": {
-      "major": {
-        "type": "int"
-      }
-    }
-  },
-  "javaDeleteConfirmAction": "Delete it",
-  "@javaDeleteConfirmAction": {
-    "description": "Confirms deleting a downloaded Java runtime."
-  },
-  "javaRefresh": "Refresh",
-  "@javaRefresh": {
-    "description": "Re-reads the list of downloaded Java runtimes from disk."
-  },
-  "javaCancel": "Cancel download",
-  "@javaCancel": {
-    "description": "Stops the Java runtime download."
-  },
-  "javaDownloadCancelled": "Java download cancelled.",
-  "@javaDownloadCancelled": {
-    "description": "Shown after the user cancelled a Java runtime download."
-  },
-  "javaDownloadFailed": "Could not install Java: {message}",
-  "@javaDownloadFailed": {
-    "description": "Shown when a Java runtime download or extraction failed. {message} is the underlying error.",
-    "placeholders": {
-      "message": {
-        "type": "String"
-      }
-    }
-  },
-  "javaUseExisting": "Java {major} found on this computer.",
-  "@javaUseExisting": {
-    "description": "Shown when an installed Java runtime already satisfies the version. {major} is the Java major version.",
-    "placeholders": {
-      "major": {
-        "type": "int"
-      }
-    }
-  },
-  "javaDownloadFailed": "Java could not be downloaded: {reason}",
-  "@javaDownloadFailed": {
-    "description": "Shown when installing a Java runtime failed. {reason} is the error message.",
-    "placeholders": {
-      "reason": {
-        "type": "String"
-      }
-    }
-  },
-  "javaDownloadCancelled": "Java download cancelled",
-  "@javaDownloadCancelled": {
-    "description": "Shown after the user cancels a Java runtime download."
-  },
-  "javaCancel": "Cancel",
-  "@javaCancel": {
-    "description": "Generic cancel button."
-  },
-  "javaUnavailableOnPlatform": "Java {major} is not available for this platform.",
-  "@javaUnavailableOnPlatform": {
-    "description": "Shown when Mojang publishes no runtime that can run this version on this computer. {major} is the Java major version.",
-    "placeholders": {
-      "major": {
-        "type": "int"
-      }
-    }
-  },
-  "javaUnavailableDetail": "No Java {major} build is published for {platform}. You can install one yourself and point the instance at it.",
-  "@javaUnavailableDetail": {
-    "description": "Explains a platform gap, e.g. Java 8 on Apple Silicon. {major} is the Java major version; {platform} is an OS name.",
-    "placeholders": {
-      "major": {
-        "type": "int"
-      },
-      "platform": {
-        "type": "String"
-      }
-    }
-  },
-  "javaManagedTitle": "Downloaded Java runtimes",
-  "@javaManagedTitle": {
     "description": "Heading of the list of Java runtimes the launcher downloaded itself."
   },
   "javaManagedEmpty": "No Java runtimes downloaded yet.",
@@ -914,12 +819,50 @@
   "@javaRefresh": {
     "description": "Button that rescans for installed Java runtimes."
   },
+  "javaCancel": "Cancel",
+  "@javaCancel": {
+    "description": "Generic cancel button."
+  },
+  "javaDownloadCancelled": "Java download cancelled",
+  "@javaDownloadCancelled": {
+    "description": "Shown after the user cancels a Java runtime download."
+  },
+  "javaDownloadFailed": "Java could not be downloaded: {reason}",
+  "@javaDownloadFailed": {
+    "description": "Shown when installing a Java runtime failed. {reason} is the error message.",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
   "javaUseExisting": "Java {major} found on this computer",
   "@javaUseExisting": {
     "description": "Shown when a suitable Java is already installed, so no download is offered. {major} is the Java major version.",
     "placeholders": {
       "major": {
         "type": "int"
+      }
+    }
+  },
+  "javaUnavailableOnPlatform": "Java {major} is not available for this platform.",
+  "@javaUnavailableOnPlatform": {
+    "description": "Shown when Mojang publishes no runtime that can run this version on this computer. {major} is the Java major version.",
+    "placeholders": {
+      "major": {
+        "type": "int"
+      }
+    }
+  },
+  "javaUnavailableDetail": "No Java {major} build is published for {platform}. You can install one yourself and point the instance at it.",
+  "@javaUnavailableDetail": {
+    "description": "Explains a platform gap, e.g. Java 8 on Apple Silicon. {major} is the Java major version; {platform} is an OS name.",
+    "placeholders": {
+      "major": {
+        "type": "int"
+      },
+      "platform": {
+        "type": "String"
       }
     }
   }

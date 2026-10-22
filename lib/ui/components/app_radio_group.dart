@@ -1,13 +1,15 @@
 import 'package:flutter/widgets.dart';
 import 'package:material_ui/material_ui.dart' as m3;
 
+import '../theme/app_theme.dart';
+
 /// A vertical list of labelled Material radio buttons.
 ///
 /// Built from [m3.Radio] inside [m3.RadioGroup] rather than from
 /// `RadioListTile`: a tile paints its own background and ink on the nearest
-/// `Material`, so placing one inside the setup panel's decorated card trips
-/// Flutter's "ink splashes may be invisible" assertion. A plain [m3.InkWell] row
-/// keeps the tap target without claiming a background.
+/// `Material`, so placing one inside a decorated card used to trip Flutter's "ink
+/// splashes may be invisible" assertion. A plain [m3.InkWell] row keeps the tap
+/// target without claiming a background.
 ///
 /// `Radio.groupValue` is deprecated in favour of an ancestor [m3.RadioGroup],
 /// which is why group state is owned there rather than passed to each radio.
@@ -27,6 +29,10 @@ class AppRadioGroup<T> extends StatelessWidget {
   /// Prefix for each row's `ValueKey`, so tests can address one option.
   final String keyPrefix;
 
+  /// A row is 40 px tall, which is MD3's control height for a single-line choice
+  /// and what keeps a two-option group from reading like a paragraph of text.
+  static const _rowHeight = 40.0;
+
   @override
   Widget build(BuildContext context) {
     return m3.RadioGroup<T>(
@@ -36,20 +42,39 @@ class AppRadioGroup<T> extends StatelessWidget {
       },
       child: m3.Column(
         crossAxisAlignment: m3.CrossAxisAlignment.start,
+        mainAxisSize: m3.MainAxisSize.min,
         children: [
           for (final entry in options.entries)
             m3.InkWell(
               key: m3.ValueKey('$keyPrefix-${entry.key}'),
               borderRadius: m3.BorderRadius.circular(8),
               onTap: () => onChanged(entry.key),
-              child: m3.Padding(
-                padding: const m3.EdgeInsets.symmetric(vertical: 2),
-                child: m3.Row(
-                  children: [
-                    m3.Radio<T>(value: entry.key),
-                    const m3.SizedBox(width: 10),
-                    m3.Flexible(child: m3.Text(entry.value)),
-                  ],
+              child: m3.ConstrainedBox(
+                constraints: const m3.BoxConstraints(minHeight: _rowHeight),
+                child: m3.Padding(
+                  padding: const m3.EdgeInsets.symmetric(horizontal: 4),
+                  child: m3.Row(
+                    children: [
+                      m3.Radio<T>(
+                        value: entry.key,
+                        // Compact density pairs the radio's 40 px box with the
+                        // switch's own 40 px row, so a group and a toggle in the
+                        // same settings column start on the same line.
+                        visualDensity: m3.VisualDensity.compact,
+                      ),
+                      const m3.SizedBox(width: 8),
+                      // The label carries the app's body style explicitly: an
+                      // unstyled `Text` inherits whatever the nearest
+                      // `DefaultTextStyle` happens to be, which is how this list
+                      // once rendered as 48 px red error text.
+                      m3.Expanded(
+                        child: m3.Text(
+                          entry.value,
+                          style: AppTheme.body(context),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

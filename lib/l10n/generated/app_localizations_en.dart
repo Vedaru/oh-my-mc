@@ -46,6 +46,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noInstanceSelected => 'No instance selected';
 
   @override
+  String get launchEmptyHint =>
+      'Create one on the Instances page, then launch it from here.';
+
+  @override
   String get instanceCreate => 'New instance';
 
   @override

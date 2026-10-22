@@ -430,3 +430,28 @@ packages' own enable flags from the UI — the only switch is the policy layer.
   577 + the 10 in `app_controls_test.dart`).
 * `AGENTS.md` records: `material_ui` is the only style package; `flutter_animate`
   is confined to the motion layer; skeletons are the loading idiom.
+
+---
+
+## 8. Shell and page frame (post-W7, reported from a screenshot)
+
+The milestone's waves all passed their gates while the app *looked* broken, because no test asserted
+what the page sat inside. Two defects, one cause:
+
+- `AppShell` returned a bare `Column` with no `Scaffold`, so the page had **no `Material` ancestor**.
+  Every `InkWell` in a settings row asserted "No Material widget found", and the radio labels - the
+  only `Text` in the app without an explicit style - inherited `MaterialApp`'s error style: 48 px,
+  red, yellow double underline.
+- Each screen carried its own outer padding and title, so the content was pinned to the rail on one
+  page and indented 16 px on another, and the launch screen showed a disabled Play button above an
+  empty console that stretched to the window.
+
+Fixed by giving the shell the `Scaffold` it always needed (`Material`, themed background, a divider
+between rail and content) and by introducing `PageBody`/`PageTitle` so the six pages share one frame.
+The rail is now fixed-width with each label under its icon (`NavigationRailLabelType.all`), which also
+gives 128 px back to every page. The launch screen's no-instance case is an empty state with a way
+forward instead of a dead button, and an idle console is as tall as its own message.
+
+**Verification**: `test/ui/shell_material_test.dart` mounts every route and fails if any `Text`
+resolves the 48 px error style; `test/dbg_shots_test.dart` renders all six pages (and two zh shots) so
+the layout can be looked at, not just asserted. Screens 1440x900.

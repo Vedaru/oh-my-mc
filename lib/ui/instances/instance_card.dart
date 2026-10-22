@@ -53,11 +53,10 @@ class _InstanceCardState extends State<InstanceCard> {
     final motion = MotionScope.of(context);
 
     // Selection is an outline, not a fill: the cards carry version art later, and
-    // a tint over it would fight the art.
-    final radius = m3.BorderRadius.circular(14);
-    final borderColor = widget.selected
-        ? scheme.primary
-        : scheme.outlineVariant;
+    // a tint over it would fight the art. Unselected cards carry no outline at
+    // all - the same filled surface the settings sections use, so a page is one
+    // material rather than a set of boxes.
+    final radius = m3.BorderRadius.circular(16);
 
     final card = m3.MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
@@ -74,13 +73,12 @@ class _InstanceCardState extends State<InstanceCard> {
             borderRadius: radius,
             color: _hovered
                 ? scheme.surfaceContainerHigh
-                : scheme.surfaceContainer,
-            border: m3.Border.all(
-              color: borderColor,
-              width: widget.selected ? 2 : 1,
-            ),
+                : scheme.surfaceContainerLow,
+            border: widget.selected
+                ? m3.Border.all(color: scheme.primary, width: 2)
+                : null,
           ),
-          padding: const m3.EdgeInsets.all(14),
+          padding: const m3.EdgeInsets.all(16),
           child: m3.Column(
             crossAxisAlignment: m3.CrossAxisAlignment.start,
             mainAxisSize: m3.MainAxisSize.min,
@@ -141,7 +139,9 @@ class _InstanceCardState extends State<InstanceCard> {
                     color: scheme.onSurfaceVariant,
                   ),
                   const m3.SizedBox(width: 5),
-                  m3.Flexible(
+                  // Expanded, not Flexible + Spacer: the Spacer claimed the free
+                  // space first and squeezed this label into "Never pla…".
+                  m3.Expanded(
                     child: m3.Text(
                       widget.instance.lastPlayedAt == null
                           ? l10n.instanceNeverPlayed
@@ -152,7 +152,7 @@ class _InstanceCardState extends State<InstanceCard> {
                       overflow: m3.TextOverflow.ellipsis,
                     ),
                   ),
-                  const m3.Spacer(),
+                  const m3.SizedBox(width: 8),
                   if (widget.busy)
                     // Determinate-looking and still: an indeterminate spinner is
                     // the one widget that keeps a ticker alive with motion off,

@@ -170,6 +170,12 @@ abstract class AppLocalizations {
   /// **'No instance selected'**
   String get noInstanceSelected;
 
+  /// Shown on the launch screen while no instance is selected, under the title.
+  ///
+  /// In en, this message translates to:
+  /// **'Create one on the Instances page, then launch it from here.'**
+  String get launchEmptyHint;
+
   /// Creates a new instance.
   ///
   /// In en, this message translates to:
