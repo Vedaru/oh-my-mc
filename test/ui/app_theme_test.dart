@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart' as m3;
+import 'package:oh_my_mc/data/settings.dart';
 import 'package:oh_my_mc/ui/theme/app_theme.dart';
 
 void main() {
@@ -28,7 +29,7 @@ void main() {
     test('the scheme is seeded from the shared accent', () {
       // A second seed would let a user's accent apply to half the UI.
       final fromSeed = m3.ColorScheme.fromSeed(
-        seedColor: AppTheme.accentSeed,
+        seedColor: AppTheme.seedFor(AccentChoice.blue),
         brightness: Brightness.light,
       );
       expect(

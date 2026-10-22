@@ -135,13 +135,34 @@ class AppLocalizationsZh extends AppLocalizations {
   String get setupUi => '界面';
 
   @override
+  String get setupAccent => '主题色';
+
+  @override
+  String get setupAccentHint => '整个界面的配色都由它生成，浅色与深色主题都会跟随。';
+
+  @override
+  String get accentBlue => '蓝色';
+
+  @override
+  String get accentTeal => '青色';
+
+  @override
+  String get accentGreen => '绿色';
+
+  @override
+  String get accentOrange => '橙色';
+
+  @override
+  String get accentRed => '红色';
+
+  @override
+  String get accentPurple => '紫色';
+
+  @override
   String get setupMemory => '内存';
 
   @override
   String get setupLanguage => '语言';
-
-  @override
-  String get setupMotion => '动画';
 
   @override
   String get setupThemeMode => '主题';
@@ -157,15 +178,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get languageChinese => '中文';
-
-  @override
-  String get setupMotionHint => '同时遵循系统的「减少动态效果」设置。';
-
-  @override
-  String get setupMotionOn => '已开启动画';
-
-  @override
-  String get setupMotionOff => '已关闭动画';
 
   @override
   String get setupPlayerName => '玩家名称';

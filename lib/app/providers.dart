@@ -33,8 +33,8 @@ class AppSettingsNotifier extends Notifier<AppSettings> {
   Future<void> setLanguage(LanguagePreference language) =>
       set(state.copyWith(language: language));
 
-  Future<void> setUiAnimations(bool enabled) =>
-      set(state.copyWith(uiAnimations: enabled));
+  Future<void> setAccent(AccentChoice accent) =>
+      set(state.copyWith(accent: accent));
 }
 
 final appSettingsProvider = NotifierProvider<AppSettingsNotifier, AppSettings>(

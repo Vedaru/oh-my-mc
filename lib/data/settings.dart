@@ -12,6 +12,14 @@ import '../core/instance/memory.dart';
 /// Which theme to use. `system` follows the OS.
 enum ThemePreference { system, light, dark }
 
+/// The accent colour the whole colour scheme is seeded from.
+///
+/// An enum, not a colour: this file stays free of Flutter types so the values
+/// survive as plain strings, and the palette itself lives in
+/// `ui/theme/app_theme.dart`. A stored colour that no longer exists falls back to
+/// the default the same way a corrupt `theme` does.
+enum AccentChoice { blue, teal, green, orange, red, purple }
+
 /// Which language to use. `system` follows the OS.
 ///
 /// Only two languages ship, so this is an enum rather than a free-form locale
@@ -24,7 +32,7 @@ class AppSettings {
   const AppSettings({
     this.theme = ThemePreference.system,
     this.language = LanguagePreference.system,
-    this.uiAnimations = true,
+    this.accent = AccentChoice.blue,
     this.playerName = defaultPlayerName,
     this.memoryMb = defaultMemoryMb,
   });
@@ -44,9 +52,10 @@ class AppSettings {
   final ThemePreference theme;
   final LanguagePreference language;
 
-  /// The app's own switch. The OS accessibility setting is OR'd on top of this
-  /// by `MotionScope`, so this can only ever turn motion *off*, never on.
-  final bool uiAnimations;
+  /// Seed for every colour in the app. Motion has no setting of its own any
+  /// more: animation is part of the design and only the OS accessibility flag
+  /// (OR'd in by `MotionScope`) can turn it off.
+  final AccentChoice accent;
 
   /// Offline profile name. Microsoft sign-in is a later milestone; until then a
   /// launch is always offline, which requires a name and nothing else.
@@ -60,7 +69,7 @@ class AppSettings {
   Map<String, Object?> toMap() => {
     'theme': theme.name,
     'language': language.name,
-    'uiAnimations': uiAnimations,
+    'accent': accent.name,
     'playerName': playerName,
     'memoryMb': memoryMb,
   };
@@ -79,11 +88,11 @@ class AppSettings {
         map['language'],
         LanguagePreference.system,
       ),
-      uiAnimations: switch (map['uiAnimations']) {
-        true => true,
-        false => false,
-        _ => true,
-      },
+      accent: _enumByName(
+        AccentChoice.values,
+        map['accent'],
+        AccentChoice.blue,
+      ),
       // A blank or implausible name would make the game refuse to start or,
       // worse, start with an empty name; clamp it back to the default instead.
       playerName: _validPlayerName(map['playerName']),
@@ -94,13 +103,13 @@ class AppSettings {
   AppSettings copyWith({
     ThemePreference? theme,
     LanguagePreference? language,
-    bool? uiAnimations,
+    AccentChoice? accent,
     String? playerName,
     int? memoryMb,
   }) => AppSettings(
     theme: theme ?? this.theme,
     language: language ?? this.language,
-    uiAnimations: uiAnimations ?? this.uiAnimations,
+    accent: accent ?? this.accent,
     playerName: playerName ?? this.playerName,
     memoryMb: memoryMb ?? this.memoryMb,
   );
@@ -111,18 +120,18 @@ class AppSettings {
       other is AppSettings &&
           other.theme == theme &&
           other.language == language &&
-          other.uiAnimations == uiAnimations &&
+          other.accent == accent &&
           other.playerName == playerName &&
           other.memoryMb == memoryMb;
 
   @override
   int get hashCode =>
-      Object.hash(theme, language, uiAnimations, playerName, memoryMb);
+      Object.hash(theme, language, accent, playerName, memoryMb);
 
   @override
   String toString() =>
       'AppSettings(theme: ${theme.name}, language: ${language.name}, '
-      'uiAnimations: $uiAnimations, playerName: $playerName, '
+      'accent: ${accent.name}, playerName: $playerName, '
       'memoryMb: $memoryMb)';
 }
 

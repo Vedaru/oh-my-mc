@@ -24,18 +24,16 @@ class ShellDestination {
 
 /// The destinations, in rail order.
 ///
-/// Launch is first and Instances second: the launcher opens on the thing the
-/// user does most, and an instance list is a management screen, not a home.
+/// **Launch first and no Instances tab**, which is PCL's operation logic: the
+/// launch page owns version selection (its picker lists every version and reaches
+/// management from there), so a second tab whose only job is choosing what the
+/// launch page already chooses is two doors to one room. `/instances` still
+/// exists as a route - it is the management screen the picker links to.
 List<ShellDestination> destinationsFor(AppLocalizations l10n) => [
   ShellDestination(
     location: Routes.launch,
     label: (l) => l.navLaunch,
     icon: ShellIcons.forRoute(Routes.launch),
-  ),
-  ShellDestination(
-    location: Routes.instances,
-    label: (l) => l.navInstances,
-    icon: ShellIcons.forRoute(Routes.instances),
   ),
   ShellDestination(
     location: Routes.download,
@@ -83,7 +81,6 @@ class AppShell extends StatelessWidget {
     final l10n = context.l10n;
     final destinations = destinationsFor(l10n);
     final selected = selectedIndexFor(destinations, location);
-    final scheme = m3.Theme.of(context).colorScheme;
 
     // The `Scaffold` is not decoration: without it there is no `Material`
     // ancestor for the page, so every ink splash asserts ("No Material widget
@@ -116,14 +113,6 @@ class AppShell extends StatelessWidget {
                         label: m3.Text(destination.label(l10n)),
                       ),
                   ],
-                ),
-                // Material 3 puts a divider between a rail and the content it
-                // navigates; without it the page's cards look like they belong to
-                // the rail.
-                m3.VerticalDivider(
-                  width: 1,
-                  thickness: 1,
-                  color: scheme.outlineVariant,
                 ),
                 m3.Expanded(child: child),
               ],
@@ -180,12 +169,7 @@ class _ShellHeader extends StatelessWidget {
 
     return m3.Container(
       height: height,
-      decoration: m3.BoxDecoration(
-        color: scheme.surfaceContainer,
-        border: m3.Border(
-          bottom: m3.BorderSide(color: scheme.outlineVariant, width: 1),
-        ),
-      ),
+      decoration: m3.BoxDecoration(color: scheme.surfaceContainer),
       padding: const m3.EdgeInsets.symmetric(horizontal: 20),
       child: m3.Row(
         children: [
@@ -205,12 +189,6 @@ class _ShellHeader extends StatelessWidget {
               key: m3.ValueKey(subtitle),
               style: AppTheme.subtitle(context),
             ),
-          ),
-          const m3.Spacer(),
-          m3.Text(
-            l10n.appTitle,
-            style: AppTheme.caption(context)
-                .copyWith(color: scheme.onSurfaceVariant),
           ),
         ],
       ),

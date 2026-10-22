@@ -107,22 +107,11 @@ void main() {
   });
 
   group('motion', () {
-    testWidgets('the settings switch is what the tree reads', (tester) async {
-      final (container, probe) = await _pump(
-        tester,
-        settings: const AppSettings(uiAnimations: true),
-      );
+    testWidgets('motion is on with no setting involved', (tester) async {
+      // There is no animation switch: the tree reads `Motion.full`, and nothing a
+      // user can change on /setup may turn it off.
+      final (_, probe) = await _pump(tester);
       expect(probe.motionEnabled, isTrue);
-
-      await container.read(appSettingsProvider.notifier).setUiAnimations(false);
-      await tester.pumpAndSettle();
-
-      expect(
-        probe.motionEnabled,
-        isFalse,
-        reason:
-            'a change on /setup must reach every screen, not just the next one',
-      );
     });
 
     testWidgets('the OS setting wins over an enabled preference', (
@@ -134,15 +123,12 @@ void main() {
         tester.binding.platformDispatcher.clearAccessibilityFeaturesTestValue,
       );
 
-      final (_, probe) = await _pump(
-        tester,
-        settings: const AppSettings(uiAnimations: true),
-      );
+      final (_, probe) = await _pump(tester);
 
       expect(
         probe.motionEnabled,
         isFalse,
-        reason: 'motion may only ever be removed, never forced on',
+        reason: 'the OS accessibility flag may remove motion from the tree',
       );
     });
 

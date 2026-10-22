@@ -26,7 +26,7 @@ class PrefsSettingsStore implements SettingsStore {
       final prefs = await SharedPreferences.getInstance();
       _prefs = prefs;
       final raw = <String, Object?>{
-        for (final key in ['theme', 'language', 'uiAnimations'])
+        for (final key in ['theme', 'language', 'accent'])
           key: prefs.get('$_prefix$key'),
       };
       _settings = AppSettings.fromMap(raw);

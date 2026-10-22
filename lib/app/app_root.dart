@@ -23,8 +23,10 @@ typedef ScreenBuilder = Widget Function(
 ///
 ///  * [AppSettings.theme] -> `MaterialApp.themeMode`
 ///  * [AppSettings.language] -> `MaterialApp.locale`, `null` meaning "follow the OS"
-///  * [AppSettings.uiAnimations] -> `MotionScope`, which ORs in the OS
-///    accessibility setting and can therefore only ever turn motion off
+///  * [AppSettings.accent] -> the seeded `ColorScheme` of both themes
+///
+/// Motion is not a setting: `MotionScope` is always `Motion.full`, and only the OS
+/// accessibility flag (OR'd inside `MotionScope.of`) can ever turn it off.
 ///
 /// Keeping this in one widget is what stops a screen from reaching for a
 /// `Theme.of` or a raw `Locale` and inventing a second, disagreeing answer.
@@ -46,8 +48,7 @@ class AppRoot extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(appSettingsProvider);
-    final motion =
-        overrideMotion ?? Motion.full.copyWith(enabled: settings.uiAnimations);
+    final motion = overrideMotion ?? Motion.full;
 
     return MotionScope(
       motion: motion,
@@ -109,8 +110,14 @@ class _AppState extends State<_App> {
       routerConfig: _router,
       title: 'oh my mc',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.material(Brightness.light),
-      darkTheme: AppTheme.material(Brightness.dark),
+      theme: AppTheme.material(
+        Brightness.light,
+        accent: widget.settings.accent,
+      ),
+      darkTheme: AppTheme.material(
+        Brightness.dark,
+        accent: widget.settings.accent,
+      ),
       themeMode: switch (widget.settings.theme) {
         ThemePreference.system => m3.ThemeMode.system,
         ThemePreference.light => m3.ThemeMode.light,

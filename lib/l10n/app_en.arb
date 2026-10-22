@@ -169,6 +169,38 @@
     "description": "Setup section: download source and mirror."
   },
   "setupUi": "Interface",
+  "setupAccent": "Accent colour",
+  "@setupAccent": {
+    "description": "Settings row label: the accent colour the whole theme is seeded from."
+  },
+  "setupAccentHint": "Seeds every colour in the app. Both themes follow it.",
+  "@setupAccentHint": {
+    "description": "Settings row hint under the accent label."
+  },
+  "accentBlue": "Blue",
+  "@accentBlue": {
+    "description": "Name of the blue accent swatch, used as its tooltip and screen-reader label."
+  },
+  "accentTeal": "Teal",
+  "@accentTeal": {
+    "description": "Name of the teal accent swatch."
+  },
+  "accentGreen": "Green",
+  "@accentGreen": {
+    "description": "Name of the green accent swatch."
+  },
+  "accentOrange": "Orange",
+  "@accentOrange": {
+    "description": "Name of the orange accent swatch."
+  },
+  "accentRed": "Red",
+  "@accentRed": {
+    "description": "Name of the red accent swatch."
+  },
+  "accentPurple": "Purple",
+  "@accentPurple": {
+    "description": "Name of the purple accent swatch."
+  },
   "@setupUi": {
     "description": "Setup section: theme, motion and language."
   },
@@ -179,10 +211,6 @@
   "setupLanguage": "Language",
   "@setupLanguage": {
     "description": "Interface language setting."
-  },
-  "setupMotion": "Animations",
-  "@setupMotion": {
-    "description": "Toggles UI motion."
   },
   "setupThemeMode": "Theme",
   "setupThemeHint": "Follow system changes with the OS.",
@@ -200,18 +228,6 @@
   "languageChinese": "Chinese",
   "@languageChinese": {
     "description": "Language choice: Chinese (either script)."
-  },
-  "setupMotionHint": "Also follows your system's reduce-motion setting.",
-  "@setupMotionHint": {
-    "description": "Hint under the animation switch."
-  },
-  "setupMotionOn": "Animations on",
-  "@setupMotionOn": {
-    "description": "Animation switch, on."
-  },
-  "setupMotionOff": "Animations off",
-  "@setupMotionOff": {
-    "description": "Animation switch, off."
   },
   "setupPlayerName": "Player name",
   "@setupPlayerName": {

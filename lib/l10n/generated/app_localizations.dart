@@ -320,6 +320,54 @@ abstract class AppLocalizations {
   /// **'Interface'**
   String get setupUi;
 
+  /// Settings row label: the accent colour the whole theme is seeded from.
+  ///
+  /// In en, this message translates to:
+  /// **'Accent colour'**
+  String get setupAccent;
+
+  /// Settings row hint under the accent label.
+  ///
+  /// In en, this message translates to:
+  /// **'Seeds every colour in the app. Both themes follow it.'**
+  String get setupAccentHint;
+
+  /// Name of the blue accent swatch, used as its tooltip and screen-reader label.
+  ///
+  /// In en, this message translates to:
+  /// **'Blue'**
+  String get accentBlue;
+
+  /// Name of the teal accent swatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Teal'**
+  String get accentTeal;
+
+  /// Name of the green accent swatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Green'**
+  String get accentGreen;
+
+  /// Name of the orange accent swatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Orange'**
+  String get accentOrange;
+
+  /// Name of the red accent swatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Red'**
+  String get accentRed;
+
+  /// Name of the purple accent swatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Purple'**
+  String get accentPurple;
+
   /// Memory allocation setting.
   ///
   /// In en, this message translates to:
@@ -331,12 +379,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Language'**
   String get setupLanguage;
-
-  /// Toggles UI motion.
-  ///
-  /// In en, this message translates to:
-  /// **'Animations'**
-  String get setupMotion;
 
   /// Light/dark/system theme choice.
   ///
@@ -367,24 +409,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Chinese'**
   String get languageChinese;
-
-  /// Hint under the animation switch.
-  ///
-  /// In en, this message translates to:
-  /// **'Also follows your system\'s reduce-motion setting.'**
-  String get setupMotionHint;
-
-  /// Animation switch, on.
-  ///
-  /// In en, this message translates to:
-  /// **'Animations on'**
-  String get setupMotionOn;
-
-  /// Animation switch, off.
-  ///
-  /// In en, this message translates to:
-  /// **'Animations off'**
-  String get setupMotionOff;
 
   /// Label for the offline player name field.
   ///

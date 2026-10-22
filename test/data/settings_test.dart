@@ -8,11 +8,11 @@ void main() {
     test('round-trips every value', () {
       for (final theme in ThemePreference.values) {
         for (final language in LanguagePreference.values) {
-          for (final animations in [true, false]) {
+          for (final accent in AccentChoice.values) {
             final original = AppSettings(
               theme: theme,
               language: language,
-              uiAnimations: animations,
+              accent: accent,
             );
             expect(
               AppSettings.fromMap(original.toMap()),
@@ -32,7 +32,7 @@ void main() {
       final settings = AppSettings.fromMap(const {
         'theme': 'chartreuse',
         'language': 'klingon',
-        'uiAnimations': 'yes please',
+        'accent': 'chartreuse',
       });
       expect(settings, AppSettings.defaults);
     });
@@ -58,8 +58,8 @@ void main() {
       expect(map['language'], 'chinese');
     });
 
-    test('uiAnimations defaults to on', () {
-      expect(AppSettings.defaults.uiAnimations, isTrue);
+    test('the accent defaults to blue', () {
+      expect(AppSettings.defaults.accent, AccentChoice.blue);
     });
   });
 
@@ -69,7 +69,7 @@ void main() {
       await store.init();
       expect(store.current, AppSettings.defaults);
 
-      const next = AppSettings(uiAnimations: false);
+      const next = AppSettings(accent: AccentChoice.teal);
       await store.write(next);
       expect(store.current, next);
       expect(store.writes, 1);
@@ -115,12 +115,12 @@ void main() {
 
         await container
             .read(appSettingsProvider.notifier)
-            .setUiAnimations(false);
+            .setAccent(AccentChoice.purple);
 
-        expect(container.read(appSettingsProvider).uiAnimations, isFalse);
+        expect(container.read(appSettingsProvider).accent, AccentChoice.purple);
         expect(
-          store.current.uiAnimations,
-          isFalse,
+          store.current.accent,
+          AccentChoice.purple,
           reason: 'a change that is not written is lost on the next launch',
         );
       },
@@ -139,7 +139,7 @@ void main() {
       final settings = container.read(appSettingsProvider);
       expect(settings.theme, ThemePreference.dark);
       expect(settings.language, LanguagePreference.english);
-      expect(settings.uiAnimations, isTrue);
+      expect(settings.accent, AccentChoice.blue);
     });
   });
 }

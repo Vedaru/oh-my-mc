@@ -1,6 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:material_ui/material_ui.dart' as m3;
 
+import '../../data/settings.dart';
+
 /// The accent seed and every theme derived from it.
 ///
 /// There is exactly one place where a colour is chosen, and one colour system:
@@ -8,19 +10,53 @@ import 'package:material_ui/material_ui.dart' as m3;
 /// seeded from the same value would still drift - the schemas differ - so a
 /// single `ColorScheme` is a correctness property, not tidiness.
 abstract final class AppTheme {
-  /// Seed for the colour system. A launcher's accent is a user preference, not
-  /// a brand statement, so this is the default rather than a constant.
-  static const m3.Color accentSeed = m3.Color(0xFF0078D4);
+  /// The selectable accents. A launcher's accent is a user preference, not a
+  /// brand statement, so the palette is short and neutral enough that every seed
+  /// produces a usable surface ramp in both brightnesses.
+  static const accents = <AccentChoice, m3.Color>{
+    AccentChoice.blue: m3.Color(0xFF0078D4),
+    AccentChoice.teal: m3.Color(0xFF00897B),
+    AccentChoice.green: m3.Color(0xFF388E3C),
+    AccentChoice.orange: m3.Color(0xFFEF6C00),
+    AccentChoice.red: m3.Color(0xFFC62828),
+    AccentChoice.purple: m3.Color(0xFF6A3AB2),
+  };
+
+  /// The seed for [choice]. Unknown values cannot occur (the enum is closed) but
+  /// a null-safe lookup keeps the call sites free of `!`.
+  static m3.Color seedFor(AccentChoice choice) =>
+      accents[choice] ?? accents[AccentChoice.blue]!;
 
   /// The `ThemeData` handed to `MaterialApp`.
-  static m3.ThemeData material(Brightness brightness) => m3.ThemeData(
-    useMaterial3: true,
-    brightness: brightness,
-    colorScheme: m3.ColorScheme.fromSeed(
-      seedColor: accentSeed,
+  ///
+  /// Elevation is expressed as **tone, not shadow**: Material 3 renders a raised
+  /// surface as a lighter (dark theme) or tinted (light theme) container from the
+  /// same neutral ramp, so stacking surfaces never produces a drop shadow. Flutter
+  /// still paints one for dialogs and menus by default, hence the zeroed
+  /// elevations and the explicit container colours below - the separation is the
+  /// colour step, which is the part a user should read.
+  static m3.ThemeData material(
+    Brightness brightness, {
+    AccentChoice accent = AccentChoice.blue,
+  }) {
+    final scheme = m3.ColorScheme.fromSeed(
+      seedColor: seedFor(accent),
       brightness: brightness,
-    ),
-  );
+    );
+    return m3.ThemeData(
+      useMaterial3: true,
+      brightness: brightness,
+      colorScheme: scheme,
+      dialogTheme: m3.DialogThemeData(
+        elevation: 0,
+        backgroundColor: scheme.surfaceContainerHigh,
+      ),
+      popupMenuTheme: m3.PopupMenuThemeData(
+        elevation: 0,
+        color: scheme.surfaceContainer,
+      ),
+    );
+  }
 
   /// Semantic type roles.
   ///

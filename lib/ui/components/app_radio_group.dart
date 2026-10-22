@@ -55,13 +55,10 @@ class AppRadioGroup<T> extends StatelessWidget {
                   padding: const m3.EdgeInsets.symmetric(horizontal: 4),
                   child: m3.Row(
                     children: [
-                      m3.Radio<T>(
-                        value: entry.key,
-                        // Compact density pairs the radio's 40 px box with the
-                        // switch's own 40 px row, so a group and a toggle in the
-                        // same settings column start on the same line.
-                        visualDensity: m3.VisualDensity.compact,
-                      ),
+                      // Default density: MD3's 20 px radio is the control this
+                      // list should look like, and compact density shrinks the
+                      // circle along with its tap target.
+                      m3.Radio<T>(value: entry.key),
                       const m3.SizedBox(width: 8),
                       // The label carries the app's body style explicitly: an
                       // unstyled `Text` inherits whatever the nearest

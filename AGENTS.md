@@ -156,10 +156,22 @@ directory and `test/shots/` are now git-ignored.)
 - **Screens use `PageBody` / `PageTitle`**, never their own outer padding. That is what keeps the six
   pages on one grid: 24 px page padding, a 1040 px content cap, and one title style.
 - **The rail is fixed-width with the label under the icon** (`NavigationRailLabelType.all`). Do not
-  switch it back to `extended:` (216 px spent on five two-character labels) and do not make it
-  collapsible (the body's constraints would then depend on a control inside the rail).
+  switch it back to `extended:` (216 px spent on short labels) and do not make it collapsible (the
+  body's constraints would then depend on a control inside the rail). No divider between rail and
+  page: they are one surface, separated by tone.
+- **Launch owns version selection** (PCL's operation logic). The launch page's picker lists every
+  instance and links to management; `/instances` is a *management* route, not a rail item. A second
+  tab that only chooses what the launch page already chooses is two doors to one room.
 - **A card is one filled surface**: `surfaceContainerLow`, 16 px radius, no outline; only a selected
   item carries a border. Boxed cards on a dark surface read as unrelated panels.
+- **No shadows, no glows.** Material 3 expresses elevation as *tone*: a raised surface is
+  `surfaceContainerLow → surfaceContainer → surfaceContainerHigh` from one neutral ramp. Dialogs and
+  menus have their elevation zeroed in `AppTheme.material` for the same reason. A `BoxShadow` in
+  `lib/ui/` is a bug: use the next container tone instead.
+- **Motion has no switch.** Animation is part of the design; `MotionScope` is always `Motion.full` and
+  only the OS accessibility flag can turn it off. Do not add a settings toggle for it.
+- **Accent colours are a setting** (`AppSettings.accent` → `AppTheme.seedFor`). Every colour comes from
+  the seeded `ColorScheme`; status hues stay fixed (see `AppTheme.status`).
 - **`material_ui` (`m3`) is the only style package.** `material_3_expressive` (`m3e`) was removed in
   `PLAN-M11` W7 — do not reintroduce it, and do not import `package:flutter/material.dart` (a second tree).
   If a control needs a variant `material_ui` lacks, add a wrapper in `lib/ui/components/`, never an

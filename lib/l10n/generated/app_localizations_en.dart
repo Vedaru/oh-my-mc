@@ -137,13 +137,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get setupUi => 'Interface';
 
   @override
+  String get setupAccent => 'Accent colour';
+
+  @override
+  String get setupAccentHint =>
+      'Seeds every colour in the app. Both themes follow it.';
+
+  @override
+  String get accentBlue => 'Blue';
+
+  @override
+  String get accentTeal => 'Teal';
+
+  @override
+  String get accentGreen => 'Green';
+
+  @override
+  String get accentOrange => 'Orange';
+
+  @override
+  String get accentRed => 'Red';
+
+  @override
+  String get accentPurple => 'Purple';
+
+  @override
   String get setupMemory => 'Memory';
 
   @override
   String get setupLanguage => 'Language';
-
-  @override
-  String get setupMotion => 'Animations';
 
   @override
   String get setupThemeMode => 'Theme';
@@ -160,16 +182,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get languageChinese => 'Chinese';
-
-  @override
-  String get setupMotionHint =>
-      'Also follows your system\'s reduce-motion setting.';
-
-  @override
-  String get setupMotionOn => 'Animations on';
-
-  @override
-  String get setupMotionOff => 'Animations off';
 
   @override
   String get setupPlayerName => 'Player name';

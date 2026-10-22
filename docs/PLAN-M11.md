@@ -455,3 +455,34 @@ forward instead of a dead button, and an idle console is as tall as its own mess
 **Verification**: `test/ui/shell_material_test.dart` mounts every route and fails if any `Text`
 resolves the 48 px error style; `test/dbg_shots_test.dart` renders all six pages (and two zh shots) so
 the layout can be looked at, not just asserted. Screens 1440x900.
+
+---
+
+## 9. Visual language pass (from the follow-up screenshots)
+
+Four decisions that came out of reviewing the rendered pages, in the order they matter:
+
+**Elevation is tone, not shadow.** MD3 renders a raised surface as a lighter or tinted container from
+the same neutral ramp; stacking surfaces never produces a drop shadow. `AppTheme.material` therefore
+zeroes the dialog and popup-menu elevations and gives both an explicit container colour, and the one
+custom shadow in the tree (the pressed Play button's glow, in `Emphasis`) is gone - the press scale is
+the signal. A `BoxShadow` anywhere in `lib/ui/` is now a review defect.
+
+**The accent is a setting.** `AppSettings.accent` (a closed enum: blue/teal/green/orange/red/purple)
+seeds `ColorScheme.fromSeed` for both brightnesses, and the settings page shows the palette as a
+swatch row (`AppAccentPicker`). Status colours stay fixed so "installed" does not become a warning
+because someone chose an orange accent.
+
+**Motion has no switch.** Animation is part of the design, so the `/setup` toggle, the
+`AppSettings.uiAnimations` field and its four ARB strings are gone. `MotionScope` is always
+`Motion.full`; only the OS accessibility flag can remove motion, and `MotionScope.of` still ORs it in.
+
+**The launch page follows PCL, and the rail loses the Instances tab.** A launcher's first question is
+*which version*, so the launch page's top control is a version picker listing every instance, with
+version settings beside Play and the instance-management screen at the bottom of the picker's menu.
+Keeping a separate Instances tab meant two tabs choosing the same thing. `/instances` remains a route
+for management, and version settings is still `/instances/<id>`.
+
+**Verification**: 598 tests green (`test/ui/shell_material_test.dart` for the Material ancestor,
+`test/ui/motion_informative_test.dart` for the motion guarantees, `test/data/settings_test.dart` for
+the accent round-trip), plus `test/shots/setup-zh.png` and `launch.png` re-rendered and read by eye.

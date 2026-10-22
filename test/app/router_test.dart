@@ -179,9 +179,9 @@ void main() {
         tester.binding.platformDispatcher.clearAccessibilityFeaturesTestValue,
       );
 
-      // Settings say animations on; the OS overrides. MotionScope can only ever
-      // remove motion, never add it.
-      await pumpApp(tester, settings: const AppSettings(uiAnimations: true));
+      // Motion is on by design; the OS flag overrides it. MotionScope can only
+      // ever remove motion, never add it.
+      await pumpApp(tester);
       liveRouter(tester).go(Routes.setup);
       await tester.pump();
 
@@ -189,10 +189,12 @@ void main() {
       expect(find.text('route:${Routes.launch}'), findsNothing);
     });
 
-    testWidgets('the settings switch turns motion off', (tester) async {
-      await pumpApp(tester, settings: const AppSettings(uiAnimations: false));
+    testWidgets('no app setting can turn motion off', (tester) async {
+      // The old `/setup` toggle is gone; a page change still animates, so the
+      // transition has to be allowed to finish before the old page is gone.
+      await pumpApp(tester);
       liveRouter(tester).go(Routes.download);
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       expect(find.text('route:${Routes.download}'), findsOneWidget);
       expect(find.text('route:${Routes.launch}'), findsNothing);

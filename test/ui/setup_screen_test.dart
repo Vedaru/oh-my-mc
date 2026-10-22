@@ -11,6 +11,7 @@ import 'package:oh_my_mc/data/java_providers.dart';
 import 'package:oh_my_mc/data/settings.dart';
 import 'package:oh_my_mc/data/launch_factory.dart';
 import 'package:oh_my_mc/ui/motion/motion.dart';
+import 'package:oh_my_mc/ui/components/app_accent_picker.dart';
 import 'package:oh_my_mc/ui/setup/setup_screen.dart';
 
 import '../support/harness.dart';
@@ -128,15 +129,24 @@ void main() {
     );
   });
 
-  testWidgets('the animation switch flips and persists', (tester) async {
+  testWidgets('picking an accent swatch persists it', (tester) async {
     final container = await pump(tester);
 
-    expect(find.text('Animations on'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('setup-motion')));
+    // Blue is the default, so its swatch is the selected one.
+    expect(container.read(appSettingsProvider).accent, AccentChoice.blue);
+
+    await tester.tap(find.byKey(const ValueKey('accent-purple')));
     await tester.pumpAndSettle();
 
-    expect(container.read(appSettingsProvider).uiAnimations, isFalse);
-    expect(find.text('Animations off'), findsOneWidget);
+    expect(container.read(appSettingsProvider).accent, AccentChoice.purple);
+  });
+
+  testWidgets('there is no animation switch any more', (tester) async {
+    await pump(tester);
+
+    // Motion is part of the design: only the OS accessibility flag can turn it
+    // off, so the screen must not offer a toggle.
+    expect(find.byKey(const ValueKey('setup-motion')), findsNothing);
   });
 
   testWidgets('a valid player name is stored', (tester) async {
@@ -198,12 +208,15 @@ void main() {
       settings: const AppSettings(
         theme: ThemePreference.light,
         language: LanguagePreference.chinese,
-        uiAnimations: false,
+        accent: AccentChoice.green,
         playerName: 'Alex',
       ),
     );
 
-    expect(find.text('Animations off'), findsOneWidget);
+    expect(
+      tester.widget<AppAccentPicker>(find.byType(AppAccentPicker)).value,
+      AccentChoice.green,
+    );
     final field = tester.widget<m3.TextField>(
       find.descendant(
         of: find.byKey(const ValueKey('setup-player-name')),

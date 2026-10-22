@@ -116,14 +116,17 @@ void main() {
     testWidgets('motion on shrinks while the pointer is down and returns', (
       tester,
     ) async {
+      // The child has to be hit-testable, exactly like the button `Emphasis`
+      // wraps in the app: `Listener` defaults to `deferToChild`, so a bare
+      // `SizedBox` has no press surface to hear in the first place.
       await tester.pumpWidget(
         _app(
           Motion.full,
           const Emphasis(
-            child: m3.SizedBox(
+            child: m3.ColoredBox(
               key: m3.ValueKey('target'),
-              width: 80,
-              height: 40,
+              color: m3.Color(0xFF202020),
+              child: m3.SizedBox(width: 80, height: 40),
             ),
           ),
         ),

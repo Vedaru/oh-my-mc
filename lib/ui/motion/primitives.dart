@@ -255,21 +255,17 @@ class AmbientLoop extends StatelessWidget {
 /// With motion disabled it returns [child] and installs **no listener**: no
 /// controller, no frames, and no changing tap area. The disabled tree is
 /// exactly the tree the caller wrote.
+///
+/// There is no glow: Material 3 draws depth with tone, not with a shadow or a
+/// halo, and a coloured halo under a filled button is exactly the effect the
+/// spec avoids.
 class Emphasis extends StatefulWidget {
-  const Emphasis({
-    required this.child,
-    this.scale = 0.97,
-    this.glow,
-    super.key,
-  });
+  const Emphasis({required this.child, this.scale = 0.97, super.key});
 
   final Widget child;
 
   /// How far the child shrinks while held. `1` disables the scale.
   final double scale;
-
-  /// Halo painted behind the child while held. Null means no halo.
-  final Color? glow;
 
   @override
   State<Emphasis> createState() => _EmphasisState();
@@ -288,7 +284,6 @@ class _EmphasisState extends State<Emphasis> {
     final motion = MotionScope.of(context);
     if (!motion.enabled) return widget.child;
 
-    final glow = widget.glow;
     return Listener(
       onPointerDown: (_) => _setHeld(true),
       onPointerUp: (_) => _setHeld(false),
@@ -297,18 +292,7 @@ class _EmphasisState extends State<Emphasis> {
         scale: _held ? widget.scale : 1,
         duration: Durations.xfast,
         curve: MotionCurves.spring,
-        child: AnimatedContainer(
-          duration: Durations.xfast,
-          curve: MotionCurves.enter,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(999),
-            boxShadow: [
-              if (_held && glow != null)
-                BoxShadow(color: glow, blurRadius: 18, spreadRadius: 2),
-            ],
-          ),
-          child: widget.child,
-        ),
+        child: widget.child,
       ),
     );
   }

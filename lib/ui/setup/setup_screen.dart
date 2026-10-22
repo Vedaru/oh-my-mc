@@ -10,10 +10,10 @@ import '../motion/motion.dart';
 import '../shell/shell_icons.dart';
 import '../theme/app_theme.dart';
 import 'java_panel.dart';
+import '../components/app_accent_picker.dart';
 import '../components/app_radio_group.dart';
 import '../components/page_body.dart';
 import '../components/app_slider.dart';
-import '../components/app_switch.dart';
 import '../components/app_text_field.dart';
 
 /// Everything the launcher lets a user change.
@@ -71,30 +71,14 @@ class SetupScreen extends ConsumerWidget {
                   onChanged: notifier.setTheme,
                 ),
               ),
+              // No animation switch: motion is part of the design, and only the
+              // OS accessibility flag can turn it off (`MotionScope` ORs it in).
               _SettingRow(
-                label: l10n.setupMotion,
-                hint: l10n.setupMotionHint,
-                child: m3.Row(
-                  children: [
-                    // Matches the radio group's own inset, so the switch and the
-                    // radio buttons above it align on one vertical line.
-                    const m3.SizedBox(width: 8),
-                    AppSwitch(
-                      key: const m3.ValueKey('setup-motion'),
-                      value: settings.uiAnimations,
-                      // Turning this on cannot override the OS accessibility
-                      // setting: MotionScope ORs them.
-                      onChanged: notifier.setUiAnimations,
-                      label: l10n.setupMotion,
-                    ),
-                    const m3.SizedBox(width: 10),
-                    m3.Text(
-                      settings.uiAnimations
-                          ? l10n.setupMotionOn
-                          : l10n.setupMotionOff,
-                      style: AppTheme.body(context),
-                    ),
-                  ],
+                label: l10n.setupAccent,
+                hint: l10n.setupAccentHint,
+                child: AppAccentPicker(
+                  value: settings.accent,
+                  onChanged: notifier.setAccent,
                 ),
               ),
             ],

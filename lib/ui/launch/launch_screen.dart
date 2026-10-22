@@ -32,13 +32,17 @@ class LaunchScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final instances = ref.watch(instanceListProvider);
+    final list = ref.watch(instanceListProvider);
     final session = ref.watch(launchControllerProvider);
     final controller = ref.read(launchControllerProvider.notifier);
 
-    final selected = switch (instances) {
+    final selected = switch (list) {
       InstanceListReady(:final selected) => selected,
       _ => null,
+    };
+    final all = switch (list) {
+      InstanceListReady(:final instances) => instances,
+      _ => const <Instance>[],
     };
 
     final busy = session.isBusy;
@@ -56,7 +60,7 @@ class LaunchScreen extends ConsumerWidget {
           if (selected == null)
             const Expanded(child: _NothingSelected())
           else ...[
-            _Headline(instance: selected, session: session),
+            _VersionPicker(selected: selected, instances: all),
             const m3.SizedBox(height: 20),
             _PlayRow(
               instance: selected,
@@ -170,56 +174,132 @@ class _JavaOfferArea extends ConsumerWidget {
 
 /// The instance name plus its version, animated so a selection change reads as
 /// a change rather than as text swapping in place.
-class _Headline extends StatelessWidget {
-  const _Headline({required this.instance, required this.session});
+/// The version picker - PCL's version card.
+///
+/// A launch page's first question is *which* version, so the answer is a control,
+/// not a label: clicking it lists every instance, and the last item is the
+/// management screen (which is where creation lives, exactly like PCL's version
+/// list dialog). The selection goes through [instanceListProvider] so the choice
+/// survives a restart and every screen agrees on it.
+class _VersionPicker extends ConsumerWidget {
+  const _VersionPicker({required this.selected, required this.instances});
 
-  final Instance? instance;
-  final LaunchSession session;
+  final Instance? selected;
+  final List<Instance> instances;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final scheme = m3.Theme.of(context).colorScheme;
-    final motion = MotionScope.of(context);
+    final instance = selected;
 
-    final title = instance?.displayName ?? l10n.noInstanceSelected;
     final subtitle = instance == null
-        ? null
+        ? l10n.noInstanceSelected
         : [
-            instance!.versionId,
-            if (instance!.loader.isModded) instance!.loader.name,
+            instance.versionId,
+            if (instance.loader.isModded) instance.loader.name,
           ].join('  ·  ');
 
-    return m3.Column(
-      crossAxisAlignment: m3.CrossAxisAlignment.start,
-      children: [
-        m3.AnimatedSwitcher(
-          duration: motion.of(Durations.base),
-          switchInCurve: MotionCurves.enter,
-          switchOutCurve: MotionCurves.exit,
-          transitionBuilder: (child, animation) => m3.FadeTransition(
-            opacity: animation,
-            child: m3.SlideTransition(
-              position: m3.Tween<m3.Offset>(
-                begin: const m3.Offset(0, 0.12),
-                end: m3.Offset.zero,
-              ).animate(animation),
-              child: child,
+    return m3.PopupMenuButton<int>(
+      key: const m3.ValueKey('launch-version-picker'),
+      tooltip: '',
+      position: m3.PopupMenuPosition.under,
+      onSelected: (value) {
+        if (value < 0) {
+          context.go(Routes.instances);
+          return;
+        }
+        ref.read(instanceListProvider.notifier).select(instances[value].id);
+      },
+      itemBuilder: (context) => [
+        for (var i = 0; i < instances.length; i++)
+          m3.PopupMenuItem<int>(
+            value: i,
+            child: m3.Row(
+              children: [
+                m3.SizedBox(
+                  width: 22,
+                  child: identical(instances[i].id, instance?.id)
+                      ? m3.Icon(
+                          ShellIcons.check,
+                          size: 16,
+                          color: scheme.primary,
+                        )
+                      : null,
+                ),
+                m3.Expanded(
+                  child: m3.Column(
+                    crossAxisAlignment: m3.CrossAxisAlignment.start,
+                    children: [
+                      m3.Text(
+                        instances[i].displayName,
+                        style: AppTheme.body(context),
+                      ),
+                      m3.Text(
+                        instances[i].versionId,
+                        style: AppTheme.caption(context)
+                            .copyWith(color: scheme.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-          child: m3.Text(
-            title,
-            key: m3.ValueKey(title),
-            style: AppTheme.display(context),
+        const m3.PopupMenuDivider(),
+        m3.PopupMenuItem<int>(
+          value: -1,
+          child: m3.Row(
+            children: [
+              m3.Icon(ShellIcons.list, size: 16),
+              const m3.SizedBox(width: 10),
+              m3.Text(l10n.navInstances, style: AppTheme.body(context)),
+            ],
           ),
         ),
-        if (subtitle != null)
-          m3.Text(
-            subtitle,
-            style: AppTheme.caption(context)
-                .copyWith(color: scheme.onSurfaceVariant),
-          ),
       ],
+      child: m3.Container(
+        padding: const m3.EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: m3.BoxDecoration(
+          color: scheme.surfaceContainerLow,
+          borderRadius: m3.BorderRadius.circular(16),
+        ),
+        child: m3.Row(
+          children: [
+            m3.Icon(
+              instance != null && instance.loader.isModded
+                  ? ShellIcons.addon
+                  : ShellIcons.instance,
+              size: 26,
+              color: scheme.primary,
+            ),
+            const m3.SizedBox(width: 14),
+            m3.Expanded(
+              child: m3.Column(
+                crossAxisAlignment: m3.CrossAxisAlignment.start,
+                children: [
+                  m3.Text(
+                    instance?.displayName ?? l10n.noInstanceSelected,
+                    key: const m3.ValueKey('launch-version-name'),
+                    style: AppTheme.title(context),
+                    maxLines: 1,
+                    overflow: m3.TextOverflow.ellipsis,
+                  ),
+                  const m3.SizedBox(height: 2),
+                  m3.Text(
+                    subtitle,
+                    style: AppTheme.caption(context)
+                        .copyWith(color: scheme.onSurfaceVariant),
+                    maxLines: 1,
+                    overflow: m3.TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            m3.Icon(m3.Icons.expand_more, color: scheme.onSurfaceVariant),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -243,68 +323,88 @@ class _PlayRow extends StatelessWidget {
     final motion = MotionScope.of(context);
     final scheme = m3.Theme.of(context).colorScheme;
 
-    return m3.Row(
+    return m3.Column(
+      crossAxisAlignment: m3.CrossAxisAlignment.start,
       children: [
-        // Press feedback: the button gives under the pointer and springs back.
-        // It reads as "heard you" on the one control the whole screen exists
-        // for; motion-off returns the plain button, no listener (PLAN-M11 §3.4).
-        Emphasis(
-          glow: scheme.primary.withValues(alpha: 0.45),
-          child: AppButton(
-            key: const m3.ValueKey('play'),
-            onPressed: onPlay,
-            style: AppButtonStyle.filled,
-            size: AppButtonSize.lg,
-            // A pulsing dot, not a spinner: the launch is one indeterminate wait,
-            // and a dot says "alive" without pretending to know how far along it
-            // is. AmbientLoop renders its resting frame and creates no ticker
-            // when motion is off.
-            icon: session.isBusy
-                ? AmbientLoop(
-                    tween: Tween<double>(begin: 0.35, end: 1),
-                    duration: Durations.slow,
-                    builder: (context, value, _) => m3.Opacity(
-                      opacity: value,
-                      child: m3.SizedBox(
-                        width: 10,
-                        height: 10,
-                        child: m3.DecoratedBox(
-                          decoration: m3.BoxDecoration(
-                            color: scheme.onPrimary,
-                            shape: m3.BoxShape.circle,
+        m3.Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          crossAxisAlignment: m3.WrapCrossAlignment.center,
+          children: [
+            // Press feedback: the button gives under the pointer and springs back.
+            // It reads as "heard you" on the one control the whole screen exists
+            // for; motion-off returns the plain button, no listener (PLAN-M11 §3.4).
+            Emphasis(
+              child: AppButton(
+                key: const m3.ValueKey('play'),
+                onPressed: onPlay,
+                style: AppButtonStyle.filled,
+                size: AppButtonSize.lg,
+                // A pulsing dot, not a spinner: the launch is one indeterminate wait,
+                // and a dot says "alive" without pretending to know how far along it
+                // is. AmbientLoop renders its resting frame and creates no ticker
+                // when motion is off.
+                icon: session.isBusy
+                    ? AmbientLoop(
+                        tween: Tween<double>(begin: 0.35, end: 1),
+                        duration: Durations.slow,
+                        builder: (context, value, _) => m3.Opacity(
+                          opacity: value,
+                          child: m3.SizedBox(
+                            width: 10,
+                            height: 10,
+                            child: m3.DecoratedBox(
+                              decoration: m3.BoxDecoration(
+                                color: scheme.onPrimary,
+                                shape: m3.BoxShape.circle,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                  )
-                : const m3.Icon(ShellIcons.play, size: 16),
-            label: m3.Text(session.isBusy ? l10n.launching : l10n.playButton),
-          ),
+                      )
+                    : const m3.Icon(ShellIcons.play, size: 16),
+                label: m3.Text(
+                  session.isBusy ? l10n.launching : l10n.playButton,
+                ),
+              ),
+            ),
+            // PCL puts version settings right next to Play, because that is the moment
+            // the user notices "this one needs more memory / another Java".
+            if (instance != null)
+              AppButton(
+                key: const m3.ValueKey('launch-open-settings'),
+                onPressed: () =>
+                    context.go(Routes.instanceDetail(instance!.id)),
+                style: AppButtonStyle.outlined,
+                icon: const m3.Icon(ShellIcons.settings, size: 14),
+                label: m3.Text(l10n.instanceOpen),
+              ),
+            // The stop button only exists while something can be stopped, and it
+            // fades rather than popping so the row does not jump.
+            m3.AnimatedSwitcher(
+              duration: motion.of(Durations.fast),
+              switchInCurve: MotionCurves.enter,
+              switchOutCurve: MotionCurves.exit,
+              child: session.canStop
+                  ? AppButton(
+                      key: const m3.ValueKey('stop'),
+                      onPressed: onStop,
+                      style: AppButtonStyle.outlined,
+                      icon: const m3.Icon(ShellIcons.stop, size: 13),
+                      label: m3.Text(l10n.stopButton),
+                    )
+                  : const m3.SizedBox.shrink(key: m3.ValueKey('no-stop')),
+            ),
+          ],
         ),
-        const m3.SizedBox(width: 8),
-        // The stop button only exists while something can be stopped, and it
-        // fades rather than popping so the row does not jump.
-        m3.AnimatedSwitcher(
-          duration: motion.of(Durations.fast),
-          switchInCurve: MotionCurves.enter,
-          switchOutCurve: MotionCurves.exit,
-          child: session.canStop
-              ? AppButton(
-                  key: const m3.ValueKey('stop'),
-                  onPressed: onStop,
-                  style: AppButtonStyle.outlined,
-                  icon: const m3.Icon(ShellIcons.stop, size: 13),
-                  label: m3.Text(l10n.stopButton),
-                )
-              : const m3.SizedBox.shrink(key: m3.ValueKey('no-stop')),
-        ),
-        const m3.Spacer(),
-        if (session.state == LaunchState.exited)
+        if (session.state == LaunchState.exited) ...[
+          const m3.SizedBox(height: 10),
           _ExitBadge(
             exitCode: session.exitCode,
             failure: session.failure,
             uptime: session.uptime,
           ),
+        ],
       ],
     );
   }
