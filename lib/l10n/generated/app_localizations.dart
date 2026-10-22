@@ -361,6 +361,210 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Download failed'**
   String get errorDownloadFailed;
+
+  /// Shown on an instance card that has never been launched.
+  ///
+  /// In en, this message translates to:
+  /// **'Never played'**
+  String get instanceNeverPlayed;
+
+  /// Placeholder in the new-instance name field.
+  ///
+  /// In en, this message translates to:
+  /// **'Name this instance'**
+  String get instanceNameHint;
+
+  /// Shown when the user has no instances at all.
+  ///
+  /// In en, this message translates to:
+  /// **'No instances yet'**
+  String get instancesEmpty;
+
+  /// Shown when part of the instance file was unreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 instance could not be read and was skipped} other{{count} instances could not be read and were skipped}}'**
+  String instancesSkipped(int count);
+
+  /// Dismisses a dialog without doing anything.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get actionCancel;
+
+  /// Java could not be started as a process.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not start Java. Check the Java setting.'**
+  String get launchFailedSpawn;
+
+  /// A second launch was attempted while one was running.
+  ///
+  /// In en, this message translates to:
+  /// **'Launch refused: an instance is already running.'**
+  String get launchFailedRefused;
+
+  /// Preparing the command line failed; details are in the log.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not prepare the launch. See the log.'**
+  String get launchFailedPrepare;
+
+  /// Shown after a session ends.
+  ///
+  /// In en, this message translates to:
+  /// **'Exited with code {code} after {duration}'**
+  String launchExited(int code, String duration);
+
+  /// Shown on a destination whose screen is not implemented yet.
+  ///
+  /// In en, this message translates to:
+  /// **'This screen is not built yet'**
+  String get screenNotReady;
+
+  /// Placeholder in the version search box.
+  ///
+  /// In en, this message translates to:
+  /// **'Search versions'**
+  String get downloadSearchHint;
+
+  /// Shown when the version search box filters out every row.
+  ///
+  /// In en, this message translates to:
+  /// **'No version matches “{query}”'**
+  String downloadSearchEmpty(String query);
+
+  /// Title of the install progress panel; the version is a Minecraft version id such as 1.20.1.
+  ///
+  /// In en, this message translates to:
+  /// **'Installing {version}'**
+  String downloadInstalling(String version);
+
+  /// Install progress step: fetching the version manifest.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading version list'**
+  String get downloadPhaseManifest;
+
+  /// Install progress step: fetching the version JSON.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading version metadata'**
+  String get downloadPhaseVersionJson;
+
+  /// Install progress step: fetching parent versions a modded version inherits from.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading inherited metadata'**
+  String get downloadPhaseParents;
+
+  /// Install progress step: fetching the asset index.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading asset index'**
+  String get downloadPhaseAssetIndex;
+
+  /// Install progress step: planning the file set. Runs before any byte is fetched.
+  ///
+  /// In en, this message translates to:
+  /// **'Working out what to download'**
+  String get downloadPhasePlanning;
+
+  /// Install progress step: transferring files.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading'**
+  String get downloadPhaseDownload;
+
+  /// Install progress step: extracting native (.dll/.so/.dylib) archives.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpacking native libraries'**
+  String get downloadPhaseNatives;
+
+  /// Install progress step: materializing legacy asset layouts.
+  ///
+  /// In en, this message translates to:
+  /// **'Placing assets'**
+  String get downloadPhaseAssets;
+
+  /// Install progress step: checking every file the install planned is present.
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying files'**
+  String get downloadPhaseVerify;
+
+  /// Position within the install pipeline, shown next to the progress bar.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {step} of {steps}'**
+  String downloadStepOf(int step, int steps);
+
+  /// Bytes downloaded so far, out of the total. Both are preformatted sizes like "12.3 MB".
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total}'**
+  String downloadBytes(String done, String total);
+
+  /// Download speed. The rate is preformatted, e.g. "3.4 MB".
+  ///
+  /// In en, this message translates to:
+  /// **'{rate}/s'**
+  String downloadRate(String rate);
+
+  /// Shown after a successful install.
+  ///
+  /// In en, this message translates to:
+  /// **'{version} is ready to play'**
+  String downloadComplete(String version);
+
+  /// Shown when the install finished but verification found missing or corrupt files.
+  ///
+  /// In en, this message translates to:
+  /// **'{version} installed, but {count} file(s) need repair'**
+  String downloadCompleteWithProblems(String version, int count);
+
+  /// Button that stops a running install.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel install'**
+  String get downloadCancel;
+
+  /// Shown after the user cancels an install.
+  ///
+  /// In en, this message translates to:
+  /// **'Install cancelled'**
+  String get downloadCancelled;
+
+  /// Download source option: Mojang servers.
+  ///
+  /// In en, this message translates to:
+  /// **'Official'**
+  String get downloadSourceOfficial;
+
+  /// Download source option: a community mirror for mainland China. BMCLAPI is a proper name and stays untranslated.
+  ///
+  /// In en, this message translates to:
+  /// **'BMCLAPI mirror'**
+  String get downloadSourceBmclapi;
+
+  /// Toggle that includes snapshot versions in the version list.
+  ///
+  /// In en, this message translates to:
+  /// **'Show snapshots'**
+  String get downloadShowSnapshots;
+
+  /// Shown when the network failed and the cached version list is being used.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline — this version list may be out of date'**
+  String get downloadStaleCache;
+
+  /// Button that retries loading the version list.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload'**
+  String get downloadRetry;
 }
 
 class _AppLocalizationsDelegate

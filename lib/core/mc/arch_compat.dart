@@ -47,6 +47,11 @@ enum BlockerCode {
   /// The install on disk is incomplete: a classpath or natives file the launch
   /// is about to hand the JVM does not exist.
   missingFiles,
+
+  /// The version's own `versions/<id>/<id>.json` is absent or unreadable. A
+  /// distinct code from [missingFiles] because the remedy is different: the
+  /// version was never installed, rather than installed partially.
+  missingVersion,
 }
 
 /// Detects metadata-level blockers for [version] on [host].

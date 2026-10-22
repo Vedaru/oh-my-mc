@@ -136,6 +136,66 @@ class StaggerList extends StatelessWidget {
   }
 }
 
+/// A page's block stack, entering once as a unit.
+///
+/// Deliberately **one** animation around the whole `Column`, not one per child:
+/// wrapping children individually breaks any child that must be a direct flex
+/// child (`Expanded`, `Flexible`), and a three-block page does not need a
+/// cascade — the cascade budget belongs to lists ([StaggerList]).
+class MotionEntrance extends StatelessWidget {
+  const MotionEntrance({
+    required this.children,
+    this.from = EnterFrom.below,
+    this.distance = 16,
+    this.padding = EdgeInsets.zero,
+    super.key,
+  });
+
+  final List<Widget> children;
+  final EnterFrom from;
+  final double distance;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    final motion = MotionScope.of(context);
+    final body = Padding(
+      padding: padding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: children,
+      ),
+    );
+
+    // Motion off returns the plain tree: no controller, no wrapper, so a
+    // disabled page has exactly the render tree it would have without this
+    // widget.
+    if (!motion.enabled) return body;
+
+    return AnimationLimiter(
+      child: AnimationConfiguration.staggeredList(
+        position: 0,
+        duration: motion.stagger.itemDuration,
+        child: SlideAnimation(
+          duration: motion.stagger.itemDuration,
+          curve: motion.stagger.curve,
+          verticalOffset: switch (from) {
+            EnterFrom.below => distance,
+            EnterFrom.above => -distance,
+            _ => 0,
+          },
+          horizontalOffset: switch (from) {
+            EnterFrom.left => -distance,
+            EnterFrom.right => distance,
+            _ => 0,
+          },
+          child: FadeInAnimation(child: body),
+        ),
+      ),
+    );
+  }
+}
+
 /// A slow, looping ambient animation — the "alive" background layer.
 ///
 /// When motion is disabled this renders the builder's steady-state frame once
@@ -148,6 +208,7 @@ class AmbientLoop extends StatelessWidget {
     this.tween,
     this.duration = Durations.ambient,
     this.curve = Curves.linear,
+    this.child,
     super.key,
   });
 
@@ -159,19 +220,25 @@ class AmbientLoop extends StatelessWidget {
   final Duration duration;
   final Curve curve;
 
+  /// Passed through to [builder] unchanged. Supplying it here rather than
+  /// capturing it in the closure lets the framework skip rebuilding the subtree
+  /// on every tick.
+  final Widget? child;
+
   @override
   Widget build(BuildContext context) {
     final motion = MotionScope.of(context);
     final effective = tween ?? Tween<double>(begin: 0, end: 1);
 
     if (!motion.enabled) {
-      return builder(context, effective.end ?? 1, null);
+      return builder(context, effective.end ?? 1, child);
     }
     return LoopAnimationBuilder<double>(
       tween: effective,
       duration: motion.of(duration),
       curve: curve,
       builder: builder,
+      child: child,
     );
   }
 }

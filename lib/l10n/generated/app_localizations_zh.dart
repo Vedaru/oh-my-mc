@@ -150,4 +150,130 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get errorDownloadFailed => '下载失败';
+
+  @override
+  String get instanceNeverPlayed => '从未启动';
+
+  @override
+  String get instanceNameHint => '实例名称';
+
+  @override
+  String get instancesEmpty => '还没有实例';
+
+  @override
+  String instancesSkipped(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '有 $count 个实例无法读取，已跳过',
+      one: '有 1 个实例无法读取，已跳过',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get actionCancel => '取消';
+
+  @override
+  String get launchFailedSpawn => '无法启动 Java，请检查 Java 设置。';
+
+  @override
+  String get launchFailedRefused => '启动被拒绝：已有实例在运行。';
+
+  @override
+  String get launchFailedPrepare => '无法准备启动，请查看日志。';
+
+  @override
+  String launchExited(int code, String duration) {
+    return '已退出，代码 $code，用时 $duration';
+  }
+
+  @override
+  String get screenNotReady => '此界面尚未完成';
+
+  @override
+  String get downloadSearchHint => '搜索版本';
+
+  @override
+  String downloadSearchEmpty(String query) {
+    return '没有匹配“$query”的版本';
+  }
+
+  @override
+  String downloadInstalling(String version) {
+    return '正在安装 $version';
+  }
+
+  @override
+  String get downloadPhaseManifest => '读取版本列表';
+
+  @override
+  String get downloadPhaseVersionJson => '读取版本元数据';
+
+  @override
+  String get downloadPhaseParents => '读取继承的元数据';
+
+  @override
+  String get downloadPhaseAssetIndex => '读取资源索引';
+
+  @override
+  String get downloadPhasePlanning => '整理下载清单';
+
+  @override
+  String get downloadPhaseDownload => '下载中';
+
+  @override
+  String get downloadPhaseNatives => '解压本地库';
+
+  @override
+  String get downloadPhaseAssets => '放置资源文件';
+
+  @override
+  String get downloadPhaseVerify => '校验文件';
+
+  @override
+  String downloadStepOf(int step, int steps) {
+    return '第 $step 步，共 $steps 步';
+  }
+
+  @override
+  String downloadBytes(String done, String total) {
+    return '$done / $total';
+  }
+
+  @override
+  String downloadRate(String rate) {
+    return '$rate/秒';
+  }
+
+  @override
+  String downloadComplete(String version) {
+    return '$version 已可开始游戏';
+  }
+
+  @override
+  String downloadCompleteWithProblems(String version, int count) {
+    return '$version 已安装，但有 $count 个文件需要修复';
+  }
+
+  @override
+  String get downloadCancel => '取消安装';
+
+  @override
+  String get downloadCancelled => '安装已取消';
+
+  @override
+  String get downloadSourceOfficial => '官方源';
+
+  @override
+  String get downloadSourceBmclapi => 'BMCLAPI 镜像';
+
+  @override
+  String get downloadShowSnapshots => '显示快照';
+
+  @override
+  String get downloadStaleCache => '当前离线，版本列表可能不是最新';
+
+  @override
+  String get downloadRetry => '重新加载';
 }

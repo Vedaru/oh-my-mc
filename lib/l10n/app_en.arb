@@ -187,5 +187,208 @@
   "errorDownloadFailed": "Download failed",
   "@errorDownloadFailed": {
     "description": "Generic download error title."
+  },
+  "instanceNeverPlayed": "Never played",
+  "@instanceNeverPlayed": {
+    "description": "Shown on an instance card that has never been launched."
+  },
+  "instanceNameHint": "Name this instance",
+  "instancesEmpty": "No instances yet",
+  "instancesSkipped": "{count, plural, =1{1 instance could not be read and was skipped} other{{count} instances could not be read and were skipped}}",
+  "@instancesSkipped": {
+    "description": "Shown when part of the instance file was unreadable.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "actionCancel": "Cancel",
+  "launchFailedSpawn": "Could not start Java. Check the Java setting.",
+  "launchFailedRefused": "Launch refused: an instance is already running.",
+  "launchFailedPrepare": "Could not prepare the launch. See the log.",
+  "launchExited": "Exited with code {code} after {duration}",
+  "@launchExited": {
+    "description": "Shown after a session ends.",
+    "placeholders": {
+      "code": {
+        "type": "int"
+      },
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "screenNotReady": "This screen is not built yet",
+  "@screenNotReady": {
+    "description": "Shown on a destination whose screen is not implemented yet."
+  },
+  "@instanceNameHint": {
+    "description": "Placeholder in the new-instance name field."
+  },
+  "@instancesEmpty": {
+    "description": "Shown when the user has no instances at all."
+  },
+  "@actionCancel": {
+    "description": "Dismisses a dialog without doing anything."
+  },
+  "@launchFailedSpawn": {
+    "description": "Java could not be started as a process."
+  },
+  "@launchFailedRefused": {
+    "description": "A second launch was attempted while one was running."
+  },
+  "@launchFailedPrepare": {
+    "description": "Preparing the command line failed; details are in the log."
+  },
+  "downloadSearchHint": "Search versions",
+  "@downloadSearchHint": {
+    "description": "Placeholder in the version search box."
+  },
+  "downloadSearchEmpty": "No version matches “{query}”",
+  "@downloadSearchEmpty": {
+    "description": "Shown when the version search box filters out every row.",
+    "placeholders": {
+      "query": {
+        "type": "String",
+        "example": "1.20"
+      }
+    }
+  },
+  "downloadInstalling": "Installing {version}",
+  "@downloadInstalling": {
+    "description": "Title of the install progress panel; the version is a Minecraft version id such as 1.20.1.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "1.20.1"
+      }
+    }
+  },
+  "downloadPhaseManifest": "Reading version list",
+  "@downloadPhaseManifest": {
+    "description": "Install progress step: fetching the version manifest."
+  },
+  "downloadPhaseVersionJson": "Reading version metadata",
+  "@downloadPhaseVersionJson": {
+    "description": "Install progress step: fetching the version JSON."
+  },
+  "downloadPhaseParents": "Reading inherited metadata",
+  "@downloadPhaseParents": {
+    "description": "Install progress step: fetching parent versions a modded version inherits from."
+  },
+  "downloadPhaseAssetIndex": "Reading asset index",
+  "@downloadPhaseAssetIndex": {
+    "description": "Install progress step: fetching the asset index."
+  },
+  "downloadPhasePlanning": "Working out what to download",
+  "@downloadPhasePlanning": {
+    "description": "Install progress step: planning the file set. Runs before any byte is fetched."
+  },
+  "downloadPhaseDownload": "Downloading",
+  "@downloadPhaseDownload": {
+    "description": "Install progress step: transferring files."
+  },
+  "downloadPhaseNatives": "Unpacking native libraries",
+  "@downloadPhaseNatives": {
+    "description": "Install progress step: extracting native (.dll/.so/.dylib) archives."
+  },
+  "downloadPhaseAssets": "Placing assets",
+  "@downloadPhaseAssets": {
+    "description": "Install progress step: materializing legacy asset layouts."
+  },
+  "downloadPhaseVerify": "Verifying files",
+  "@downloadPhaseVerify": {
+    "description": "Install progress step: checking every file the install planned is present."
+  },
+  "downloadStepOf": "Step {step} of {steps}",
+  "@downloadStepOf": {
+    "description": "Position within the install pipeline, shown next to the progress bar.",
+    "placeholders": {
+      "step": {
+        "type": "int",
+        "example": "3"
+      },
+      "steps": {
+        "type": "int",
+        "example": "9"
+      }
+    }
+  },
+  "downloadBytes": "{done} of {total}",
+  "@downloadBytes": {
+    "description": "Bytes downloaded so far, out of the total. Both are preformatted sizes like \"12.3 MB\".",
+    "placeholders": {
+      "done": {
+        "type": "String",
+        "example": "12.3 MB"
+      },
+      "total": {
+        "type": "String",
+        "example": "480 MB"
+      }
+    }
+  },
+  "downloadRate": "{rate}/s",
+  "@downloadRate": {
+    "description": "Download speed. The rate is preformatted, e.g. \"3.4 MB\".",
+    "placeholders": {
+      "rate": {
+        "type": "String",
+        "example": "3.4 MB"
+      }
+    }
+  },
+  "downloadComplete": "{version} is ready to play",
+  "@downloadComplete": {
+    "description": "Shown after a successful install.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "1.20.1"
+      }
+    }
+  },
+  "downloadCompleteWithProblems": "{version} installed, but {count} file(s) need repair",
+  "@downloadCompleteWithProblems": {
+    "description": "Shown when the install finished but verification found missing or corrupt files.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "1.20.1"
+      },
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "downloadCancel": "Cancel install",
+  "@downloadCancel": {
+    "description": "Button that stops a running install."
+  },
+  "downloadCancelled": "Install cancelled",
+  "@downloadCancelled": {
+    "description": "Shown after the user cancels an install."
+  },
+  "downloadSourceOfficial": "Official",
+  "@downloadSourceOfficial": {
+    "description": "Download source option: Mojang servers."
+  },
+  "downloadSourceBmclapi": "BMCLAPI mirror",
+  "@downloadSourceBmclapi": {
+    "description": "Download source option: a community mirror for mainland China. BMCLAPI is a proper name and stays untranslated."
+  },
+  "downloadShowSnapshots": "Show snapshots",
+  "@downloadShowSnapshots": {
+    "description": "Toggle that includes snapshot versions in the version list."
+  },
+  "downloadStaleCache": "Offline — this version list may be out of date",
+  "@downloadStaleCache": {
+    "description": "Shown when the network failed and the cached version list is being used."
+  },
+  "downloadRetry": "Reload",
+  "@downloadRetry": {
+    "description": "Button that retries loading the version list."
   }
 }

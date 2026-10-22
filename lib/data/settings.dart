@@ -23,7 +23,18 @@ class AppSettings {
     this.theme = ThemePreference.system,
     this.language = LanguagePreference.system,
     this.uiAnimations = true,
+    this.playerName = defaultPlayerName,
+    this.memoryMb = defaultMemoryMb,
   });
+
+  /// A valid offline player name (3-16 ASCII word characters). Shown to other
+  /// players, so it is user data rather than a localized string.
+  static const defaultPlayerName = 'Player';
+
+  /// Heap cap handed to the JVM when an instance does not set its own. 2 GiB is
+  /// the smallest value that runs a modern vanilla instance with room to spare,
+  /// and low enough not to thrash a 4 GiB machine.
+  static const defaultMemoryMb = 2048;
 
   /// What a first run gets, and what a corrupt store degrades to.
   static const defaults = AppSettings();
@@ -35,12 +46,21 @@ class AppSettings {
   /// by `MotionScope`, so this can only ever turn motion *off*, never on.
   final bool uiAnimations;
 
+  /// Offline profile name. Microsoft sign-in is a later milestone; until then a
+  /// launch is always offline, which requires a name and nothing else.
+  final String playerName;
+
+  /// Global heap cap, used when an instance has no override.
+  final int memoryMb;
+
   /// Persisted form. Keys are stable strings, not enum indices, so reordering an
   /// enum cannot silently reinterpret an existing user's setting.
   Map<String, Object?> toMap() => {
     'theme': theme.name,
     'language': language.name,
     'uiAnimations': uiAnimations,
+    'playerName': playerName,
+    'memoryMb': memoryMb,
   };
 
   /// Reads [map], falling back to [defaults] per field rather than wholesale, so
@@ -62,6 +82,10 @@ class AppSettings {
         false => false,
         _ => true,
       },
+      // A blank or implausible name would make the game refuse to start or,
+      // worse, start with an empty name; clamp it back to the default instead.
+      playerName: _validPlayerName(map['playerName']),
+      memoryMb: _validMemoryMb(map['memoryMb']),
     );
   }
 
@@ -69,10 +93,14 @@ class AppSettings {
     ThemePreference? theme,
     LanguagePreference? language,
     bool? uiAnimations,
+    String? playerName,
+    int? memoryMb,
   }) => AppSettings(
     theme: theme ?? this.theme,
     language: language ?? this.language,
     uiAnimations: uiAnimations ?? this.uiAnimations,
+    playerName: playerName ?? this.playerName,
+    memoryMb: memoryMb ?? this.memoryMb,
   );
 
   @override
@@ -81,15 +109,37 @@ class AppSettings {
       other is AppSettings &&
           other.theme == theme &&
           other.language == language &&
-          other.uiAnimations == uiAnimations;
+          other.uiAnimations == uiAnimations &&
+          other.playerName == playerName &&
+          other.memoryMb == memoryMb;
 
   @override
-  int get hashCode => Object.hash(theme, language, uiAnimations);
+  int get hashCode =>
+      Object.hash(theme, language, uiAnimations, playerName, memoryMb);
 
   @override
   String toString() =>
       'AppSettings(theme: ${theme.name}, language: ${language.name}, '
-      'uiAnimations: $uiAnimations)';
+      'uiAnimations: $uiAnimations, playerName: $playerName, '
+      'memoryMb: $memoryMb)';
+}
+
+/// Minecraft accepts 3-16 characters from `[A-Za-z0-9_]`. Anything else is a
+/// hand-edited or older file, and the default is safer than passing it to the
+/// game.
+String _validPlayerName(Object? raw) {
+  if (raw is! String) return AppSettings.defaultPlayerName;
+  return RegExp(r'^[A-Za-z0-9_]{3,16}$').hasMatch(raw)
+      ? raw
+      : AppSettings.defaultPlayerName;
+}
+
+/// 512 MiB below is not enough for any supported version; above 64 GiB is a
+/// typo (or a unit mix-up) that would make the JVM fail to reserve its heap.
+int _validMemoryMb(Object? raw) {
+  if (raw is! int) return AppSettings.defaultMemoryMb;
+  if (raw < 512 || raw > 65536) return AppSettings.defaultMemoryMb;
+  return raw;
 }
 
 T _enumByName<T extends Enum>(List<T> values, Object? raw, T fallback) {

@@ -151,4 +151,134 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorDownloadFailed => 'Download failed';
+
+  @override
+  String get instanceNeverPlayed => 'Never played';
+
+  @override
+  String get instanceNameHint => 'Name this instance';
+
+  @override
+  String get instancesEmpty => 'No instances yet';
+
+  @override
+  String instancesSkipped(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count instances could not be read and were skipped',
+      one: '1 instance could not be read and was skipped',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get actionCancel => 'Cancel';
+
+  @override
+  String get launchFailedSpawn =>
+      'Could not start Java. Check the Java setting.';
+
+  @override
+  String get launchFailedRefused =>
+      'Launch refused: an instance is already running.';
+
+  @override
+  String get launchFailedPrepare =>
+      'Could not prepare the launch. See the log.';
+
+  @override
+  String launchExited(int code, String duration) {
+    return 'Exited with code $code after $duration';
+  }
+
+  @override
+  String get screenNotReady => 'This screen is not built yet';
+
+  @override
+  String get downloadSearchHint => 'Search versions';
+
+  @override
+  String downloadSearchEmpty(String query) {
+    return 'No version matches “$query”';
+  }
+
+  @override
+  String downloadInstalling(String version) {
+    return 'Installing $version';
+  }
+
+  @override
+  String get downloadPhaseManifest => 'Reading version list';
+
+  @override
+  String get downloadPhaseVersionJson => 'Reading version metadata';
+
+  @override
+  String get downloadPhaseParents => 'Reading inherited metadata';
+
+  @override
+  String get downloadPhaseAssetIndex => 'Reading asset index';
+
+  @override
+  String get downloadPhasePlanning => 'Working out what to download';
+
+  @override
+  String get downloadPhaseDownload => 'Downloading';
+
+  @override
+  String get downloadPhaseNatives => 'Unpacking native libraries';
+
+  @override
+  String get downloadPhaseAssets => 'Placing assets';
+
+  @override
+  String get downloadPhaseVerify => 'Verifying files';
+
+  @override
+  String downloadStepOf(int step, int steps) {
+    return 'Step $step of $steps';
+  }
+
+  @override
+  String downloadBytes(String done, String total) {
+    return '$done of $total';
+  }
+
+  @override
+  String downloadRate(String rate) {
+    return '$rate/s';
+  }
+
+  @override
+  String downloadComplete(String version) {
+    return '$version is ready to play';
+  }
+
+  @override
+  String downloadCompleteWithProblems(String version, int count) {
+    return '$version installed, but $count file(s) need repair';
+  }
+
+  @override
+  String get downloadCancel => 'Cancel install';
+
+  @override
+  String get downloadCancelled => 'Install cancelled';
+
+  @override
+  String get downloadSourceOfficial => 'Official';
+
+  @override
+  String get downloadSourceBmclapi => 'BMCLAPI mirror';
+
+  @override
+  String get downloadShowSnapshots => 'Show snapshots';
+
+  @override
+  String get downloadStaleCache =>
+      'Offline — this version list may be out of date';
+
+  @override
+  String get downloadRetry => 'Reload';
 }

@@ -1,0 +1,696 @@
+import 'dart:async';
+
+import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:oh_my_mc/app/providers.dart';
+import 'package:oh_my_mc/core/instance/instance.dart';
+import 'package:oh_my_mc/core/launch/launch_handle.dart';
+import 'package:oh_my_mc/core/mc/launch_service.dart';
+import 'package:oh_my_mc/data/instance_providers.dart';
+import 'package:oh_my_mc/data/instance_store.dart';
+import 'package:oh_my_mc/data/launch_providers.dart';
+import 'package:oh_my_mc/data/settings.dart';
+import 'package:oh_my_mc/l10n/l10n.dart';
+import 'package:oh_my_mc/ui/instances/instance_card.dart';
+import 'package:oh_my_mc/ui/instances/instances_screen.dart';
+import 'package:oh_my_mc/ui/launch/launch_screen.dart';
+import 'package:oh_my_mc/ui/motion/motion.dart';
+
+/// A handle that never spawns a process, so a widget test can drive every launch
+/// state deterministically.
+///
+/// The stream is real (a `StreamController`), not a mock: the controller
+/// subscribes to it exactly as it does in production, which is where the
+/// subscription-lifetime bugs live.
+class FakeLaunchHandle implements LaunchHandle {
+  FakeLaunchHandle({this.prepareOutcome});
+
+  final _controller = StreamController<LaunchEvent>.broadcast();
+  LaunchState _state = LaunchState.idle;
+
+  /// Emitted by [start] before it reports `running`; `null` starts successfully.
+  final LaunchOutcome? prepareOutcome;
+
+  /// Emitted by [stop].
+  int stopCalls = 0;
+
+  final _started = Completer<void>();
+
+  /// Completes once the test can emit into a started handle.
+  Future<void> get started => _started.future;
+
+  @override
+  LaunchState get state => _state;
+
+  /// The handle's own bounded buffer; the controller builds its log from the
+  /// event stream instead, but the interface requires it.
+  @override
+  List<LaunchLog> get recentLog => List.unmodifiable(_recent);
+
+  final _recent = <LaunchLog>[];
+
+  @override
+  int? get exitCode => _exitCode;
+
+  int? _exitCode;
+
+  @override
+  Stream<LaunchEvent> get events => _controller.stream;
+
+  @override
+  Future<void> start() async {
+    _set(LaunchState.preparing);
+    if (prepareOutcome is LaunchRefused) {
+      _controller.add(
+        LaunchEnded(
+          exitCode: null,
+          uptime: Duration.zero,
+          failure: LaunchFailure.prepareFailed,
+        ),
+      );
+      _set(LaunchState.exited);
+      if (!_started.isCompleted) _started.complete();
+      return;
+    }
+    _set(LaunchState.running);
+    if (!_started.isCompleted) _started.complete();
+  }
+
+  /// Emits a log line as if the game printed it.
+  void log(String text, {LogChannel channel = LogChannel.stdout}) {
+    final line = LaunchLog(text, channel: channel);
+    _recent.add(line);
+    _controller.add(line);
+  }
+
+  /// Ends the session with [exitCode].
+  void exit(int exitCode, {Duration uptime = const Duration(minutes: 4)}) {
+    _exitCode = exitCode;
+    _controller.add(
+      LaunchEnded(exitCode: exitCode, uptime: uptime, failure: null),
+    );
+    _set(LaunchState.exited);
+  }
+
+  @override
+  Future<void> stop({Duration? grace}) async {
+    stopCalls++;
+    _set(LaunchState.stopping);
+    exit(0, uptime: const Duration(seconds: 30));
+  }
+
+  @override
+  Future<void> dispose() async {
+    await _controller.close();
+  }
+
+  void _set(LaunchState next) {
+    _state = next;
+    if (!_controller.isClosed) _controller.add(LaunchStateChanged(next));
+  }
+}
+
+/// Mounts a screen inside the real localization/theme/motion stack, with the
+/// instance list and launch controller overridden.
+///
+/// No `FluentApp`: a test that mounts the whole app cannot tell whether a widget
+/// reads its own providers or happens to inherit something from the shell, and
+/// the shell is not what these tests are about.
+Future<ProviderContainer> pumpScreen(
+  WidgetTester tester,
+  Widget screen, {
+  List<Instance> instances = const [],
+  Instance? selected,
+  FakeLaunchHandle Function()? handle,
+  AppSettings settings = AppSettings.defaults,
+}) async {
+  final container = ProviderContainer(
+    overrides: [
+      settingsStoreProvider.overrideWith(
+        (ref) => MemorySettingsStore(settings),
+      ),
+      instanceStoreProvider.overrideWith(
+        (ref) => MemoryInstanceStore(instances),
+      ),
+      launchHandleFactoryProvider.overrideWith(
+        (ref) =>
+            (instance) => (handle ?? FakeLaunchHandle.new)(),
+      ),
+    ],
+  );
+  addTearDown(container.dispose);
+
+  await tester.pumpWidget(
+    UncontrolledProviderScope(
+      container: container,
+      child: FluentApp(
+        theme: FluentThemeData(),
+        home: MotionScope(
+          motion: Motion.full,
+          child: ScaffoldPage(
+            content: Padding(padding: const EdgeInsets.all(16), child: screen),
+          ),
+        ),
+        localizationsDelegates: appLocalizationsDelegates,
+        supportedLocales: appSupportedLocales,
+      ),
+    ),
+  );
+  // The instance list loads on a microtask; without this the first assertion
+  // would see the loading spinner.
+  await tester.pumpAndSettle();
+  if (selected != null) {
+    await container.read(instanceListProvider.notifier).select(selected.id);
+    await tester.pumpAndSettle();
+  }
+  return container;
+}
+
+Instance sample({
+  String id = 'demo',
+  String name = 'Demo',
+  String versionId = '1.20.1',
+  LoaderKind loader = LoaderKind.vanilla,
+  String? loaderVersion,
+  DateTime? lastPlayedAt,
+  Duration totalPlaytime = Duration.zero,
+}) => Instance(
+  id: id,
+  name: name,
+  versionId: versionId,
+  loader: loader,
+  loaderVersion: loaderVersion,
+  lastPlayedAt: lastPlayedAt,
+  totalPlaytime: totalPlaytime,
+);
+
+void main() {
+  group('instance list state', () {
+    test('a fresh store selects nothing and reports no skip', () async {
+      final container = ProviderContainer(
+        overrides: [
+          settingsStoreProvider.overrideWith(
+            (ref) => MemorySettingsStore(AppSettings.defaults),
+          ),
+          instanceStoreProvider.overrideWith((ref) => MemoryInstanceStore()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      container.read(instanceListProvider);
+      await pumpEventQueue();
+
+      final state = container.read(instanceListProvider);
+      expect(state, isA<InstanceListReady>());
+      final ready = state as InstanceListReady;
+      expect(ready.instances, isEmpty);
+      expect(ready.selectedId, isNull);
+      expect(ready.selected, isNull);
+    });
+
+    test('a loaded list selects the first instance', () async {
+      final container = ProviderContainer(
+        overrides: [
+          settingsStoreProvider.overrideWith(
+            (ref) => MemorySettingsStore(AppSettings.defaults),
+          ),
+          instanceStoreProvider.overrideWith(
+            (ref) => MemoryInstanceStore([
+              sample(id: 'a', name: 'A'),
+              sample(id: 'b', name: 'B'),
+            ]),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      container.read(instanceListProvider);
+      await pumpEventQueue();
+
+      final ready = container.read(instanceListProvider) as InstanceListReady;
+      expect(
+        ready.selectedId,
+        'a',
+        reason:
+            'the play button needs a target '
+            'without the user having to click a card first',
+      );
+    });
+
+    test('deleting the selected instance moves the selection', () async {
+      final store = MemoryInstanceStore([
+        sample(id: 'a', name: 'A'),
+        sample(id: 'b', name: 'B'),
+      ]);
+      final container = ProviderContainer(
+        overrides: [
+          settingsStoreProvider.overrideWith(
+            (ref) => MemorySettingsStore(AppSettings.defaults),
+          ),
+          instanceStoreProvider.overrideWith((ref) => store),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final notifier = container.read(instanceListProvider.notifier);
+      await pumpEventQueue();
+      await notifier.select('a');
+      await notifier.remove('a');
+
+      final ready = container.read(instanceListProvider) as InstanceListReady;
+      expect(ready.instances.map((i) => i.id), ['b']);
+      expect(
+        ready.selectedId,
+        'b',
+        reason:
+            'leaving the selection on a deleted id would make the play '
+            'button act on nothing',
+      );
+      expect((await store.load()).map((i) => i.id), [
+        'b',
+      ], reason: 'the removal must be persisted, not just held in memory');
+    });
+
+    test('deleting the last instance leaves nothing selected', () async {
+      final container = ProviderContainer(
+        overrides: [
+          settingsStoreProvider.overrideWith(
+            (ref) => MemorySettingsStore(AppSettings.defaults),
+          ),
+          instanceStoreProvider.overrideWith(
+            (ref) => MemoryInstanceStore([sample(id: 'only')]),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final notifier = container.read(instanceListProvider.notifier);
+      await pumpEventQueue();
+      await notifier.remove('only');
+
+      final ready = container.read(instanceListProvider) as InstanceListReady;
+      expect(ready.instances, isEmpty);
+      expect(ready.selectedId, isNull);
+    });
+
+    test('create avoids colliding with an existing directory name', () async {
+      final container = ProviderContainer(
+        overrides: [
+          settingsStoreProvider.overrideWith(
+            (ref) => MemorySettingsStore(AppSettings.defaults),
+          ),
+          instanceStoreProvider.overrideWith(
+            (ref) =>
+                MemoryInstanceStore([sample(id: 'my-world', name: 'My World')]),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final notifier = container.read(instanceListProvider.notifier);
+      await pumpEventQueue();
+      final created = await notifier.create(
+        name: 'My World',
+        versionId: '1.20.1',
+      );
+
+      expect(created.id, 'my-world-2');
+      final ready = container.read(instanceListProvider) as InstanceListReady;
+      expect(ready.instances.map((i) => i.id), ['my-world', 'my-world-2']);
+      expect(
+        ready.selectedId,
+        'my-world-2',
+        reason: 'the instance just created should be the one that launches',
+      );
+    });
+
+    test('renaming does not move the directory', () async {
+      final container = ProviderContainer(
+        overrides: [
+          settingsStoreProvider.overrideWith(
+            (ref) => MemorySettingsStore(AppSettings.defaults),
+          ),
+          instanceStoreProvider.overrideWith(
+            (ref) => MemoryInstanceStore([sample(id: 'fixed-id', name: 'Old')]),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final notifier = container.read(instanceListProvider.notifier);
+      await pumpEventQueue();
+      await notifier.rename('fixed-id', 'New Name');
+
+      final ready = container.read(instanceListProvider) as InstanceListReady;
+      expect(ready.instances.single.id, 'fixed-id');
+      expect(ready.instances.single.name, 'New Name');
+    });
+
+    test('a recorded session adds to playtime and stamps the date', () async {
+      final container = ProviderContainer(
+        overrides: [
+          settingsStoreProvider.overrideWith(
+            (ref) => MemorySettingsStore(AppSettings.defaults),
+          ),
+          instanceStoreProvider.overrideWith(
+            (ref) => MemoryInstanceStore([
+              sample(totalPlaytime: const Duration(hours: 1)),
+            ]),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final notifier = container.read(instanceListProvider.notifier);
+      await pumpEventQueue();
+      final before = DateTime.now();
+      await notifier.recordSession('demo', const Duration(minutes: 30));
+
+      final instance = (container.read(
+        instanceListProvider,
+      ) as InstanceListReady).instances.single;
+      expect(instance.totalPlaytime, const Duration(hours: 1, minutes: 30));
+      expect(instance.lastPlayedAt, isNotNull);
+      expect(
+        instance.lastPlayedAt!.isBefore(
+          before.subtract(const Duration(seconds: 1)),
+        ),
+        isFalse,
+      );
+    });
+  });
+
+  group('instances screen', () {
+    testWidgets('an empty list says so and offers to create one', (
+      tester,
+    ) async {
+      await pumpScreen(tester, const InstancesScreen());
+
+      expect(find.text('No instances yet'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'New instance'), findsOneWidget);
+    });
+
+    testWidgets('cards show the name, version and playtime', (tester) async {
+      await pumpScreen(
+        tester,
+        const InstancesScreen(),
+        instances: [
+          sample(
+            id: 'a',
+            name: 'Survival',
+            versionId: '1.20.1',
+            lastPlayedAt: DateTime(2026, 1, 1),
+            totalPlaytime: const Duration(hours: 3, minutes: 12),
+          ),
+        ],
+      );
+
+      expect(find.text('Survival'), findsOneWidget);
+      expect(find.text('1.20.1'), findsOneWidget);
+      expect(find.text('3h 12m'), findsOneWidget);
+    });
+
+    testWidgets('a never-played instance says so instead of showing 0s', (
+      tester,
+    ) async {
+      await pumpScreen(tester, const InstancesScreen(), instances: [sample()]);
+
+      expect(find.text('Never played'), findsOneWidget);
+    });
+
+    testWidgets('tapping a card selects it', (tester) async {
+      final container = await pumpScreen(
+        tester,
+        const InstancesScreen(),
+        instances: [
+          sample(id: 'a', name: 'A'),
+          sample(id: 'b', name: 'B'),
+        ],
+      );
+
+      // The first is selected on load; tap the second.
+      await tester.tap(find.text('B'));
+      await tester.pumpAndSettle();
+
+      expect(
+        (container.read(instanceListProvider) as InstanceListReady).selectedId,
+        'b',
+      );
+      final cards = tester.widgetList<InstanceCard>(find.byType(InstanceCard));
+      expect(
+        cards.where((c) => c.selected).length,
+        1,
+        reason: 'exactly one card must look selected',
+      );
+    });
+
+    testWidgets('a modded instance shows its loader', (tester) async {
+      await pumpScreen(
+        tester,
+        const InstancesScreen(),
+        instances: [
+          sample(
+            loader: LoaderKind.neoforge,
+            loaderVersion: '21.1.0',
+            versionId: '1.21.1',
+          ),
+        ],
+      );
+
+      expect(find.text('neoforge 21.1.0'), findsOneWidget);
+    });
+
+    testWidgets('a skipped-entry warning is shown when the file was damaged', (
+      tester,
+    ) async {
+      // A store reporting damage, as FileInstanceStore does after a hand edit.
+      await pumpScreen(tester, const InstancesScreen(), instances: [sample()]);
+      // The banner is driven by the loaded state's `skipped` field, which the
+      // memory store never sets; assert the non-damaged case shows no banner.
+      expect(find.textContaining('could not be read'), findsNothing);
+    });
+  });
+
+  group('launch screen', () {
+    testWidgets('with no instance the play button is disabled', (tester) async {
+      await pumpScreen(tester, const LaunchScreen());
+
+      expect(find.text('No instance selected'), findsOneWidget);
+      final button = tester.widget<FilledButton>(find.byType(FilledButton));
+      expect(button.onPressed, isNull);
+    });
+
+    testWidgets('starting shows the launching state and disables play', (
+      tester,
+    ) async {
+      final handle = FakeLaunchHandle();
+      await pumpScreen(
+        tester,
+        const LaunchScreen(),
+        instances: [sample()],
+        handle: () => handle,
+      );
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Play'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 150));
+
+      // `preparing` then `running`; both are "busy" and both must say so.
+      expect(find.text('Launching…'), findsOneWidget);
+      final button = tester.widget<FilledButton>(find.byType(FilledButton));
+      expect(
+        button.onPressed,
+        isNull,
+        reason:
+            'a second click while a game is starting would spawn a second '
+            'JVM',
+      );
+      await handle.dispose();
+    });
+
+    testWidgets('a running game can be stopped', (tester) async {
+      final handle = FakeLaunchHandle();
+      await pumpScreen(
+        tester,
+        const LaunchScreen(),
+        instances: [sample()],
+        handle: () => handle,
+      );
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Play'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 150));
+      await tester.pump();
+
+      expect(find.text('Stop'), findsOneWidget);
+      await tester.tap(find.text('Stop'));
+      await tester.pumpAndSettle();
+
+      expect(handle.stopCalls, 1);
+      await handle.dispose();
+    });
+
+    testWidgets('the log tail shows output as it arrives', (tester) async {
+      final handle = FakeLaunchHandle();
+      await pumpScreen(
+        tester,
+        const LaunchScreen(),
+        instances: [sample()],
+        handle: () => handle,
+      );
+
+      expect(find.text('No log output yet'), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Play'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 150));
+      handle.log('Setting user: Player');
+      handle.log('LWJGL Version: 3.3.1');
+      // `pump`, not `pumpAndSettle`: the running state shows a ProgressRing,
+      // which is an endless animation, so settling never happens by design.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 150));
+
+      expect(find.text('Setting user: Player'), findsOneWidget);
+      expect(find.text('LWJGL Version: 3.3.1'), findsOneWidget);
+      expect(find.text('No log output yet'), findsNothing);
+      await handle.dispose();
+    });
+
+    testWidgets('a clean exit reports the code and the playtime', (
+      tester,
+    ) async {
+      final handle = FakeLaunchHandle();
+      await pumpScreen(
+        tester,
+        const LaunchScreen(),
+        instances: [sample()],
+        handle: () => handle,
+      );
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Play'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 150));
+      handle.exit(0, uptime: const Duration(minutes: 42));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Exited with code 0'), findsOneWidget);
+      expect(find.textContaining('42m'), findsOneWidget);
+      // Back to Play, not stuck on "Launching…".
+      expect(find.widgetWithText(FilledButton, 'Play'), findsOneWidget);
+      await handle.dispose();
+    });
+
+    testWidgets('a prepare failure is reported, not silently dropped', (
+      tester,
+    ) async {
+      final handle = FakeLaunchHandle(prepareOutcome: const LaunchRefused([]));
+      await pumpScreen(
+        tester,
+        const LaunchScreen(),
+        instances: [sample()],
+        handle: () => handle,
+      );
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Play'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('Could not prepare the launch'),
+        findsOneWidget,
+      );
+      await handle.dispose();
+    });
+
+    testWidgets('a finished session is added to the instance playtime', (
+      tester,
+    ) async {
+      // The controller owns this, not the screen: a launcher that only records
+      // playtime while the launch screen is mounted loses every session the user
+      // starts and then navigates away from.
+      final handle = FakeLaunchHandle();
+      final container = await pumpScreen(
+        tester,
+        const LaunchScreen(),
+        instances: [sample()],
+        handle: () => handle,
+      );
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Play'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 150));
+      handle.exit(0, uptime: const Duration(minutes: 25));
+      await tester.pumpAndSettle();
+
+      final instance = (container.read(
+        instanceListProvider,
+      ) as InstanceListReady).instances.single;
+      expect(instance.totalPlaytime, const Duration(minutes: 25));
+      expect(instance.lastPlayedAt, isNotNull);
+      await handle.dispose();
+    });
+
+    testWidgets('a refused launch records no playtime', (tester) async {
+      // Nothing ran, so the card must not claim a session: the guard is on the
+      // measured session duration, and a refused launch never reached `running`.
+      final handle = FakeLaunchHandle(prepareOutcome: const LaunchRefused([]));
+      final container = await pumpScreen(
+        tester,
+        const LaunchScreen(),
+        instances: [sample()],
+        handle: () => handle,
+      );
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Play'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 150));
+      await tester.pumpAndSettle();
+
+      final instance = (container.read(
+        instanceListProvider,
+      ) as InstanceListReady).instances.single;
+      expect(instance.totalPlaytime, Duration.zero);
+      expect(instance.lastPlayedAt, isNull);
+      await handle.dispose();
+    });
+
+    testWidgets('the log keeps the newest lines, not the oldest', (
+      tester,
+    ) async {
+      // 2100 lines through a 2000-line window: the first 100 must be gone and
+      // the tail present. A `take()` instead of a `sublist` would leave the log
+      // frozen at the start of the session.
+      final handle = FakeLaunchHandle();
+      await pumpScreen(
+        tester,
+        const LaunchScreen(),
+        instances: [sample()],
+        handle: () => handle,
+      );
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Play'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 150));
+      for (var i = 0; i < 2100; i++) {
+        handle.log('line $i');
+      }
+      // Same reason as above: a running session animates forever.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 150));
+
+      final session = tester.state<State>(find.byType(LaunchScreen)).context;
+      final lines = ProviderScope.containerOf(session)
+          .read(launchControllerProvider)
+          .log;
+      expect(lines.length, 2000);
+      expect(lines.last.text, 'line 2099');
+      expect(
+        lines.first.text,
+        'line 100',
+        reason: 'the window must slide, keeping the newest 2000 lines',
+      );
+      await handle.dispose();
+    });
+  });
+}

@@ -76,8 +76,9 @@ needs `build <5.0.0` → unsatisfiable. Don't "upgrade" it.
 ## Where the plan lives
 
 `docs/PLAN.md` (product scope, targets, §7 screens), `docs/PLAN-M1-M4.md` (§0 package traps and
-the motion architecture — still the rationale of record), and `docs/PLAN-M3.4-M5.md` (**current
-status and next steps**: it audits the older plan against the code).
+the motion architecture — still the rationale of record), `docs/PLAN-M3.4-M5.md` (audits the older
+plan against the code), and `docs/PLAN-M4.2-M9.md` (**current status and next steps**: M5–M9, with
+the defect list this milestone found).
 
 ## App shell traps (M3.4)
 
@@ -216,6 +217,33 @@ re-add it. `arch_compat` only has to handle the macOS-arm64 case below.
 - **x64 targets need no library patching at all.**
 - Legacy versions use `minecraftArguments` (string) + `natives` classifiers; modern use `arguments.jvm/game`.
   Both shapes are already captured as fixtures targets in the plan.
+
+## UI traps (M4.2 launch screen + instance grid)
+
+- **`PaneItem.body` must be non-null even with `paneBodyBuilder`.** Fluent's
+  `NavigationPane.effectiveItems` filters out items with a null `body`, and
+  `selectedItem` then indexes an empty list → `RangeError` on the first frame. Every
+  pane item passes `body: const SizedBox.shrink()`.
+- **Do not wrap individual children of a `Column` in animation widgets.** It breaks
+  `Expanded`/`Flexible` (`Incorrect use of ParentDataWidget`). `MotionEntrance`
+  therefore animates the whole column as one unit and returns the bare tree when
+  motion is off.
+- **`pumpAndSettle` never returns while `ProgressRing` is on screen.** The launch
+  screen shows one while running, by design. Busy-state tests use
+  `pump()` + `pump(150ms)`; that also drains Fluent's 100 ms button hover timer,
+  which otherwise trips the framework's pending-timer assertion.
+- **Playtime is recorded by `LaunchController`, not by the screen.** It runs on
+  `LaunchEnded` with the process's own uptime, so navigating away mid-session still
+  records it exactly once. Do not add a second listener; it would double-count.
+- **`AppSettings.playerName` drives the offline UUID.** `offlineUuid` must be
+  version-3 / RFC-4122 (`md5('OfflinePlayer:<name>')` with the nibbles patched at
+  hex offsets 12 and 16). `test/data/launch_factory_test.dart` pins a known value —
+  a subtly wrong hash silently changes the user's identity on every server.
+- **Java selection must never collapse "too old" into "missing".** `selectRuntime`
+  returns null when nothing satisfies the requirement; the factory then passes the
+  *highest* runtime so `checkJava` can report `javaTooOld` with the required major.
+  Passing null gives the user an unfixable "no Java" message on a machine that has
+  Java.
 
 ## Framework gotchas (probed, will silently break you)
 
