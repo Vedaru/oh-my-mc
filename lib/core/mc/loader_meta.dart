@@ -68,11 +68,23 @@ class LoaderMeta {
     if (body is! List) {
       throw StateError('loader list for $gameVersion is not a list');
     }
-    return [
-      for (final entry in body)
-        if (entry is Map && entry['version'] is String)
-          entry['version'] as String,
-    ];
+    // Both services answer with a *list of objects*, and the build version lives
+    // under `loader` (`{"loader": {"version": "0.16.9", ...}, "intermediary": ...}`).
+    // Reading a top-level `version` - which the first implementation and its test
+    // fixture both did - silently yields an empty list against the real services,
+    // so the shape is asserted here and in test/core/loader_meta_test.dart.
+    return [for (final entry in body) ?_loaderVersionOf(entry)];
+  }
+
+  static String? _loaderVersionOf(Object? entry) {
+    if (entry is! Map) return null;
+    final loader = entry['loader'];
+    if (loader is Map && loader['version'] is String) {
+      return loader['version'] as String;
+    }
+    // Tolerated for hand-written fixtures and any older service revision.
+    final flat = entry['version'];
+    return flat is String ? flat : null;
   }
 
   /// The installable profile for one (game, loader) pair.

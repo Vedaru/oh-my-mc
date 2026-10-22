@@ -366,13 +366,18 @@ void main() {
       expect(File(paths.versionJson(fixture.childId)).existsSync(), isTrue);
       expect(File(paths.versionJson(fixture.parentId)).existsSync(), isTrue);
 
-      // The client jar is inherited from the parent but written under the
-      // child's directory, because the child declares no `jar` override. A
-      // Forge profile that sets `jar` would write it under the parent instead.
+      // The client jar belongs to the base version. `resolveInheritance` sets
+      // `jar` to the parent's id when neither the child nor the parent overrides
+      // it, which is the case for every real profile (Fabric, Quilt and Forge all
+      // ship a JSON with no `jar` field and no jar of their own): writing a second
+      // copy under the loader's directory is 23 MB of duplication, and pointing
+      // the classpath at that path is what made loader launches refuse with a
+      // missing client jar.
       expect(
-        File(paths.versionJar(fixture.childId)).readAsStringSync(),
+        File(paths.versionJar(fixture.parentId)).readAsStringSync(),
         'client-jar-bytes',
       );
+      expect(File(paths.versionJar(fixture.childId)).existsSync(), isFalse);
 
       // Both the parent library and the child's patched build are present.
       expect(

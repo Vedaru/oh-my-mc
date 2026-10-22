@@ -17,6 +17,7 @@ import '../core/mc/java_manager.dart';
 import '../core/mc/java_provisioner.dart';
 import '../core/mc/local_host.dart';
 import '../core/mc/launch_service.dart';
+import '../core/mc/version_resolver.dart';
 import '../core/mc/version_json.dart';
 import 'settings.dart';
 
@@ -87,7 +88,12 @@ Future<LaunchOutcome> prepareInstanceLaunch({
   JavaManager? javaManager,
   RuleContext? host,
 }) async {
-  final gamePaths = paths.gamePathsFor(instance);
+  // Resources always come from the shared tree: the installer writes there even
+  // when the instance is isolated, because libraries and assets are identical
+  // across instances and copying them per instance would multiply a 400 MB install.
+  final gamePaths = paths.gamePaths;
+  // ...while the game directory is what isolation actually separates.
+  final gameDirectory = paths.gamePathsFor(instance);
 
   final versionFile = File(gamePaths.versionJson(instance.versionId));
   if (!await versionFile.exists()) {
@@ -108,7 +114,19 @@ Future<LaunchOutcome> prepareInstanceLaunch({
     if (raw is! Map<String, dynamic>) {
       throw const FormatException('version json is not an object');
     }
-    version = VersionJson.fromJson(raw);
+    // A loader version is a *delta*: its JSON inherits the game version and only
+    // carries its own libraries and main class. Launching it unresolved is what
+    // made a Forge install look broken ("version uninstalled", or a classpath
+    // pointing at `versions/<loader-id>/<loader-id>.jar`), so the chain is merged
+    // here exactly as the installer merges it before downloading.
+    version = resolveInheritance(VersionJson.fromJson(raw), (id) {
+      final parent = File(gamePaths.versionJson(id));
+      if (!parent.existsSync()) return null;
+      final parsed = jsonDecode(parent.readAsStringSync());
+      return parsed is Map<String, dynamic>
+          ? VersionJson.fromJson(parsed)
+          : null;
+    });
   } on Object catch (e) {
     // A truncated or hand-edited version file is the user's problem to see, not
     // a stack trace to swallow.
@@ -144,6 +162,7 @@ Future<LaunchOutcome> prepareInstanceLaunch({
   return prepareLaunch(
     version: version,
     paths: gamePaths,
+    gameDirectory: gameDirectory,
     host: host ?? localRuleContext(),
     request: buildLaunchRequest(
       instance: instance,

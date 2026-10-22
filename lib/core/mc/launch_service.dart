@@ -116,7 +116,17 @@ LaunchOutcome prepareLaunch({
   required LaunchRequest request,
   required JavaRuntime? java,
   bool checkFiles = true,
+
+  /// Where the game writes its own files (`--gameDir`: mods, saves, options).
+  ///
+  /// Separate from [paths] because those two are not the same thing once
+  /// instances are isolated: the version, libraries and assets stay in the shared
+  /// tree (they are content-addressed and identical), while the game directory
+  /// moves into the instance. Passing one `GamePaths` for both is what made an
+  /// isolated instance look un-installed.
+  GamePaths? gameDirectory,
 }) {
+  final gamePaths = gameDirectory ?? paths;
   final graph = buildLibraryGraph(version, host, features: request.features);
 
   final blockers = <LaunchBlocker>[
@@ -197,7 +207,7 @@ LaunchOutcome prepareLaunch({
   final vars = LaunchVariables(
     authPlayerName: request.playerName,
     versionName: version.id,
-    gameDirectory: p.normalize(p.absolute(paths.root)),
+    gameDirectory: p.normalize(p.absolute(gamePaths.root)),
     assetsRoot: p.normalize(p.absolute(paths.assets)),
     assetIndexName: version.assetIndexName,
     authUuid: request.uuid,
@@ -243,7 +253,9 @@ LaunchOutcome prepareLaunch({
       jvmArgs: jvmArgs,
       gameArgs: gameArgs,
       mainClass: version.mainClass,
-      workingDirectory: p.normalize(p.absolute(paths.root)),
+      // The process runs in the game directory, not the install root: relative
+      // paths in a mod's config or a `--gameDir`-less legacy launch resolve here.
+      workingDirectory: p.normalize(p.absolute(gamePaths.root)),
       classpath: classpath,
       nativeArchives: [
         for (final a in graph.natives)

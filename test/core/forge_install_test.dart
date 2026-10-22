@@ -147,6 +147,21 @@ void main() {
       );
     });
 
+    test('a maven root with a path (NeoForge) keeps that path', () {
+      // The real NeoForge repository is `https://maven.neoforged.net/releases`.
+      // Building the URL by replacing the path drops `/releases` and 404s, which
+      // is what the end-to-end run hit.
+      final urls = ForgeMeta(
+        neoForgeMaven: Uri.parse('https://maven.neoforged.net/releases'),
+      );
+
+      expect(
+        urls.installerUrl(LoaderKind.neoforge, '1.21.1', '21.1.80').toString(),
+        'https://maven.neoforged.net/releases/net/neoforged/neoforge/21.1.80/'
+        'neoforge-21.1.80-installer.jar',
+      );
+    });
+
     test('version ids are the directory names the installers write', () {
       expect(
         ForgeMeta.versionId(LoaderKind.forge, '1.20.1', '47.2.0'),

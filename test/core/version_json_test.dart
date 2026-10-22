@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:oh_my_mc/core/mc/version_resolver.dart';
 import 'package:oh_my_mc/core/mc/host.dart';
 import 'package:oh_my_mc/core/mc/library_graph.dart';
 import 'package:oh_my_mc/core/mc/rules.dart';
@@ -204,6 +205,53 @@ void main() {
         expect(onArm, contains(contains('linux-aarch_64')));
         expect(onArm, contains(contains('linux-x86_64')));
       });
+    });
+  });
+
+  group('inheritance', () {
+    VersionJson parse(Map<String, Object?> json) =>
+        VersionJson.fromJson(json.cast<String, dynamic>());
+
+    test('the client jar comes from the base version, not the loader id', () {
+      final parent = parse({
+        'id': '1.20.1',
+        'type': 'release',
+        'mainClass': 'net.minecraft.client.main.Main',
+        'assets': '5',
+        'assetIndex': {'id': '5', 'sha1': '', 'size': 0, 'url': ''},
+        'libraries': [
+          {'name': 'com.example:parent:1.0'},
+        ],
+        'downloads': {
+          'client': {'sha1': '', 'size': 0, 'url': ''},
+        },
+      });
+      final child = parse({
+        'id': 'fabric-loader-0.16.9-1.20.1',
+        'inheritsFrom': '1.20.1',
+        'mainClass': 'net.fabricmc.loader.impl.launch.knot.KnotClient',
+        'libraries': [
+          {'name': 'net.fabricmc:fabric-loader:0.16.9'},
+        ],
+      });
+
+      final merged = resolveInheritance(child, (id) {
+        expect(id, '1.20.1');
+        return parent;
+      });
+
+      // Without this the classpath asks for
+      // `versions/fabric-loader-0.16.9-1.20.1/fabric-loader-0.16.9-1.20.1.jar`,
+      // which no installer writes.
+      expect(merged.jar, '1.20.1');
+      expect(merged.mainClass, contains('KnotClient'));
+      expect(
+        merged.libraries.map((l) => l.name),
+        containsAll([
+          'com.example:parent:1.0',
+          'net.fabricmc:fabric-loader:0.16.9',
+        ]),
+      );
     });
   });
 }

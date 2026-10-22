@@ -145,9 +145,12 @@ class ForgeMeta {
           '/net/minecraftforge/forge/$gameVersion-$loaderVersion/'
           'forge-$gameVersion-$loaderVersion-installer.jar',
     ),
+    // NeoForge's repository root is `https://maven.neoforged.net/releases`, so the
+    // artifact path is *appended* to it: `replace(path: …)` drops `/releases` and
+    // the download 404s - which is what the end-to-end run caught.
     LoaderKind.neoforge => _neoForgeMaven.replace(
       path:
-          '/net/neoforged/neoforge/$loaderVersion/'
+          '${_neoForgeMaven.path}/net/neoforged/neoforge/$loaderVersion/'
           'neoforge-$loaderVersion-installer.jar',
     ),
     _ => throw ArgumentError(

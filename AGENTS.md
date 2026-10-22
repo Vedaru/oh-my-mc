@@ -61,6 +61,25 @@ screenshot harness instead:
 flutter test test/dbg_shots_test.dart --run-skipped --update-goldens
 ```
 
+There is a second harness for the install paths, tagged `e2e` and also skipped by
+default:
+
+```
+flutter test test/e2e --tags e2e --run-skipped
+E2E_TREE=/tmp/tree flutter test test/e2e --tags e2e --run-skipped   # reuse a tree
+```
+
+It installs 1.20.1, 1.6.4 (legacy `virtual` assets), Fabric, Quilt, Forge and
+NeoForge against the *real* services, provisions a JRE from Mojang's catalog, and
+launches an isolated instance. It found four bugs no local server could:
+Fabric/Quilt nest the build under `loader` (the fixture had it flat, so the parser
+looked right), NeoForge's maven root has a `/releases` path segment that
+`Uri.replace(path:)` silently dropped, an inheriting version has no client jar of
+its own (`jar` must resolve to the base id), and an isolated instance was reading
+its version from its own tree while the installer only ever writes the shared one.
+Treat a local fixture as a hypothesis: mirror the real payload's shape, and run
+this harness when a service could have changed.
+
 Writes 1440×900 PNGs of every screen to `test/shots/` in ~3 s (git-ignored).
 The harness is tagged `shots` and `dart_test.yaml` skips it by default, because
 its goldens are text-bearing pages laid out with host fonts: comparing them on
@@ -260,6 +279,11 @@ the current gap table and the ordered backlog. Two rules from it bind new code:
   just downloaded.
 - **The version card is the selector**, and per-version settings live in
   `/instances/:id`, never in the global `/setup` page.
+- **Isolation separates the game directory, not the install.** `versions/`,
+  `libraries/` and `assets/` always come from the shared tree (`paths.gamePaths`),
+  because they are content-addressed and identical; only `--gameDir` and the
+  process working directory move to `<data>/instances/<id>/minecraft`. A version
+  dropped into an instance tree by hand is not an install and will not launch.
 - **The instance grid is home**; there is no Launch tab. `/launch` is the running
   view (log, stop, version settings) that a Play navigates to.
 - **A loader is not always a profile.** Fabric/Quilt publish a version JSON

@@ -40,6 +40,11 @@ VersionJson resolveInheritance(
     ...base.raw,
     'id': root.id,
     'type': root.type,
+    // The client jar belongs to the base version: without this, a loader version
+    // resolves its classpath as `versions/<loader-id>/<loader-id>.jar`, a file no
+    // installer writes, and the launch refuses with a missing client jar.
+    if ((root.raw['jar'] as String?) == null && base.raw['jar'] == null)
+      'jar': base.id,
   };
 
   // Walk from the top-most parent down so nearer ancestors overwrite.

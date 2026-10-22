@@ -308,17 +308,15 @@ void main() {
       );
     });
 
-    test('an isolated instance reads its own minecraft tree', () async {
+    test('an isolated instance shares resources and owns its game directory', () async {
       final data = Directory(p.join(tmp.path, 'data'))
         ..createSync(recursive: true);
       final game = Directory(p.join(tmp.path, 'game'));
-      // Only the *instance* tree has the version: a shared install would wrongly
-      // succeed, which is what makes this an isolation test.
-      final instanceRoot = Directory(p.join(data.path, 'instances', 'demo'));
-      await writeVersion(
-        Directory(p.join(instanceRoot.path, 'minecraft')),
-        '1.20.1',
-      );
+      // The installer writes to the shared tree even for an isolated instance:
+      // libraries and assets are identical across instances, so only the game
+      // directory moves. Reading the version from the instance tree instead is
+      // what made every isolated instance look un-installed.
+      await writeVersion(game, '1.20.1');
       final paths = pathsFor(data, game);
       const sameSettings = AppSettings.defaults;
 
@@ -330,10 +328,34 @@ void main() {
       );
 
       expect(outcome, isA<LaunchReady>());
-      expect(
-        (outcome as LaunchReady).plan.workingDirectory,
-        contains(p.join('instances', 'demo')),
+      final plan = (outcome as LaunchReady).plan;
+      expect(plan.workingDirectory, contains(p.join('instances', 'demo')));
+      // ...and the classpath still comes from the shared install.
+      expect(plan.classpath.join(' '), contains(game.path));
+    });
+
+    test('an isolated instance refuses when only its own tree has the version', () async {
+      final data = Directory(p.join(tmp.path, 'data'))
+        ..createSync(recursive: true);
+      final game = Directory(p.join(tmp.path, 'game'))
+        ..createSync(recursive: true);
+      // A version dropped into the instance tree by hand is not an install: the
+      // launcher never writes one there, and launching from it would skip the
+      // shared libraries anyway.
+      await writeVersion(
+        Directory(p.join(data.path, 'instances', 'demo', 'minecraft')),
+        '1.20.1',
       );
+      final paths = pathsFor(data, game);
+
+      final outcome = await prepareInstanceLaunch(
+        paths: paths,
+        settings: AppSettings.defaults,
+        instance: instance(isolation: IsolationKind.isolated),
+        javaManager: fakeJava(17),
+      );
+
+      expect(outcome, isA<LaunchRefused>());
     });
 
     test('a shared instance ignores the isolated tree and refuses', () async {

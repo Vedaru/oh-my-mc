@@ -7,3 +7,9 @@
 tags:
   shots:
     skip: "visual harness — run with --run-skipped"
+  # The end-to-end install paths talk to Mojang/Fabric/Forge/NeoForge, download
+  # hundreds of megabytes and run an installer jar. CI has no JVM and no budget
+  # for that; run it by hand:
+  #   flutter test test/e2e --tags e2e --run-skipped
+  e2e:
+    skip: "network- and JVM-heavy — run with --tags e2e --run-skipped"

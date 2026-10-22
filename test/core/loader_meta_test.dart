@@ -20,6 +20,9 @@ class _MetaServer {
   /// Set to serve a profile that disagrees with the id we expect.
   var mismatchedId = false;
 
+  /// Serve the pre-2024 flat `{"version": …}` list instead of the nested shape.
+  var flatLoaderList = false;
+
   static Future<_MetaServer> start() async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     final meta = _MetaServer._(server);
@@ -38,10 +41,25 @@ class _MetaServer {
 
     if (path == '/v2/versions/loader/1.20.1') {
       request.response.write(
-        jsonEncode([
-          {'version': '0.16.9', 'stable': true},
-          {'version': '0.16.8', 'stable': true},
-        ]),
+        // The real shape: the build hangs off `loader`. A flat `version` here is
+        // what let the production parser be wrong for weeks.
+        jsonEncode(
+          flatLoaderList
+              ? [
+                  {'version': '0.16.9'},
+                  {'version': '0.16.8'},
+                ]
+              : [
+                  {
+                    'loader': {'version': '0.16.9', 'stable': true, 'build': 9},
+                    'intermediary': {'version': '1.20.1'},
+                  },
+                  {
+                    'loader': {'version': '0.16.8', 'stable': true, 'build': 8},
+                    'intermediary': {'version': '1.20.1'},
+                  },
+                ],
+        ),
       );
     } else if (path == '/v2/versions/loader/1.20.1/0.16.9/profile/json') {
       request.response.write(
@@ -175,4 +193,18 @@ void main() {
       expect(json['mainClass'], contains('KnotClient'));
     },
   );
+
+  test('a build list in the old flat shape still parses', () async {
+    // Belt and braces for the fixture mistake the e2e run caught: the parser must
+    // read the real nested shape, and not crash on a flat one.
+    final server = await _MetaServer.start();
+    addTearDown(server.close);
+    server.flatLoaderList = true;
+    final meta = LoaderMeta(hosts: {LoaderKind.fabric: server.base});
+
+    expect(await meta.loaderVersions(LoaderKind.fabric, '1.20.1'), [
+      '0.16.9',
+      '0.16.8',
+    ]);
+  });
 }
