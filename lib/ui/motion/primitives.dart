@@ -184,6 +184,12 @@ class MotionEntrance extends StatelessWidget {
         // runs at a low frame rate" looks like on a 1440x900 page holding a grid
         // or a log. A transform is free by comparison, and the entrance still
         // reads as an arrival.
+        //
+        // The boundary is what makes the transform free in practice: a
+        // `Transform` above a subtree still repaints that subtree unless it is a
+        // layer of its own, and at a 2x device pixel ratio a fullscreen page is
+        // ten megapixels per frame to repaint. Behind a boundary the whole
+        // entrance is a composite of a raster that was rendered once.
         child: SlideAnimation(
           duration: motion.stagger.itemDuration,
           curve: motion.stagger.curve,
@@ -197,7 +203,7 @@ class MotionEntrance extends StatelessWidget {
             EnterFrom.right => distance,
             _ => 0,
           },
-          child: body,
+          child: RepaintBoundary(child: body),
         ),
       ),
     );
