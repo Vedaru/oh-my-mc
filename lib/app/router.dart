@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart' as m3;
 
 import '../l10n/l10n.dart';
 import '../ui/motion/motion.dart';
@@ -149,15 +150,30 @@ class PageSlideTransition extends StatelessWidget {
     // The incoming page travels a little; the outgoing one drifts the other way
     // at half the distance, so a change reads as one surface moving rather than
     // a sheet landing on top.
-    return SlideTransition(
-      position: _drift(
-        secondaryAnimation,
-        MotionCurves.exit,
-        const Offset(-0.02, 0),
-      ),
+    return ClipRect(
+      // The page is translated inside the content area, and a transform paints
+      // outside its layout bounds. Without the clip, the outgoing page's edge
+      // slid over the navigation rail, which is the "page under the tab bar"
+      // that shows up mid-transition.
       child: SlideTransition(
-        position: _drift(animation, motion.curve, const Offset(0.04, 0)),
-        child: RepaintBoundary(child: child),
+        position: _drift(
+          secondaryAnimation,
+          MotionCurves.exit,
+          const Offset(-0.02, 0),
+        ),
+        child: SlideTransition(
+          position: _drift(animation, motion.curve, const Offset(0.04, 0)),
+          child: RepaintBoundary(
+            // Pages are transparent: the shell paints the background. Without a
+            // surface of its own, the outgoing page's text shows through the
+            // incoming one mid-slide - two screens printed on top of each other.
+            // Painting it here makes the move read as one page replacing another.
+            child: ColoredBox(
+              color: m3.Theme.of(context).scaffoldBackgroundColor,
+              child: child,
+            ),
+          ),
+        ),
       ),
     );
   }
