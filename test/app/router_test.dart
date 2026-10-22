@@ -1,3 +1,4 @@
+import 'package:animations/animations.dart';
 import 'package:flutter/widgets.dart';
 import 'package:material_ui/material_ui.dart' as m3;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -171,10 +172,14 @@ void main() {
         reason: 'the page itself must still animate',
       );
       expect(find.byType(m3.NavigationRail), findsOneWidget);
-      // One rail, not two: each page used to carry its own copy, which is what
-      // made it look like the tab bar was fading with the content. The ancestor
-      // check belongs in the widget test below, because `MaterialApp` installs
-      // its own transition above every route.
+      expect(
+        find.ancestor(
+          of: find.byType(m3.NavigationRail),
+          matching: find.byType(SharedAxisTransition),
+        ),
+        findsNothing,
+        reason: 'the rail must not be animated by the page transition',
+      );
     });
 
     testWidgets('reduced motion settles in one frame, with no transition', (
@@ -259,47 +264,12 @@ void main() {
     });
   });
 
-  testWidgets('appPage is the only transition source (a slide)', (
+  testWidgets('appPage is the only transition source (shared axis)', (
     tester,
   ) async {
     // A guard against a screen quietly building its own MaterialPageRoute: if
     // every route goes through appPage, this finder sees one per page.
     await pumpApp(tester);
-    expect(find.byType(SlideTransition), findsWidgets);
-  });
-
-  testWidgets('the page transition slides, and never fades the page', (
-    tester,
-  ) async {
-    // A fade is an `Opacity` over the page, so every frame of the move
-    // re-rasterises the window offscreen - ten megapixels at fullscreen on a 2x
-    // surface. Built directly, because `MaterialApp` wraps every route in its own
-    // zoom transition: from inside a live page an ancestor search finds that
-    // wrapper's fade instead of this one.
-    final enter = AnimationController(vsync: const TestVSync());
-    addTearDown(enter.dispose);
-
-    await tester.pumpWidget(
-      Directionality(
-        textDirection: TextDirection.ltr,
-        child: MotionScope(
-          motion: Motion.full,
-          child: PageSlideTransition(
-            animation: enter,
-            child: const Text('page'),
-          ),
-        ),
-      ),
-    );
-
-    expect(find.byType(FadeTransition), findsNothing);
-    expect(find.byType(SlideTransition), findsWidgets);
-    expect(
-      find.ancestor(
-        of: find.text('page'),
-        matching: find.byType(RepaintBoundary),
-      ),
-      findsWidgets,
-    );
+    expect(find.byType(SharedAxisTransition), findsWidgets);
   });
 }

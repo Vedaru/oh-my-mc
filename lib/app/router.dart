@@ -1,6 +1,6 @@
+import 'package:animations/animations.dart';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
-import 'package:material_ui/material_ui.dart' as m3;
 
 import '../l10n/l10n.dart';
 import '../ui/motion/motion.dart';
@@ -53,10 +53,10 @@ GoRouter createRouter({
       // The rail belongs to the *shell*, not to the page.
       //
       // It used to be wrapped around each screen's widget, which meant the page
-      // transition owned it too: switching tabs faded and moved the whole
-      // window, tab bar included, because the transition sat above it. A
-      // `ShellRoute` builds the rail once and hands the router only the content,
-      // so a transition moves the page and nothing else.
+      // transition owned it too: switching tabs faded and slid the whole
+      // window, tab bar included, because `SharedAxisTransition` was animated
+      // above it. A `ShellRoute` builds the rail once and hands the router only
+      // the content, so a transition moves the page and nothing else.
       ShellRoute(
         builder: (context, state, child) =>
             AppShell(location: state.uri.path, child: child),
@@ -96,7 +96,9 @@ GoRoute _route(
 ///
 /// Two decisions live here and nowhere else:
 ///
-///  * **Slide, never a fade.** See [PageSlideTransition].
+///  * **Direction.** The app is a flat, five-item nav pane, so every transition
+///    is horizontal. A screen that wants a different axis would have to argue for
+///    it here rather than inventing its own page class in a widget file.
 ///  * **Reduced motion.** Per `PLAN-M1-M4.md` §3, neither animation package
 ///    honours `MediaQuery.disableAnimations`, so `MotionScope` resolves the policy
 ///    and the duration is collapsed to zero here. Verified: a zero-duration
@@ -109,6 +111,7 @@ Page<void> appPage(
   BuildContext context, {
   required GoRouterState state,
   required Widget child,
+  SharedAxisTransitionType type = SharedAxisTransitionType.horizontal,
 }) {
   final motion = MotionScope.of(context);
   return CustomTransitionPage<void>(
@@ -116,64 +119,14 @@ Page<void> appPage(
     child: child,
     transitionDuration: motion.of(Durations.slow),
     reverseTransitionDuration: motion.of(Durations.slow),
-    transitionsBuilder: (context, animation, _, child) =>
-        PageSlideTransition(animation: animation, child: child),
-  );
-}
-
-/// Slides a page in. Never fades it.
-///
-/// A fade is an `Opacity` over the whole page, so every frame of the move
-/// re-rasterises the window offscreen. At this app's 2x device pixel ratio a
-/// fullscreen page is ten megapixels, and that is the difference between smooth
-/// in a tile and jittery fullscreen. A translation is composited from the
-/// page's own raster, which the [RepaintBoundary] keeps valid for the move.
-class PageSlideTransition extends StatelessWidget {
-  const PageSlideTransition({
-    required this.animation,
-    required this.child,
-    super.key,
-  });
-
-  final Animation<double> animation;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final motion = MotionScope.of(context);
-    // Only the incoming page moves. Drifting the outgoing one too needed the
-    // secondary animation, and a page that reports it as 1 without being covered
-    // rests at a negative offset: the detail page rendered 29 px to the left,
-    // under the rail. A transition that is zero at rest by construction cannot
-    // do that.
-    return ClipRect(
-      // The page is translated inside the content area, and a transform paints
-      // outside its layout bounds. Without the clip, the page's left edge lands
-      // on the navigation rail mid-slide.
-      child: SlideTransition(
-        position: _drift(animation, motion.curve, const Offset(0.04, 0)),
-        child: RepaintBoundary(
-          // Pages are transparent: the shell paints the background. Without a
-          // surface of its own, the outgoing page's text shows through the
-          // incoming one mid-slide - two screens printed on top of each other.
-          // Painting it here makes the move read as one page replacing another.
-          child: ColoredBox(
-            color: m3.Theme.of(context).scaffoldBackgroundColor,
-            child: child,
-          ),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+        SharedAxisTransition(
+          animation: animation,
+          secondaryAnimation: secondaryAnimation,
+          transitionType: type,
+          child: child,
         ),
-      ),
-    );
-  }
-
-  static Animation<Offset> _drift(
-    Animation<double> parent,
-    Curve curve,
-    Offset from,
-  ) => Tween<Offset>(
-    begin: from,
-    end: Offset.zero,
-  ).chain(CurveTween(curve: curve)).animate(parent);
+  );
 }
 
 /// Title for the current route, for the window/title bar.
