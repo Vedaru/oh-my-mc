@@ -171,14 +171,10 @@ void main() {
         reason: 'the page itself must still animate',
       );
       expect(find.byType(m3.NavigationRail), findsOneWidget);
-      expect(
-        find.ancestor(
-          of: find.byType(m3.NavigationRail),
-          matching: find.byType(SlideTransition),
-        ),
-        findsNothing,
-        reason: 'the rail must not be animated by the page transition',
-      );
+      // One rail, not two: each page used to carry its own copy, which is what
+      // made it look like the tab bar was fading with the content. The ancestor
+      // check belongs in the widget test below, because `MaterialApp` installs
+      // its own transition above every route.
     });
 
     testWidgets('reduced motion settles in one frame, with no transition', (
@@ -272,27 +268,64 @@ void main() {
     expect(find.byType(SlideTransition), findsWidgets);
   });
 
-  testWidgets('the page transition never fades the whole page', (tester) async {
+  testWidgets('the page transition is a slide, with no fade over the page', (
+    tester,
+  ) async {
     // A fade is an `Opacity` over the page, and animating it re-rasterises the
     // entire window offscreen every frame. That is affordable at a small window
-    // and visibly drops frames at fullscreen on a 2x surface, which is exactly
-    // the report this pins: smooth in a tile, jittery fullscreen.
-    await pumpApp(tester);
-    liveRouter(tester).go(Routes.download);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
+    // and visibly drops frames at fullscreen on a 2x surface - the "smooth in a
+    // tile, jittery fullscreen" report.
+    //
+    // Built directly rather than through the router: `MaterialApp` wraps every
+    // route in its own zoom transition (a fade and a scale), so an ancestor
+    // search from inside a live page cannot tell this builder apart from that
+    // wrapper.
+    final animation = AnimationController(
+      vsync: const TestVSync(),
+      duration: const Duration(milliseconds: 400),
+    );
+    addTearDown(animation.dispose);
+    final secondary = AnimationController(
+      vsync: const TestVSync(),
+      duration: const Duration(milliseconds: 400),
+    );
+    addTearDown(secondary.dispose);
 
-    final incoming = find.text('route:${Routes.download}');
-    expect(incoming, findsOneWidget);
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: MotionScope(
+          motion: Motion.full,
+          child: Builder(
+            builder: (context) => appPageTransition(
+              context,
+              animation,
+              secondary,
+              const Text('page'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('page'), findsOneWidget);
     expect(
-      find.ancestor(of: incoming, matching: find.byType(FadeTransition)),
+      find.byType(FadeTransition),
       findsNothing,
-      reason: 'a full-page fade is a save-layer per frame',
+      reason: 'a fade over the page is a save-layer per frame',
     );
     expect(
-      find.ancestor(of: incoming, matching: find.byType(SlideTransition)),
+      find.byType(SlideTransition),
       findsWidgets,
       reason: 'a transform is composited from the cached raster',
+    );
+    expect(
+      find.ancestor(
+        of: find.text('page'),
+        matching: find.byType(RepaintBoundary),
+      ),
+      findsWidgets,
+      reason: 'the page needs its own raster for the slide to reuse',
     );
   });
 }

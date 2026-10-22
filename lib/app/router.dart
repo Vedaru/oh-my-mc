@@ -122,26 +122,43 @@ Page<void> appPage(
     child: child,
     transitionDuration: motion.of(Durations.slow),
     reverseTransitionDuration: motion.of(Durations.slow),
-    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      // The incoming page travels a little; the outgoing one drifts the other
-      // way at half the distance, so the two read as one surface moving rather
-      // than a sheet slapped on top.
-      final enter = Tween<Offset>(
-        begin: const Offset(0.04, 0),
-        end: Offset.zero,
-      ).chain(CurveTween(curve: motion.curve)).animate(animation);
-      final exit = Tween<Offset>(
-        begin: Offset.zero,
-        end: const Offset(-0.02, 0),
-      ).chain(CurveTween(curve: MotionCurves.exit)).animate(secondaryAnimation);
-      return SlideTransition(
-        position: exit,
-        child: SlideTransition(
-          position: enter,
-          child: RepaintBoundary(child: child),
-        ),
-      );
-    },
+    transitionsBuilder: appPageTransition,
+  );
+}
+
+/// The page transition itself: a slide, with no fade over the page.
+///
+/// Public so a test can build it directly. Going through the router cannot
+/// prove this property: `MaterialApp` wraps every route in its own default
+/// transition (a zoom, which is a fade and a scale), so a `FadeTransition`
+/// ancestor search from inside a page finds that wrapper no matter what this
+/// builder does.
+Widget appPageTransition(
+  BuildContext context,
+  Animation<double> animation,
+  Animation<double> secondaryAnimation,
+  Widget child,
+) {
+  final motion = MotionScope.of(context);
+  // The incoming page travels a little; the outgoing one drifts the other way
+  // at half the distance, so the two read as one surface moving rather than a
+  // sheet slapped on top.
+  final enter = Tween<Offset>(
+    begin: const Offset(0.04, 0),
+    end: Offset.zero,
+  ).chain(CurveTween(curve: motion.curve)).animate(animation);
+  final exit = Tween<Offset>(
+    begin: Offset.zero,
+    end: const Offset(-0.02, 0),
+  ).chain(CurveTween(curve: MotionCurves.exit)).animate(secondaryAnimation);
+  return SlideTransition(
+    position: exit,
+    child: SlideTransition(
+      position: enter,
+      // Keeps the page's raster valid for the whole move, so the slide is a
+      // composite rather than a re-render.
+      child: RepaintBoundary(child: child),
+    ),
   );
 }
 
