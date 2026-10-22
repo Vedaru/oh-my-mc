@@ -36,6 +36,22 @@ const _restricted = <String, ({String reason, Set<String> allowed})>{
         'for GlobalWidgetsLocalizations.',
     allowed: {'lib/l10n/l10n.dart'},
   ),
+  // Both build an animation controller unconditionally, so reaching them from a
+  // screen would make "motion off" cost frames again - the exact property
+  // lib/ui/motion/ exists to guarantee. Screens go through Emphasis,
+  // AppendHighlight and Skeleton instead.
+  'package:flutter_animate/flutter_animate.dart': (
+    reason:
+        'Always allocates a controller and ignores reduced motion. Use '
+        'AppendHighlight from lib/ui/motion/motion.dart.',
+    allowed: {'lib/ui/motion/primitives.dart'},
+  ),
+  'package:skeletonizer/skeletonizer.dart': (
+    reason:
+        'Its enabled flag has to track the app motion policy. Use Skeleton from '
+        'lib/ui/motion/motion.dart.',
+    allowed: {'lib/ui/motion/primitives.dart'},
+  ),
 };
 
 /// Layers that must stay Flutter-free so the engine is unit-testable.

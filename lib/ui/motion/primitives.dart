@@ -1,6 +1,8 @@
 import 'package:flutter/widgets.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_staggered_animations_plus/flutter_staggered_animations_plus.dart';
 import 'package:simple_animations/simple_animations.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 import 'motion_scope.dart';
 import 'tokens.dart';
@@ -238,6 +240,177 @@ class AmbientLoop extends StatelessWidget {
       duration: motion.of(duration),
       curve: curve,
       builder: builder,
+      child: child,
+    );
+  }
+}
+
+/// A held emphasis: the control shrinks while the pointer is down and springs
+/// back on release.
+///
+/// This is the "the control heard you" state from `PLAN-M11` §3.4 — the Play
+/// button's `1 → 0.97 → 1`. It listens with [Listener] rather than a gesture
+/// detector, so it never competes for the tap its child is waiting for.
+///
+/// With motion disabled it returns [child] and installs **no listener**: no
+/// controller, no frames, and no changing tap area. The disabled tree is
+/// exactly the tree the caller wrote.
+class Emphasis extends StatefulWidget {
+  const Emphasis({
+    required this.child,
+    this.scale = 0.97,
+    this.glow,
+    super.key,
+  });
+
+  final Widget child;
+
+  /// How far the child shrinks while held. `1` disables the scale.
+  final double scale;
+
+  /// Halo painted behind the child while held. Null means no halo.
+  final Color? glow;
+
+  @override
+  State<Emphasis> createState() => _EmphasisState();
+}
+
+class _EmphasisState extends State<Emphasis> {
+  var _held = false;
+
+  void _setHeld(bool value) {
+    if (_held == value) return;
+    setState(() => _held = value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final motion = MotionScope.of(context);
+    if (!motion.enabled) return widget.child;
+
+    final glow = widget.glow;
+    return Listener(
+      onPointerDown: (_) => _setHeld(true),
+      onPointerUp: (_) => _setHeld(false),
+      onPointerCancel: (_) => _setHeld(false),
+      child: AnimatedScale(
+        scale: _held ? widget.scale : 1,
+        duration: Durations.xfast,
+        curve: MotionCurves.spring,
+        child: AnimatedContainer(
+          duration: Durations.xfast,
+          curve: MotionCurves.enter,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            boxShadow: [
+              if (_held && glow != null)
+                BoxShadow(color: glow, blurRadius: 18, spreadRadius: 2),
+            ],
+          ),
+          child: widget.child,
+        ),
+      ),
+    );
+  }
+}
+
+/// A number that counts to its new value instead of snapping to it.
+///
+/// Used where the number *is* the answer — the memory a launch will ask for, the
+/// percentage of a download. The tween is ours rather than a package's: the
+/// digit-slide packages all pull `package:flutter/material.dart` (the banned
+/// second tree) to animate ~15 lines of arithmetic.
+///
+/// Motion disabled renders the final value directly; no ticker is created.
+class AnimatedCount extends StatelessWidget {
+  const AnimatedCount({required this.value, required this.builder, super.key});
+
+  final int value;
+
+  /// Receives the in-flight value. Rebuilding the label here (rather than
+  /// animating a `Text` in place) keeps localization in the caller's hands.
+  final Widget Function(BuildContext context, int value) builder;
+
+  @override
+  Widget build(BuildContext context) {
+    final motion = MotionScope.of(context);
+    if (!motion.enabled) return builder(context, value);
+
+    return TweenAnimationBuilder<int>(
+      tween: IntTween(begin: value, end: value),
+      duration: motion.of(Durations.base),
+      curve: MotionCurves.emphasise,
+      builder: (context, animated, _) => builder(context, animated),
+    );
+  }
+}
+
+/// The loading idiom: a placeholder laid out like the content that is coming.
+///
+/// Wrap the **placeholder**, never the real content — Skeletonizer paints over
+/// its subtree and hides semantics while it does.
+///
+/// Note `enabled: motion.enabled` rather than dropping the wrapper: with motion
+/// off the bones still draw (a still frame that says "loading") and
+/// `Skeletonizer` never builds its controller, which is the property
+/// `test/ui/motion_informative_test.dart` asserts.
+class Skeleton extends StatelessWidget {
+  const Skeleton({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final motion = MotionScope.of(context);
+    return Skeletonizer(enabled: motion.enabled, child: child);
+  }
+}
+
+/// A one-shot tint for a row that has just been appended.
+///
+/// The log console appends lines while the user watches; without this a warning
+/// arrives as a silent text change in a wall of text. The tint starts opaque and
+/// fades to nothing on the frame the row enters, then the row looks like every
+/// other row.
+///
+/// `flutter_animate` builds its controller unconditionally, so this wrapper is
+/// the only place in `lib/` allowed to import it (enforced by
+/// `tool/check_imports.dart`), and motion-off returns [child] untouched.
+class AppendHighlight extends StatelessWidget {
+  const AppendHighlight({
+    required this.child,
+    required this.enabled,
+    this.tint,
+    super.key,
+  });
+
+  final Widget child;
+
+  /// Whether this row just arrived. A row that was already on screen must not
+  /// re-run the effect, or every rebuild would flash the whole console.
+  final bool enabled;
+
+  /// Tint colour, usually `AppTheme.status(context).warning`.
+  final Color? tint;
+
+  @override
+  Widget build(BuildContext context) {
+    final motion = MotionScope.of(context);
+    final tintColor = tint;
+    if (!motion.enabled || !enabled || tintColor == null) return child;
+
+    return Animate(
+      effects: [
+        // A fade of the overlay only: the row itself is faded in by the list's
+        // own transition, and two fades on one arrival read as a stutter.
+        TintEffect(
+          color: tintColor,
+          begin: 1,
+          end: 0,
+          duration: Durations.slow,
+          curve: MotionCurves.exit,
+        ),
+      ],
       child: child,
     );
   }

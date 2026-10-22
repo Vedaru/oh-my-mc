@@ -14,7 +14,9 @@ import 'package:oh_my_mc/data/launch_factory.dart';
 import 'package:oh_my_mc/data/settings.dart';
 import 'package:oh_my_mc/ui/instances/instance_detail_screen.dart';
 import 'package:oh_my_mc/ui/components/app_button.dart';
+
 import '../support/harness.dart';
+
 import 'package:path/path.dart' as p;
 
 /// The detail page, asserted through the store rather than through the widgets.

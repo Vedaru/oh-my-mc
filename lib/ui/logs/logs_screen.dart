@@ -1,7 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:material_3_expressive/material_3_expressive.dart' as m3e;
 import 'package:material_ui/material_ui.dart' as m3;
 import 'package:oh_my_mc/ui/components/app_button.dart';
 
@@ -11,6 +10,8 @@ import '../../l10n/l10n.dart';
 import '../motion/motion.dart';
 import '../shell/shell_icons.dart';
 import '../theme/app_theme.dart';
+import '../components/app_switch.dart';
+import '../components/app_text_field.dart';
 
 /// Which log lines are visible.
 enum LogFilter {
@@ -84,8 +85,8 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
                 AppButton(
                   key: const m3.ValueKey('logs-copy'),
                   onPressed: () => _copy(context, session.log),
-                  style: m3e.M3EButtonStyle.outlined,
-                  size: m3e.M3EButtonSize.sm,
+                  style: AppButtonStyle.outlined,
+                  size: AppButtonSize.sm,
                   icon: const m3.Icon(ShellIcons.copy, size: 14),
                   label: m3.Text(l10n.logsCopy),
                 ),
@@ -97,28 +98,27 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
           child: m3.Row(
             children: [
               m3.Expanded(
-                child: m3e.M3ETextField(
+                child: AppTextField(
                   key: const m3.ValueKey('logs-search'),
                   controller: _search,
-                  placeholder: l10n.logsSearchHint,
+                  hint: l10n.logsSearchHint,
                   leading: const m3.Icon(ShellIcons.search, size: 15),
                   onChanged: (_) => setState(() {}),
                 ),
               ),
               const m3.SizedBox(width: 12),
-              m3e.M3ESwitch(
+              AppSwitch(
                 value: _filter == LogFilter.errors,
                 onChanged: (errors) => setState(() {
                   _filter = errors ? LogFilter.errors : LogFilter.all;
                 }),
-                semanticLabel: l10n.logsOnlyErrors,
+                label: l10n.logsOnlyErrors,
               ),
               const m3.SizedBox(width: 8),
               m3.Text(
                 l10n.logsOnlyErrors,
-                style: AppTheme.body(context).copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
+                style: AppTheme.body(context)
+                    .copyWith(color: scheme.onSurfaceVariant),
               ),
             ],
           ),
@@ -153,24 +153,108 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
       line.channel == LogChannel.stderr ? '! ${line.text}' : line.text;
 }
 
-class _Lines extends StatelessWidget {
+class _Lines extends StatefulWidget {
   const _Lines({required this.lines, required this.emptyText});
 
   final List<LogLine> lines;
   final String emptyText;
 
   @override
+  State<_Lines> createState() => _LinesState();
+}
+
+class _LinesState extends State<_Lines> {
+  /// The list owns its own item count (`insertItem`/`removeItem`), so this
+  /// widget keeps the list of rows it has told the list about. The diff between
+  /// that and [widget.lines] is what turns a provider update into insert calls.
+  late List<LogLine> _shown = widget.lines;
+
+  /// Rows that arrived on the last update. Their tint plays once; a row that was
+  /// already on screen must not re-run it, or every rebuild would flash the
+  /// console.
+  var _fresh = <LogLine>{};
+
+  var _listKey = GlobalKey<m3.AnimatedListState>();
+
+  @override
+  void didUpdateWidget(covariant _Lines oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final next = widget.lines;
+
+    // A parent rebuild with the same rows (a resize, a theme change) must not
+    // touch the list.
+    if (_sameRows(next, _shown)) return;
+
+    if (!_isAppend(next)) {
+      setState(() {
+        // A fresh key rebuilds the list from scratch: a diff it cannot express
+        // must not be faked with inserts.
+        _listKey = GlobalKey<m3.AnimatedListState>();
+        _shown = next;
+        _fresh = const {};
+      });
+      return;
+    }
+
+    final start = _shown.length;
+    // A backfill (nothing on screen yet) arrives without animation: it is a wall
+    // of text, and animating it would delay the user's first useful frame.
+    final duration = start == 0
+        ? Duration.zero
+        : MotionScope.of(context).of(Durations.base);
+
+    setState(() {
+      _shown = next;
+      _fresh = {
+        for (final line in next.skip(start))
+          if (_isWarning(line)) line,
+      };
+      final list = _listKey.currentState;
+      for (var i = start; i < next.length; i++) {
+        list?.insertItem(i, duration: duration);
+      }
+    });
+  }
+
+  /// Identity, not equality: the session appends the same `LogLine` instances,
+  /// while a filtered view is a different list of the same values.
+  static bool _sameRows(List<LogLine> a, List<LogLine> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (!identical(a[i], b[i])) return false;
+    }
+    return true;
+  }
+
+  /// Whether [next] is [previous] plus new rows at the end.
+  bool _isAppend(List<LogLine> next) {
+    if (next.length < _shown.length) return false;
+    for (var i = 0; i < _shown.length; i++) {
+      if (!identical(next[i], _shown[i])) return false;
+    }
+    return true;
+  }
+
+  /// A line worth tinting on arrival: stderr, or a warning/error on stdout,
+  /// which is where a JVM puts most of its bad news.
+  static bool _isWarning(LogLine line) =>
+      line.channel == LogChannel.stderr ||
+      line.text.contains('WARN') ||
+      line.text.contains('Error') ||
+      line.text.contains('Exception');
+
+  @override
   Widget build(BuildContext context) {
     final scheme = m3.Theme.of(context).colorScheme;
+    final warning = AppTheme.status(context).warning;
 
-    if (lines.isEmpty) {
+    if (widget.lines.isEmpty) {
       return m3.Center(
         child: m3.Text(
-          emptyText,
+          widget.emptyText,
           key: const m3.ValueKey('logs-empty'),
-          style: AppTheme.caption(context).copyWith(
-            color: scheme.onSurfaceVariant,
-          ),
+          style: AppTheme.caption(context)
+              .copyWith(color: scheme.onSurfaceVariant),
         ),
       );
     }
@@ -181,17 +265,31 @@ class _Lines extends StatelessWidget {
         borderRadius: m3.BorderRadius.circular(10),
         border: m3.Border.all(color: scheme.outlineVariant),
       ),
-      child: m3.ListView.builder(
+      child: m3.AnimatedList(
+        // The global key *is* the identity: replacing it is what makes a
+        // wholesale change rebuild the list instead of animating a diff.
+        key: _listKey,
         padding: const m3.EdgeInsets.all(10),
-        itemCount: lines.length,
-        itemBuilder: (context, index) {
-          final line = lines[index];
-          return m3.Text(
-            line.text,
-            style: AppTheme.mono(context).copyWith(
-              color: line.channel == LogChannel.stderr
-                  ? scheme.error
-                  : scheme.onSurface,
+        initialItemCount: _shown.length,
+        itemBuilder: (context, index, animation) {
+          final line = _shown[index];
+          return m3.SizeTransition(
+            sizeFactor: animation,
+            alignment: m3.Alignment.topCenter,
+            child: m3.FadeTransition(
+              opacity: animation,
+              child: AppendHighlight(
+                enabled: _fresh.contains(line),
+                tint: warning,
+                child: m3.Text(
+                  line.text,
+                  style: AppTheme.mono(context).copyWith(
+                    color: line.channel == LogChannel.stderr
+                        ? scheme.error
+                        : scheme.onSurface,
+                  ),
+                ),
+              ),
             ),
           );
         },

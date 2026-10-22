@@ -1,5 +1,4 @@
 import 'package:flutter/widgets.dart';
-import 'package:material_3_expressive/material_3_expressive.dart' as m3e;
 import 'package:material_ui/material_ui.dart' as m3;
 import 'package:oh_my_mc/ui/components/app_button.dart';
 
@@ -50,13 +49,15 @@ class _InstanceCardState extends State<InstanceCard> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final scheme = m3e.M3ETheme.of(context).colorScheme;
+    final scheme = m3.Theme.of(context).colorScheme;
     final motion = MotionScope.of(context);
 
     // Selection is an outline, not a fill: the cards carry version art later, and
     // a tint over it would fight the art.
     final radius = m3.BorderRadius.circular(14);
-    final borderColor = widget.selected ? scheme.primary : scheme.outlineVariant;
+    final borderColor = widget.selected
+        ? scheme.primary
+        : scheme.outlineVariant;
 
     final card = m3.MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
@@ -122,9 +123,8 @@ class _InstanceCardState extends State<InstanceCard> {
                         '${widget.instance.loader.name} '
                                 '${widget.instance.loaderVersion ?? ''}'
                             .trim(),
-                        style: AppTheme.caption(context).copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
+                        style: AppTheme.caption(context)
+                            .copyWith(color: scheme.onSurfaceVariant),
                         maxLines: 1,
                         overflow: m3.TextOverflow.ellipsis,
                       ),
@@ -146,9 +146,8 @@ class _InstanceCardState extends State<InstanceCard> {
                       widget.instance.lastPlayedAt == null
                           ? l10n.instanceNeverPlayed
                           : formatPlaytime(widget.instance.totalPlaytime),
-                      style: AppTheme.caption(context).copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
+                      style: AppTheme.caption(context)
+                          .copyWith(color: scheme.onSurfaceVariant),
                       maxLines: 1,
                       overflow: m3.TextOverflow.ellipsis,
                     ),
@@ -170,8 +169,8 @@ class _InstanceCardState extends State<InstanceCard> {
                   else
                     AppButton(
                       onPressed: widget.onPlay,
-                      style: m3e.M3EButtonStyle.filled,
-                      size: m3e.M3EButtonSize.sm,
+                      style: AppButtonStyle.filled,
+                      size: AppButtonSize.sm,
                       icon: const m3.Icon(ShellIcons.play, size: 13),
                       label: m3.Text(l10n.playButton),
                     ),

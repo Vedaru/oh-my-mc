@@ -457,6 +457,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String downloadPercent(int percent) {
+    return '$percent%';
+  }
+
+  @override
   String downloadRate(String rate) {
     return '$rate/s';
   }

@@ -76,9 +76,6 @@ class MotionRespectingProgressBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = MotionScope.of(context).enabled;
-    return m3.LinearProgressIndicator(
-      minHeight: 4,
-      value: enabled ? null : 0,
-    );
+    return m3.LinearProgressIndicator(minHeight: 4, value: enabled ? null : 0);
   }
 }

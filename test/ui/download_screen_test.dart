@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';
-import 'package:material_3_expressive/material_3_expressive.dart' as m3e;
 import 'package:material_ui/material_ui.dart' as m3;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,6 +10,7 @@ import 'package:oh_my_mc/core/net/version_manifest.dart';
 import 'package:oh_my_mc/data/install_providers.dart';
 import 'package:oh_my_mc/ui/download/download_screen.dart';
 import 'package:oh_my_mc/ui/motion/motion.dart';
+
 import '../support/harness.dart';
 
 /// A manifest with one release, one snapshot and one ancient beta.
@@ -190,7 +190,7 @@ void main() {
 
     // The label is a sibling of the switch, not part of it, so tapping the text
     // would not toggle anything.
-    await tester.tap(find.byType(m3e.M3ESwitch));
+    await tester.tap(find.byType(m3.Switch));
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text('24w14a'), findsOneWidget);
@@ -200,7 +200,7 @@ void main() {
   testWidgets('search filters the visible rows', (tester) async {
     await pump(tester);
 
-    await tester.enterText(find.byType(m3e.M3ETextField), '1.20');
+    await tester.enterText(find.byType(m3.TextField), '1.20');
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text('1.20.1'), findsOneWidget);
@@ -211,7 +211,7 @@ void main() {
   ) async {
     await pump(tester);
 
-    await tester.enterText(find.byType(m3e.M3ETextField), '9.99');
+    await tester.enterText(find.byType(m3.TextField), '9.99');
     await tester.pump(const Duration(milliseconds: 400));
 
     // The search field holds the query too, so the assertion names the message.

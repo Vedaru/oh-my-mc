@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:material_3_expressive/material_3_expressive.dart' as m3e;
 import 'package:material_ui/material_ui.dart' as m3;
 import 'package:oh_my_mc/ui/components/app_button.dart';
 
@@ -21,6 +20,10 @@ import '../shell/shell_icons.dart';
 import '../theme/app_theme.dart';
 import 'args_field.dart';
 import 'instance_card.dart';
+import '../components/app_slider.dart';
+import '../components/app_switch.dart';
+import '../components/app_text_field.dart';
+import '../components/app_dialog.dart';
 
 /// One instance's settings.
 ///
@@ -81,7 +84,7 @@ class InstanceDetailScreen extends ConsumerWidget {
             const m3.SizedBox(height: 12),
             AppButton(
               onPressed: () => _close(context),
-              style: m3e.M3EButtonStyle.filled,
+              style: AppButtonStyle.filled,
               label: m3.Text(l10n.actionBack),
             ),
           ],
@@ -123,7 +126,7 @@ class InstanceDetailScreen extends ConsumerWidget {
               ),
               AppButton(
                 onPressed: () => _delete(context, ref, instance!),
-                style: m3e.M3EButtonStyle.text,
+                style: AppButtonStyle.text,
                 label: m3.Text(l10n.instanceDelete),
               ),
             ],
@@ -223,8 +226,8 @@ class InstanceDetailScreen extends ConsumerWidget {
                     child: AppButton(
                       key: const m3.ValueKey('instance-open-folder'),
                       onPressed: () => _openFolder(context, ref, instance!),
-                      style: m3e.M3EButtonStyle.outlined,
-                      size: m3e.M3EButtonSize.sm,
+                      style: AppButtonStyle.outlined,
+                      size: AppButtonSize.sm,
                       icon: const m3.Icon(ShellIcons.folder, size: 14),
                       label: m3.Text(l10n.instanceOpenFolder),
                     ),
@@ -262,14 +265,13 @@ class InstanceDetailScreen extends ConsumerWidget {
       if (!context.mounted) return;
       await m3.showDialog<void>(
         context: context,
-        builder: (context) => m3e.M3EDialog(
+        builder: (context) => AppDialog(
           title: context.l10n.instanceOpenFolderFailed,
-          semanticLabel: context.l10n.instanceOpenFolderFailed,
           content: m3.SelectableText(root),
           actions: [
             AppButton(
               onPressed: () => m3.Navigator.pop(context),
-              style: m3e.M3EButtonStyle.filled,
+              style: AppButtonStyle.filled,
               label: m3.Text(context.l10n.actionClose),
             ),
           ],
@@ -286,9 +288,8 @@ class InstanceDetailScreen extends ConsumerWidget {
     final l10n = context.l10n;
     final confirmed = await m3.showDialog<bool>(
       context: context,
-      builder: (context) => m3e.M3EDialog(
+      builder: (context) => AppDialog(
         title: l10n.instanceDelete,
-        semanticLabel: l10n.instanceDelete,
         // The prompt promises the folder goes, because it does: this is the one
         // destructive action in the app, and "delete" that leaves half a gigabyte
         // behind is how users end up with an unreadable data directory.
@@ -296,13 +297,13 @@ class InstanceDetailScreen extends ConsumerWidget {
         actions: [
           AppButton(
             onPressed: () => m3.Navigator.pop(context, false),
-            style: m3e.M3EButtonStyle.text,
+            style: AppButtonStyle.text,
             label: m3.Text(l10n.actionCancel),
           ),
           AppButton(
             key: const m3.ValueKey('instance-delete-confirm'),
             onPressed: () => m3.Navigator.pop(context, true),
-            style: m3e.M3EButtonStyle.filled,
+            style: AppButtonStyle.filled,
             label: m3.Text(l10n.instanceDelete),
           ),
         ],
@@ -321,14 +322,13 @@ class InstanceDetailScreen extends ConsumerWidget {
     // leftover folder. Say where it is, so the user can finish the job.
     await m3.showDialog<void>(
       context: context,
-      builder: (context) => m3e.M3EDialog(
+      builder: (context) => AppDialog(
         title: l10n.instanceDelete,
-        semanticLabel: l10n.instanceDelete,
         content: m3.SelectableText(l10n.instanceDeleteFilesFailed(path)),
         actions: [
           AppButton(
             onPressed: () => m3.Navigator.pop(context),
-            style: m3e.M3EButtonStyle.filled,
+            style: AppButtonStyle.filled,
             label: m3.Text(l10n.actionClose),
           ),
         ],
@@ -358,7 +358,10 @@ class _Section extends StatelessWidget {
         children: [
           m3.Text(title, style: AppTheme.label(context)),
           const m3.SizedBox(height: 10),
-          for (final child in children) ...[child, const m3.SizedBox(height: 8)],
+          for (final child in children) ...[
+            child,
+            const m3.SizedBox(height: 8),
+          ],
         ],
       ),
     );
@@ -394,9 +397,8 @@ class _Row extends StatelessWidget {
                   padding: const m3.EdgeInsets.only(top: 2),
                   child: m3.Text(
                     hint,
-                    style: AppTheme.caption(context).copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
+                    style: AppTheme.caption(context)
+                        .copyWith(color: scheme.onSurfaceVariant),
                   ),
                 ),
             ],
@@ -428,9 +430,7 @@ class _ReadOnlyRow extends StatelessWidget {
         padding: const m3.EdgeInsets.only(top: 6),
         child: m3.SelectableText(
           value,
-          style: (monospace
-                  ? AppTheme.mono(context)
-                  : AppTheme.body(context))
+          style: (monospace ? AppTheme.mono(context) : AppTheme.body(context))
               .copyWith(color: scheme.onSurfaceVariant),
         ),
       ),
@@ -484,12 +484,12 @@ class _NameRowState extends State<_NameRow> {
   Widget build(BuildContext context) {
     return _Row(
       label: context.l10n.instanceNameLabel,
-      child: m3e.M3ETextField(
+      child: AppTextField(
         key: const m3.ValueKey('instance-name'),
         controller: _controller,
         focusNode: _focus,
         label: context.l10n.instanceNameLabel,
-        placeholder: context.l10n.instanceNameHint,
+        hint: context.l10n.instanceNameHint,
         onSubmitted: (_) => _commit(),
       ),
     );
@@ -516,7 +516,7 @@ class _IsolationRow extends StatelessWidget {
           children: [
             m3.Row(
               children: [
-                m3e.M3ESwitch(
+                AppSwitch(
                   key: const m3.ValueKey('instance-isolation'),
                   value: isolated,
                   onChanged: (value) => onChanged(
@@ -524,7 +524,7 @@ class _IsolationRow extends StatelessWidget {
                         ? IsolationKind.isolated
                         : IsolationKind.shareLibraries,
                   ),
-                  semanticLabel: l10n.instanceIsolationLabel,
+                  label: l10n.instanceIsolationLabel,
                 ),
                 const m3.SizedBox(width: 10),
                 m3.Text(
@@ -577,11 +577,11 @@ class _MemoryRow extends ConsumerWidget {
         children: [
           m3.Row(
             children: [
-              m3e.M3ESwitch(
+              AppSwitch(
                 key: const m3.ValueKey('instance-memory-override'),
                 value: value != null,
                 onChanged: (on) => onChanged(on ? global : null),
-                semanticLabel: l10n.instanceMemoryLabel,
+                label: l10n.instanceMemoryLabel,
               ),
               const m3.SizedBox(width: 10),
               m3.Text(
@@ -594,22 +594,21 @@ class _MemoryRow extends ConsumerWidget {
           ),
           if (value != null) ...[
             const m3.SizedBox(height: 6),
-            m3e.M3ESlider(
+            AppSlider(
               value: clampMemoryMb(value).toDouble(),
               min: kMinMemoryMb.toDouble(),
               max: kMaxMemoryMb.toDouble(),
               // 1 GiB steps: the exact MiB is not a decision anyone makes, and a
               // continuous slider invites pointless precision.
               divisions: (kMaxMemoryMb - kMinMemoryMb) ~/ 1024,
-              label: l10n.instanceMemoryMb(value),
-              semanticLabel: l10n.instanceMemoryLabel,
+              valueLabel: l10n.instanceMemoryMb(value),
+              label: l10n.instanceMemoryLabel,
               onChanged: (v) => onChanged((v / 1024).round() * 1024),
             ),
             m3.Text(
               l10n.instanceMemoryBigger,
-              style: AppTheme.caption(context).copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
+              style: AppTheme.caption(context)
+                  .copyWith(color: scheme.onSurfaceVariant),
             ),
           ],
         ],
@@ -682,7 +681,6 @@ class _JavaRowState extends ConsumerState<_JavaRow> {
     final onChanged = widget.onChanged;
     final l10n = context.l10n;
     final scheme = m3.Theme.of(context).colorScheme;
-    final expressiveScheme = m3e.M3ETheme.of(context).colorScheme;
     final runtimes = ref.watch(javaRuntimesProvider).value ?? const [];
 
     // `null` is a real choice here ("use the launcher's automatic pick"), and
@@ -739,13 +737,12 @@ class _JavaRowState extends ConsumerState<_JavaRow> {
             runtimes.isEmpty
                 ? l10n.instanceJavaNoneDownloaded
                 : l10n.instanceJavaHintDetail,
-            style: AppTheme.caption(context).copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
+            style: AppTheme.caption(context)
+                .copyWith(color: scheme.onSurfaceVariant),
           ),
           if (instance.javaPath != null) ...[
             const m3.SizedBox(height: 8),
-            _javaTestRow(context, l10n, expressiveScheme, instance.javaPath!),
+            _javaTestRow(context, l10n, instance.javaPath!),
           ],
         ],
       ),
@@ -755,14 +752,12 @@ class _JavaRowState extends ConsumerState<_JavaRow> {
   Widget _javaTestRow(
     BuildContext context,
     AppLocalizations l10n,
-    m3e.M3EColorScheme scheme,
     String executable,
   ) {
     final result = _resultFor == executable ? _result : null;
     final running = result is _ProbeRunning;
-    final caption = AppTheme.caption(context).copyWith(
-      color: scheme.onSurfaceVariant,
-    );
+    final caption = AppTheme.caption(context)
+        .copyWith(color: m3.Theme.of(context).colorScheme.onSurfaceVariant);
 
     return m3.Column(
       crossAxisAlignment: m3.CrossAxisAlignment.start,
@@ -772,8 +767,8 @@ class _JavaRowState extends ConsumerState<_JavaRow> {
           child: AppButton(
             key: const m3.ValueKey('instance-java-test'),
             onPressed: running ? null : () => _test(executable),
-            style: m3e.M3EButtonStyle.outlined,
-            size: m3e.M3EButtonSize.sm,
+            style: AppButtonStyle.outlined,
+            size: AppButtonSize.sm,
             label: m3.Text(
               running ? l10n.instanceJavaTestRunning : l10n.instanceJavaTest,
             ),

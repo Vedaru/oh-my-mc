@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
-import 'package:material_3_expressive/material_3_expressive.dart' as m3e;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart' as m3;
 import 'package:oh_my_mc/app/providers.dart';
 import 'package:oh_my_mc/data/settings.dart';
 import 'package:oh_my_mc/l10n/l10n.dart';
@@ -24,7 +24,7 @@ Future<void> _setLanguage(
   WidgetTester tester,
   LanguagePreference language,
 ) async {
-  final context = tester.element(find.byType(m3e.M3ENavigationRail).first);
+  final context = tester.element(find.byType(m3.NavigationRail).first);
   await ProviderScope.containerOf(context)
       .read(appSettingsProvider.notifier)
       .setLanguage(language);
@@ -46,7 +46,7 @@ void main() {
     // string that must differ. Reading it through the same BuildContext the app
     // built with proves AppLocalizations is genuinely in scope for widgets, not
     // merely loadable from the delegate.
-    final context = tester.element(find.byType(m3e.M3ENavigationRail).first);
+    final context = tester.element(find.byType(m3.NavigationRail).first);
     expect(context.l10n.navLaunch, '启动');
     expect(context.l10n.setupLanguage, '语言');
     expect(AppLocalizations.of(context).localeName, 'zh');
@@ -57,13 +57,13 @@ void main() {
   ) async {
     await _pumpApp(tester, locale: const Locale('en'));
     expect(
-      tester.element(find.byType(m3e.M3ENavigationRail).first).l10n.navLaunch,
+      tester.element(find.byType(m3.NavigationRail).first).l10n.navLaunch,
       'Launch',
     );
 
     await _setLanguage(tester, LanguagePreference.chinese);
     expect(
-      tester.element(find.byType(m3e.M3ENavigationRail).first).l10n.navLaunch,
+      tester.element(find.byType(m3.NavigationRail).first).l10n.navLaunch,
       '启动',
       reason: 'a language change must relocalize without a restart',
     );
@@ -73,7 +73,7 @@ void main() {
     tester,
   ) async {
     await _pumpApp(tester, locale: const Locale('en'));
-    final en = tester.element(find.byType(m3e.M3ENavigationRail).first).l10n;
+    final en = tester.element(find.byType(m3.NavigationRail).first).l10n;
     expect(en.instanceCount(0), 'No instances');
     expect(en.instanceCount(1), '1 instance');
     expect(en.instanceCount(4), '4 instances');
@@ -83,7 +83,7 @@ void main() {
     );
 
     await _setLanguage(tester, LanguagePreference.chinese);
-    final zh = tester.element(find.byType(m3e.M3ENavigationRail).first).l10n;
+    final zh = tester.element(find.byType(m3.NavigationRail).first).l10n;
     expect(zh.instanceCount(0), '暂无实例');
     expect(zh.instanceCount(4), '4 个实例');
     expect(zh.instanceDeleteConfirm('1.20.4'), '删除 1.20.4？此操作无法撤销。');

@@ -13,7 +13,9 @@ import 'package:oh_my_mc/data/java_providers.dart';
 import 'package:oh_my_mc/data/launch_factory.dart';
 import 'package:oh_my_mc/ui/motion/motion.dart';
 import 'package:oh_my_mc/ui/setup/java_panel.dart';
+
 import '../support/harness.dart';
+
 import 'package:path/path.dart' as p;
 
 /// Holds the panel at whichever install state a test needs, so no test opens a

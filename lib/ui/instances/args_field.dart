@@ -1,10 +1,10 @@
 import 'package:flutter/widgets.dart';
-import 'package:material_3_expressive/material_3_expressive.dart' as m3e;
 import 'package:material_ui/material_ui.dart' as m3;
 
 import '../../core/instance/args.dart';
 import '../../l10n/l10n.dart';
 import '../theme/app_theme.dart';
+import '../components/app_text_field.dart';
 
 /// The JVM/game argument editors.
 ///
@@ -103,12 +103,12 @@ class _ArgsFieldState extends State<ArgsField> {
       children: [
         m3.Text(widget.label, style: AppTheme.label(context)),
         const m3.SizedBox(height: 4),
-        m3e.M3ETextField(
+        AppTextField(
           key: widget.fieldKey,
           controller: _controller,
           focusNode: _focus,
           maxLines: 4,
-          placeholder: widget.hint,
+          hint: widget.hint,
           // The preview is live so a quoting mistake shows up while the text is
           // still in front of the user; the write is not.
           onChanged: (_) => _reparse(),
@@ -119,16 +119,14 @@ class _ArgsFieldState extends State<ArgsField> {
           _parsed.isEmpty
               ? l10n.instanceArgsPreview(0)
               : l10n.instanceArgsPreview(_parsed.length),
-          style: AppTheme.caption(context).copyWith(
-            color: scheme.onSurfaceVariant,
-          ),
+          style: AppTheme.caption(context)
+              .copyWith(color: scheme.onSurfaceVariant),
         ),
         if (_parsed.isNotEmpty)
           m3.SelectableText(
             l10n.instanceArgsPreviewList(_parsed.join(' · ')),
-            style: AppTheme.mono(context).copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
+            style: AppTheme.mono(context)
+                .copyWith(color: scheme.onSurfaceVariant),
           ),
       ],
     );

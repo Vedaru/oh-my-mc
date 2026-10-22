@@ -860,6 +860,12 @@ abstract class AppLocalizations {
   /// **'{done} of {total}'**
   String downloadBytes(String done, String total);
 
+  /// How much of the current download is done, as a whole percentage. Sits next to the byte counter.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}%'**
+  String downloadPercent(int percent);
+
   /// Download speed. The rate is preformatted, e.g. "3.4 MB".
   ///
   /// In en, this message translates to:

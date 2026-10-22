@@ -1,8 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:material_3_expressive/material_3_expressive.dart' as m3e;
 import 'package:material_ui/material_ui.dart' as m3;
 import 'package:oh_my_mc/ui/components/app_button.dart';
+import 'package:oh_my_mc/ui/components/app_dialog.dart';
 
 import '../../core/mc/java_catalog.dart';
 import '../../core/mc/local_host.dart';
@@ -91,9 +91,8 @@ class _Offer extends ConsumerWidget {
               const m3.SizedBox(height: 2),
               m3.Text(
                 l10n.javaDownloadWhy(majorVersion),
-                style: AppTheme.caption(context).copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
+                style: AppTheme.caption(context)
+                    .copyWith(color: scheme.onSurfaceVariant),
               ),
             ],
           ),
@@ -104,7 +103,7 @@ class _Offer extends ConsumerWidget {
           onPressed: () => ref
               .read(javaProvisionControllerProvider.notifier)
               .install(choice),
-          style: m3e.M3EButtonStyle.filled,
+          style: AppButtonStyle.filled,
           label: m3.Text(l10n.javaDownloadAction(majorVersion)),
         ),
       ],
@@ -142,17 +141,16 @@ class _Running extends ConsumerWidget {
             if (download?.bytesPerSecond != null)
               m3.Text(
                 formatRate(download!.bytesPerSecond),
-                style: AppTheme.caption(context).copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
+                style: AppTheme.caption(context)
+                    .copyWith(color: scheme.onSurfaceVariant),
               ),
             const m3.SizedBox(width: 12),
             AppButton(
               key: const m3.ValueKey('java-cancel'),
               onPressed: () =>
                   ref.read(javaProvisionControllerProvider.notifier).cancel(),
-              style: m3e.M3EButtonStyle.outlined,
-              size: m3e.M3EButtonSize.sm,
+              style: AppButtonStyle.outlined,
+              size: AppButtonSize.sm,
               label: m3.Text(l10n.javaCancel),
             ),
           ],
@@ -172,10 +170,13 @@ class _Done extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
-    final scheme = m3e.M3ETheme.of(context).colorScheme;
     return m3.Row(
       children: [
-        m3.Icon(ShellIcons.checkCircle, size: 16, color: scheme.success),
+        m3.Icon(
+          ShellIcons.checkCircle,
+          size: 16,
+          color: AppTheme.status(context).success,
+        ),
         const m3.SizedBox(width: 8),
         m3.Expanded(
           child: m3.Text(
@@ -187,8 +188,8 @@ class _Done extends ConsumerWidget {
         AppButton(
           onPressed: () =>
               ref.read(javaProvisionControllerProvider.notifier).reset(),
-          style: m3e.M3EButtonStyle.text,
-          size: m3e.M3EButtonSize.sm,
+          style: AppButtonStyle.text,
+          size: AppButtonSize.sm,
           label: m3.Text(l10n.actionClose),
         ),
       ],
@@ -205,14 +206,12 @@ class _Message extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return m3.Row(
       children: [
-        m3.Expanded(
-          child: m3.Text(text, style: AppTheme.body(context)),
-        ),
+        m3.Expanded(child: m3.Text(text, style: AppTheme.body(context))),
         AppButton(
           onPressed: () =>
               ref.read(javaProvisionControllerProvider.notifier).reset(),
-          style: m3e.M3EButtonStyle.text,
-          size: m3e.M3EButtonSize.sm,
+          style: AppButtonStyle.text,
+          size: AppButtonSize.sm,
           label: m3.Text(context.l10n.actionClose),
         ),
       ],
@@ -228,10 +227,13 @@ class _Failed extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
-    final scheme = m3e.M3ETheme.of(context).colorScheme;
     return m3.Row(
       children: [
-        m3.Icon(ShellIcons.warning, size: 16, color: scheme.warning),
+        m3.Icon(
+          ShellIcons.warning,
+          size: 16,
+          color: AppTheme.status(context).warning,
+        ),
         const m3.SizedBox(width: 8),
         m3.Expanded(
           child: m3.Text(
@@ -244,8 +246,8 @@ class _Failed extends ConsumerWidget {
         AppButton(
           onPressed: () =>
               ref.read(javaProvisionControllerProvider.notifier).reset(),
-          style: m3e.M3EButtonStyle.text,
-          size: m3e.M3EButtonSize.sm,
+          style: AppButtonStyle.text,
+          size: AppButtonSize.sm,
           label: m3.Text(l10n.actionClose),
         ),
       ],
@@ -260,10 +262,13 @@ class _Satisfied extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = m3e.M3ETheme.of(context).colorScheme;
     return m3.Row(
       children: [
-        m3.Icon(ShellIcons.checkCircle, size: 16, color: scheme.success),
+        m3.Icon(
+          ShellIcons.checkCircle,
+          size: 16,
+          color: AppTheme.status(context).success,
+        ),
         const m3.SizedBox(width: 8),
         m3.Text(
           context.l10n.javaUseExisting(majorVersion),
@@ -282,7 +287,6 @@ class _Unavailable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final scheme = m3e.M3ETheme.of(context).colorScheme;
     final major = requirement.majorVersion;
     final text = switch (requirement.reason) {
       JavaUnavailableReason.versionNotInstalled =>
@@ -298,7 +302,11 @@ class _Unavailable extends StatelessWidget {
     };
     return m3.Row(
       children: [
-        m3.Icon(ShellIcons.warning, size: 16, color: scheme.warning),
+        m3.Icon(
+          ShellIcons.warning,
+          size: 16,
+          color: AppTheme.status(context).warning,
+        ),
         const m3.SizedBox(width: 8),
         m3.Expanded(child: m3.Text(text, style: AppTheme.caption(context))),
       ],
@@ -334,8 +342,8 @@ class JavaRuntimeList extends ConsumerWidget {
             AppButton(
               key: const m3.ValueKey('java-refresh'),
               onPressed: () => ref.invalidate(javaRuntimesProvider),
-              style: m3e.M3EButtonStyle.text,
-              size: m3e.M3EButtonSize.sm,
+              style: AppButtonStyle.text,
+              size: AppButtonSize.sm,
               icon: const m3.Icon(ShellIcons.refresh, size: 14),
               label: m3.Text(l10n.javaRefresh),
             ),
@@ -354,9 +362,8 @@ class JavaRuntimeList extends ConsumerWidget {
           AsyncData(:final value) when value.isEmpty => m3.Text(
             l10n.javaManagedEmpty,
             key: const m3.ValueKey('java-list-empty'),
-            style: AppTheme.caption(context).copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
+            style: AppTheme.caption(context)
+                .copyWith(color: scheme.onSurfaceVariant),
           ),
           AsyncData(:final value) => m3.Column(
             mainAxisSize: m3.MainAxisSize.min,
@@ -385,21 +392,20 @@ class JavaRuntimeList extends ConsumerWidget {
         : l10n.javaManagedItem(major, runtime.versionName);
     final confirmed = await m3.showDialog<bool>(
       context: context,
-      builder: (context) => m3e.M3EDialog(
+      builder: (context) => AppDialog(
         title: label,
-        semanticLabel: label,
         content: m3.Text(
           major == null ? l10n.javaDelete : l10n.javaDeleteConfirm(major),
         ),
         actions: [
           AppButton(
             onPressed: () => m3.Navigator.pop(context, false),
-            style: m3e.M3EButtonStyle.text,
+            style: AppButtonStyle.text,
             label: m3.Text(l10n.actionCancel),
           ),
           AppButton(
             onPressed: () => m3.Navigator.pop(context, true),
-            style: m3e.M3EButtonStyle.filled,
+            style: AppButtonStyle.filled,
             label: m3.Text(l10n.javaDeleteConfirmAction),
           ),
         ],
@@ -438,16 +444,15 @@ class _RuntimeRow extends StatelessWidget {
           ),
           m3.Text(
             l10n.javaManagedDiskUse(formatBytes(runtime.diskBytes)),
-            style: AppTheme.caption(context).copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
+            style: AppTheme.caption(context)
+                .copyWith(color: scheme.onSurfaceVariant),
           ),
           const m3.SizedBox(width: 12),
           AppButton(
             key: m3.ValueKey('java-delete-${runtime.versionName}'),
             onPressed: onDelete,
-            style: m3e.M3EButtonStyle.text,
-            size: m3e.M3EButtonSize.sm,
+            style: AppButtonStyle.text,
+            size: AppButtonSize.sm,
             label: m3.Text(l10n.javaDelete),
           ),
         ],

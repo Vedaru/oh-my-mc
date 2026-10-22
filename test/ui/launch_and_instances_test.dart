@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/widgets.dart';
-import 'package:material_3_expressive/material_3_expressive.dart' as m3e;
 import 'package:material_ui/material_ui.dart' as m3;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -172,11 +171,6 @@ Future<ProviderContainer> pumpScreen(
         supportedLocales: appSupportedLocales,
         localizationsDelegates: appLocalizationsDelegates,
         theme: AppTheme.material(Brightness.light),
-        builder: (context, child) => m3e.M3ETheme(
-          data: AppTheme.expressive(Brightness.light),
-          autoTheming: false,
-          child: child!,
-        ),
         home: MotionScope(
           motion: Motion.full,
           child: m3.Scaffold(

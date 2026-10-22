@@ -1,5 +1,4 @@
 import 'package:flutter/widgets.dart';
-import 'package:material_3_expressive/material_3_expressive.dart' as m3e;
 import 'package:material_ui/material_ui.dart' as m3;
 import 'package:go_router/go_router.dart';
 
@@ -65,8 +64,7 @@ List<ShellDestination> destinationsFor(AppLocalizations l10n) => [
 /// `onDestinationSelected` as a request removes the possibility of the two
 /// disagreeing.
 ///
-/// The rail's type is fixed at [m3e.M3ENavigationRailType.alwaysExpand] on
-/// purpose. The collapsible variants animate their own width, which would make
+/// The rail is permanently [m3.NavigationRail.extended] on purpose. The collapsible variants animate their own width, which would make
 /// the body's constraints depend on a control inside the rail - a layout that
 /// works until someone collapses it on a narrow window. A launcher is not short
 /// of horizontal space at its minimum window size, so labels are always visible
@@ -91,24 +89,18 @@ class AppShell extends StatelessWidget {
         m3.Expanded(
           child: m3.Row(
             children: [
-              m3e.M3ENavigationRail(
-                type: m3e.M3ENavigationRailType.alwaysExpand,
-                expandedWidth: 216,
+              m3.NavigationRail(
+                extended: true,
+                minExtendedWidth: 216,
                 selectedIndex: selected,
                 onDestinationSelected: (index) =>
                     context.go(destinations[index].location),
-                expandTooltip: l10n.navExpand,
-                collapseTooltip: l10n.navCollapse,
-                sections: [
-                  m3e.M3ENavigationRailSection(
-                    destinations: [
-                      for (final destination in destinations)
-                        m3e.M3ENavigationRailDestination(
-                          icon: m3.Icon(destination.icon),
-                          label: destination.label(l10n),
-                        ),
-                    ],
-                  ),
+                destinations: [
+                  for (final destination in destinations)
+                    m3.NavigationRailDestination(
+                      icon: m3.Icon(destination.icon),
+                      label: m3.Text(destination.label(l10n)),
+                    ),
                 ],
               ),
               m3.Expanded(child: child),
@@ -194,9 +186,8 @@ class _ShellHeader extends StatelessWidget {
           const m3.Spacer(),
           m3.Text(
             l10n.appTitle,
-            style: AppTheme.caption(context).copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
+            style: AppTheme.caption(context)
+                .copyWith(color: scheme.onSurfaceVariant),
           ),
         ],
       ),

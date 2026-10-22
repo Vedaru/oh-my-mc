@@ -16,6 +16,13 @@ dependencies:
   flutter_staggered_animations_plus: ^1.0.4
   simple_animations: ^5.3.0
   animations: ^3.0.0
+  # Loading state that states its shape. Honours reduced motion on its own:
+  # `enabled: false` never builds the shader controller.
+  skeletonizer: ^3.0.0
+  # One-shot effects for state we want the user to notice (an appended warning
+  # line). Its controller is unconditional, so it is confined to lib/ui/motion/
+  # by tool/check_imports.dart and only ever reached through `AppendHighlight`.
+  flutter_animate: ^4.5.2
 
   # --- shell / chrome -----------------------------------------------------
   window_manager: ^0.5.2
@@ -42,11 +49,10 @@ dependencies:
   oauth2: ^2.0.5
 
   # --- ui extras ----------------------------------------------------------
-  # Pinned exactly: 1.8.0 moved RoundedPolygon into material_ui, which collides
-  # with material_new_shapes (a material_3_expressive dependency) and fails the
-  # build with "'RoundedPolygon' is imported from both ...". Do not widen this.
-  material_ui: 1.7.0
-  material_3_expressive: ^1.1.7
+  # Was pinned to 1.7.0 to dodge a RoundedPolygon collision with
+  # material_new_shapes, which arrived via the old expressive style package.
+  # Both are gone as of M11, so the constraint is a normal caret again.
+  material_ui: ^1.7.0
 
 dev_dependencies:
   flutter_test:

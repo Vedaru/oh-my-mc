@@ -1,7 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:material_3_expressive/material_3_expressive.dart' as m3e;
 import 'package:material_ui/material_ui.dart' as m3;
 
 import '../data/settings.dart';
@@ -126,13 +125,6 @@ class _AppState extends State<_App> {
       },
       supportedLocales: appSupportedLocales,
       localizationsDelegates: appLocalizationsDelegates,
-      // The expressive theme must sit above the router's Navigator so every
-      // routed page - including a deep link pumped directly - sees it.
-      builder: (context, child) => m3e.M3ETheme(
-        data: AppTheme.expressive(m3.Theme.of(context).brightness),
-        autoTheming: false,
-        child: child!,
-      ),
     );
   }
 }

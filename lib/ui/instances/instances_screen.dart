@@ -1,7 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:material_3_expressive/material_3_expressive.dart' as m3e;
 import 'package:material_ui/material_ui.dart' as m3;
 import 'package:oh_my_mc/ui/components/app_button.dart';
 
@@ -11,10 +10,13 @@ import '../../data/instance_providers.dart';
 import '../../data/launch_providers.dart';
 import '../../l10n/l10n.dart';
 import '../components/app_banner.dart';
+import '../components/skeleton_block.dart';
 import '../motion/motion.dart';
 import '../shell/shell_icons.dart';
 import '../theme/app_theme.dart';
 import 'instance_card.dart';
+import '../components/app_text_field.dart';
+import '../components/app_dialog.dart';
 
 /// The instance grid.
 ///
@@ -39,9 +41,10 @@ class InstancesScreen extends ConsumerWidget {
     final session = ref.watch(launchControllerProvider);
 
     return switch (state) {
-      InstanceListLoading() => const m3.Center(
-        child: m3.CircularProgressIndicator(),
-      ),
+      // A grid-shaped skeleton rather than a centred spinner: the shape is
+      // known, so the placeholder can occupy the space the cards will
+      // (PLAN-M11 §3.1).
+      InstanceListLoading() => const _GridSkeleton(),
       InstanceListFailed(:final message) => _Failure(message: message),
       InstanceListReady(:final instances, :final selectedId, :final skipped) =>
         _Grid(
@@ -88,20 +91,19 @@ class InstancesScreen extends ConsumerWidget {
     final l10n = context.l10n;
     final confirmed = await m3.showDialog<bool>(
       context: context,
-      builder: (context) => m3e.M3EDialog(
+      builder: (context) => AppDialog(
         title: l10n.instanceDelete,
-        semanticLabel: l10n.instanceDelete,
         content: m3.Text(l10n.instanceDeleteConfirmFiles(instance.displayName)),
         actions: [
           AppButton(
             onPressed: () => m3.Navigator.pop(context, false),
-            style: m3e.M3EButtonStyle.text,
+            style: AppButtonStyle.text,
             label: m3.Text(l10n.actionCancel),
           ),
           AppButton(
             key: const m3.ValueKey('instance-delete-confirm'),
             onPressed: () => m3.Navigator.pop(context, true),
-            style: m3e.M3EButtonStyle.filled,
+            style: AppButtonStyle.filled,
             label: m3.Text(l10n.instanceDelete),
           ),
         ],
@@ -172,14 +174,13 @@ class _Grid extends StatelessWidget {
               const m3.SizedBox(width: 8),
               m3.Text(
                 l10n.instanceCount(instances.length),
-                style: AppTheme.caption(context).copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
+                style: AppTheme.caption(context)
+                    .copyWith(color: scheme.onSurfaceVariant),
               ),
               const m3.Spacer(),
               AppButton(
                 onPressed: onCreate,
-                style: m3e.M3EButtonStyle.filled,
+                style: AppButtonStyle.filled,
                 icon: const m3.Icon(ShellIcons.add, size: 15),
                 label: m3.Text(l10n.instanceCreate),
               ),
@@ -251,7 +252,8 @@ extension on _Grid {
   Future<void> _showMenu(BuildContext context, Instance instance) async {
     final l10n = context.l10n;
     final box = context.findRenderObject() as m3.RenderBox?;
-    final overlay = m3.Overlay.of(context).context.findRenderObject()! as m3.RenderBox;
+    final overlay =
+        m3.Overlay.of(context).context.findRenderObject()! as m3.RenderBox;
     final origin = box == null
         ? m3.Offset.zero
         : box.localToGlobal(m3.Offset.zero, ancestor: overlay);
@@ -352,7 +354,7 @@ class _Empty extends StatelessWidget {
           const m3.SizedBox(height: 16),
           AppButton(
             onPressed: onCreate,
-            style: m3e.M3EButtonStyle.filled,
+            style: AppButtonStyle.filled,
             label: m3.Text(l10n.instanceCreate),
           ),
         ],
@@ -404,20 +406,19 @@ class _NewInstanceDialogState extends State<_NewInstanceDialog> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final canCreate = _controller.text.trim().isNotEmpty;
-    return m3e.M3EDialog(
+    return AppDialog(
       title: l10n.instanceCreate,
-      semanticLabel: l10n.instanceCreate,
-      content: m3e.M3ETextField(
+      content: AppTextField(
         controller: _controller,
         autofocus: true,
-        label: l10n.instanceNameHint,
+        hint: l10n.instanceNameHint,
         onChanged: (_) => setState(() {}),
         onSubmitted: (value) => m3.Navigator.of(context).pop(value.trim()),
       ),
       actions: [
         AppButton(
           onPressed: () => m3.Navigator.of(context).pop(),
-          style: m3e.M3EButtonStyle.text,
+          style: AppButtonStyle.text,
           label: m3.Text(l10n.actionCancel),
         ),
         AppButton(
@@ -427,10 +428,82 @@ class _NewInstanceDialogState extends State<_NewInstanceDialog> {
           onPressed: canCreate
               ? () => m3.Navigator.of(context).pop(_controller.text.trim())
               : null,
-          style: m3e.M3EButtonStyle.filled,
+          style: AppButtonStyle.filled,
           label: m3.Text(l10n.instanceCreate),
         ),
       ],
+    );
+  }
+}
+
+/// The instance grid's loading state.
+///
+/// Same `mainAxisExtent: 148`, same column arithmetic and same spacing as the
+/// real grid, so the cards land exactly where the skeletons stood instead of the
+/// whole page reflowing when the list arrives (PLAN-M11 §3.1).
+class _GridSkeleton extends StatelessWidget {
+  const _GridSkeleton();
+
+  static const _cards = 8;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = m3.Theme.of(context).colorScheme;
+
+    return m3.LayoutBuilder(
+      builder: (context, constraints) {
+        // Kept identical to _Grid's arithmetic: a skeleton that picks its own
+        // column count would be a second layout to maintain, and would not
+        // promise the layout that is actually coming.
+        const targetWidth = 280.0;
+        final columns = (constraints.maxWidth / targetWidth).floor().clamp(
+          1,
+          6,
+        );
+
+        return Skeleton(
+          child: m3.GridView.builder(
+            padding: const m3.EdgeInsets.all(16),
+            physics: const m3.NeverScrollableScrollPhysics(),
+            gridDelegate: m3.SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: columns,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              mainAxisExtent: 148,
+            ),
+            itemCount: _cards,
+            itemBuilder: (context, index) => m3.Container(
+              padding: const m3.EdgeInsets.all(14),
+              decoration: m3.BoxDecoration(
+                color: scheme.surfaceContainerLow,
+                borderRadius: m3.BorderRadius.circular(14),
+              ),
+              child: const m3.Column(
+                crossAxisAlignment: m3.CrossAxisAlignment.start,
+                children: [
+                  m3.Row(
+                    children: [
+                      SkeletonBlock(width: 22, height: 22, radius: 6),
+                      m3.SizedBox(width: 10),
+                      m3.Expanded(child: SkeletonBlock(height: 12)),
+                    ],
+                  ),
+                  m3.SizedBox(height: 10),
+                  SkeletonBlock(width: 96, height: 10),
+                  m3.Spacer(),
+                  m3.Row(
+                    children: [
+                      m3.Expanded(child: SkeletonBlock(height: 10)),
+                      m3.SizedBox(width: 12),
+                      SkeletonBlock(width: 40, height: 10),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -148,6 +148,62 @@ directory and `test/shots/` are now git-ignored.)
 - All durations/curves come from `lib/ui/motion/motion.dart`; no inline `Duration(` / `Curves.` elsewhere.
 - Respect reduced motion via `MotionScope` (collapses durations to 0).
 - Every user-visible string goes through `AppLocalizations` (en + zh_Hans). No hardcoded UI text.
+- **`material_ui` (`m3`) is the only style package.** `material_3_expressive` (`m3e`) was removed in
+  `PLAN-M11` W7 — do not reintroduce it, and do not import `package:flutter/material.dart` (a second tree).
+  If a control needs a variant `material_ui` lacks, add a wrapper in `lib/ui/components/`, never an
+  inline workaround at the call site.
+
+## `lib/ui/components/` — the design-system seam
+
+Screens import these, not raw `m3` controls, so a later design-system change is a one-file edit each:
+
+| Component | Wraps | Why it exists |
+|---|---|---|
+| `AppButton` | `m3.Filled/Outlined/TextButton` | `AppButtonStyle` / `AppButtonSize` absorb the old `M3EButton*` enums |
+| `AppTextField` | `m3.TextField` + `InputDecoration` | outlined, single/multi-line |
+| `AppSwitch` | `m3.Switch` + `Semantics` | `m3.Switch` has **no** `semanticLabel` |
+| `AppSlider` | `m3.Slider` + `Semantics` | `m3.Slider` has **no** `semanticLabel` |
+| `AppRadioGroup<T>` | `m3.RadioGroup` + `m3.Radio` in `InkWell` rows | `RadioListTile` **asserts** under a `DecoratedBox` with a background |
+| `AppDialog` | `m3.AlertDialog` | `title` is also the semantic label |
+| `AppTheme.status(context)` | fixed hues | MD3 has no success/warning/info; these must not follow the accent |
+
+Two `material_ui` facts that cost real time here:
+
+- `RadioGroup` is **not** re-exported by `material_ui`; it comes from `package:flutter/widgets.dart`.
+  `Radio.groupValue`/`Radio.onChanged` are deprecated after Flutter 3.32 — put state on `RadioGroup`.
+- `m3.Slider.onChangeEnd` reports the **released** value (unlike `m3e`, which reported the stale prop).
+  Do not resurrect the `_dragging`-reads-in-`onChangeEnd` workaround.
+
+## Motion: informative, not decorative
+
+Motion has two jobs and they are reviewed differently. *Style* motion (entrances, page transitions,
+ambience) lives in `lib/ui/motion/` and is unchanged by design changes. *Informative* motion states a
+fact the user could not otherwise read, and is the only kind a screen may add on its own:
+
+| Primitive | Says | Use for |
+|---|---|---|
+| `Skeleton` + `SkeletonBlock` | "content of this shape is coming" | any region whose layout is known while loading |
+| `AnimatedCount` | "this number is moving to *that* value" | memory size, download percentage |
+| `Emphasis` | "the control heard the press" | the one primary action on a screen |
+| `AppendHighlight` | "this row just arrived" | appended log lines, warnings especially |
+| `AmbientLoop` | "still working, no progress to report" | a pulsing dot while a launch runs |
+| `MotionRespectingProgressBar` | "working, length unknown" | an indeterminate phase |
+| `StaggerItem`/`StaggerList`/`MotionEntrance` | "this is a list, that is a page" | entrance only |
+
+Rules that are enforced, not stylistic:
+
+- **Skeleton where the shape is known, spinner where it is not.** A spinner above a list that will be
+  rows is a wasted opportunity; a skeleton in a one-line check is noise.
+- **A running progress bar never reaches 1.0.** `download_screen.dart` clamps both the bar and the
+  percentage (`_displayFraction`); only the finished state may say 100%.
+- **Motion off must cost nothing.** Every primitive returns its end state (or the plain child) and
+  schedules no frames; `test/ui/motion_informative_test.dart` asserts this with
+  `transientCallbackCount == 0`, not with a duration check.
+- `flutter_animate` and `skeletonizer` may only be imported by `lib/ui/motion/primitives.dart`
+  (`tool/check_imports.dart` enforces it): both build controllers unconditionally, so a call site
+  would silently break reduced motion.
+- Never animate an initial backfill (a log opened with 500 lines): animation there delays the first
+  useful frame and communicates nothing.
 
 ## Ship targets (decided — do not "helpfully" add more)
 

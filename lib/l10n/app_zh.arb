@@ -72,6 +72,7 @@
   "downloadPhaseVerify": "校验文件",
   "downloadStepOf": "第 {step} 步，共 {steps} 步",
   "downloadBytes": "{done} / {total}",
+  "downloadPercent": "{percent}%",
   "downloadRate": "{rate}/秒",
   "downloadComplete": "{version} 已可开始游戏",
   "downloadCompleteWithProblems": "{version} 已安装，但有 {count} 个文件需要修复",

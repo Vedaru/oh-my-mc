@@ -56,6 +56,7 @@ void main() {
         'setupJava', // "Java" is "Java" in Chinese
         'instanceJavaLabel', // same
         'instanceMemoryMb', // a number and the SI-ish unit "MB"
+        'downloadPercent', // a number and a percent sign
         'languageEnglish', // a language is named in its own language
       };
       final untranslated = [
@@ -110,26 +111,31 @@ void main() {
     // the reason: an unprefixed reference resolves to the in-SDK Material copy,
     // a second type system from the `material_ui` package the app actually uses.
     // A qualified `m3.` reference is the correct one and is allowed.
-    test('our own code never references the SDK Material localization types', () {
-      final offenders = <String>[];
-      for (final entity in Directory('lib').listSync(recursive: true)) {
-        if (entity is! File || !entity.path.endsWith('.dart')) continue;
-        if (entity.path.contains('lib/l10n/generated/')) continue;
-        final source = _stripComments(entity.readAsStringSync());
-        for (final banned in [
-          RegExp(r'(?<!\.)GlobalMaterialLocalizations'),
-          RegExp(r'(?<!\.)GlobalCupertinoLocalizations'),
-        ]) {
-          if (banned.hasMatch(source)) {
-            offenders.add('${entity.path}: ${banned.pattern}');
+    test(
+      'our own code never references the SDK Material localization types',
+      () {
+        final offenders = <String>[];
+        for (final entity in Directory('lib').listSync(recursive: true)) {
+          if (entity is! File || !entity.path.endsWith('.dart')) continue;
+          if (entity.path.contains('lib/l10n/generated/')) continue;
+          final source = _stripComments(entity.readAsStringSync());
+          for (final banned in [
+            RegExp(r'(?<!\.)GlobalMaterialLocalizations'),
+            RegExp(r'(?<!\.)GlobalCupertinoLocalizations'),
+          ]) {
+            if (banned.hasMatch(source)) {
+              offenders.add('${entity.path}: ${banned.pattern}');
+            }
+          }
+          if (source.contains('AppLocalizations.localizationsDelegates')) {
+            offenders.add(
+              '${entity.path}: AppLocalizations.localizationsDelegates',
+            );
           }
         }
-        if (source.contains('AppLocalizations.localizationsDelegates')) {
-          offenders.add('${entity.path}: AppLocalizations.localizationsDelegates');
-        }
-      }
-      expect(offenders, isEmpty);
-    });
+        expect(offenders, isEmpty);
+      },
+    );
 
     test('the shipped delegate list has one entry per tree', () {
       // Our own delegate plus every delegate `material_ui` needs. Counting them

@@ -1,5 +1,4 @@
 import 'package:flutter/widgets.dart';
-import 'package:material_3_expressive/material_3_expressive.dart' as m3e;
 import 'package:material_ui/material_ui.dart' as m3;
 import 'package:oh_my_mc/ui/components/app_button.dart';
 
@@ -48,17 +47,17 @@ class AppBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = m3e.M3ETheme.of(context).colorScheme;
-    // The scheme exposes flat semantic accents and only one container pair
-    // (`errorContainer`), so the container is derived: a light tint of the accent
-    // over the surface, which keeps contrast in both brightnesses. Using the
-    // accent directly as a background would need a matching on-colour we do not
-    // have for `success`/`warning`.
+    final scheme = m3.Theme.of(context).colorScheme;
+    final status = AppTheme.status(context);
+    // Only `errorContainer` exists in MD3, so the container is derived: a light
+    // tint of the accent over the surface keeps contrast in both brightnesses.
+    // The accent itself is not a background because there is no matching
+    // on-colour for success/warning.
     final (accent, icon) = switch (severity) {
-      BannerSeverity.info => (scheme.info, ShellIcons.error),
-      BannerSeverity.success => (scheme.success, ShellIcons.checkCircle),
-      BannerSeverity.warning => (scheme.warning, ShellIcons.warning),
-      BannerSeverity.error => (scheme.danger, ShellIcons.error),
+      BannerSeverity.info => (status.info, ShellIcons.error),
+      BannerSeverity.success => (status.success, ShellIcons.checkCircle),
+      BannerSeverity.warning => (status.warning, ShellIcons.warning),
+      BannerSeverity.error => (status.danger, ShellIcons.error),
     };
     final background = m3.Color.alphaBlend(
       accent.withValues(alpha: 0.14),
@@ -99,8 +98,8 @@ class AppBanner extends StatelessWidget {
             const m3.SizedBox(width: 8),
             AppButton(
               onPressed: onAction,
-              style: m3e.M3EButtonStyle.text,
-              size: m3e.M3EButtonSize.sm,
+              style: AppButtonStyle.text,
+              size: AppButtonSize.sm,
               label: m3.Text(actionLabel!),
             ),
           ],

@@ -1,6 +1,5 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:material_3_expressive/material_3_expressive.dart' as m3e;
 import 'package:material_ui/material_ui.dart' as m3;
 import 'package:oh_my_mc/ui/components/app_button.dart';
 
@@ -150,9 +149,8 @@ class _Headline extends StatelessWidget {
         if (subtitle != null)
           m3.Text(
             subtitle,
-            style: AppTheme.caption(context).copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
+            style: AppTheme.caption(context)
+                .copyWith(color: scheme.onSurfaceVariant),
           ),
       ],
     );
@@ -180,23 +178,41 @@ class _PlayRow extends StatelessWidget {
 
     return m3.Row(
       children: [
-        AppButton(
-          key: const m3.ValueKey('play'),
-          onPressed: onPlay,
-          style: m3e.M3EButtonStyle.filled,
-          size: m3e.M3EButtonSize.lg,
-          icon: session.isBusy
-              ? m3.SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: m3.CircularProgressIndicator(
-                    value: 0.35,
-                    strokeWidth: 2.5,
-                    color: scheme.onPrimary,
-                  ),
-                )
-              : const m3.Icon(ShellIcons.play, size: 16),
-          label: m3.Text(session.isBusy ? l10n.launching : l10n.playButton),
+        // Press feedback: the button gives under the pointer and springs back.
+        // It reads as "heard you" on the one control the whole screen exists
+        // for; motion-off returns the plain button, no listener (PLAN-M11 §3.4).
+        Emphasis(
+          glow: scheme.primary.withValues(alpha: 0.45),
+          child: AppButton(
+            key: const m3.ValueKey('play'),
+            onPressed: onPlay,
+            style: AppButtonStyle.filled,
+            size: AppButtonSize.lg,
+            // A pulsing dot, not a spinner: the launch is one indeterminate wait,
+            // and a dot says "alive" without pretending to know how far along it
+            // is. AmbientLoop renders its resting frame and creates no ticker
+            // when motion is off.
+            icon: session.isBusy
+                ? AmbientLoop(
+                    tween: Tween<double>(begin: 0.35, end: 1),
+                    duration: Durations.slow,
+                    builder: (context, value, _) => m3.Opacity(
+                      opacity: value,
+                      child: m3.SizedBox(
+                        width: 10,
+                        height: 10,
+                        child: m3.DecoratedBox(
+                          decoration: m3.BoxDecoration(
+                            color: scheme.onPrimary,
+                            shape: m3.BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                : const m3.Icon(ShellIcons.play, size: 16),
+            label: m3.Text(session.isBusy ? l10n.launching : l10n.playButton),
+          ),
         ),
         const m3.SizedBox(width: 8),
         // The stop button only exists while something can be stopped, and it
@@ -209,7 +225,7 @@ class _PlayRow extends StatelessWidget {
               ? AppButton(
                   key: const m3.ValueKey('stop'),
                   onPressed: onStop,
-                  style: m3e.M3EButtonStyle.outlined,
+                  style: AppButtonStyle.outlined,
                   icon: const m3.Icon(ShellIcons.stop, size: 13),
                   label: m3.Text(l10n.stopButton),
                 )
@@ -241,7 +257,7 @@ class _ExitBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final scheme = m3e.M3ETheme.of(context).colorScheme;
+    final scheme = m3.Theme.of(context).colorScheme;
     final failed = failure != null || (exitCode != null && exitCode != 0);
 
     // A non-zero exit is not necessarily an error the user can fix (the game
@@ -255,7 +271,9 @@ class _ExitBadge extends StatelessWidget {
           }
         : l10n.launchExited(exitCode ?? 0, formatPlaytime(uptime));
 
-    final color = failed ? scheme.warning : scheme.onSurfaceVariant;
+    final color = failed
+        ? AppTheme.status(context).warning
+        : scheme.onSurfaceVariant;
     return m3.Row(
       mainAxisSize: m3.MainAxisSize.min,
       children: [
@@ -331,9 +349,8 @@ class _LogTailState extends State<_LogTail> {
       return m3.Center(
         child: m3.Text(
           l10n.logsEmpty,
-          style: AppTheme.caption(context).copyWith(
-            color: scheme.onSurfaceVariant,
-          ),
+          style: AppTheme.caption(context)
+              .copyWith(color: scheme.onSurfaceVariant),
         ),
       );
     }

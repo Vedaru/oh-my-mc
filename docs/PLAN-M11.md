@@ -105,11 +105,11 @@ file exercising all of them jointly (`RadioGroup` + `RadioListTile`,
 | `M3EButtonStyle.filled/outlined/text` (36) | 36 | `m3.FilledButton` / `OutlinedButton` / `TextButton` | collapse into one `AppButton` switch (§2.2) |
 | `M3EButtonSize.sm/lg` (19) | 19 | `AppButtonSize` enum → `ButtonStyle.minimumSize`/`padding` | `sm` 40 px (unchanged); `lg` 40 px→MD3 large, §2.2.1 |
 | `M3EButton` | 1 | internal to `AppButton` | the wrapper becomes the only place a button is built |
-| `M3ETextField` (6) | 6 | `m3.TextField` + `m3.InputDecoration(labelText:, hintText:)` | `placeholder` → `hintText` |
-| `M3ESwitch` (5) | 5 | `m3.Switch` | |
-| `M3ESlider` (2) | 2 | `m3.Slider` | **removes a workaround**, §2.4 |
-| `M3EDialog` (6) | 6 | `m3.AlertDialog(title:, content:, actions:, semanticLabel:)` | |
-| `M3ERadioGroup` + `M3ERadio` (2) | 2 | `m3.RadioGroup` + `m3.RadioListTile` | `RadioGroup` is re-exported from `flutter/widgets.dart` |
+| `M3ETextField` (6) | 6 | `AppTextField` → `m3.TextField` + `m3.InputDecoration` | `placeholder` → `hintText` |
+| `M3ESwitch` (5) | 5 | `AppSwitch` → `m3.Switch` + `Semantics` | `m3.Switch` has no `semanticLabel`, §2.7 |
+| `M3ESlider` (2) | 2 | `AppSlider` → `m3.Slider` + `Semantics` | **removes a workaround**, §2.4 |
+| `M3EDialog` (6) | 6 | `AppDialog` → `m3.AlertDialog` | title doubles as `semanticLabel` |
+| `M3ERadioGroup` + `M3ERadio` (2) | 2 | `AppRadioGroup` → `m3.RadioGroup` + `m3.Radio` rows | **not** `RadioListTile`, §2.7 |
 | `M3ETheme` (11) | 11 | delete; read `m3.Theme.of(context).colorScheme` | |
 | `M3EThemeData` (2) + `M3EColorScheme` (2) | 4 | `m3.ThemeData` + `m3.ColorScheme` | `AppTheme.expressive` disappears; `AppTheme.material` is the only theme |
 | `M3ENavigationRail*` (5) | 5 | `m3.NavigationRail(extended: true, …)` + `NavigationRailDestination` | §2.3 |
@@ -135,14 +135,21 @@ bug disappears with `m3`. The wrapper keeps its public shape — `label`,
 declared beside it, so the 36 `style:` and 19 `size:` call sites change one
 token each and no screen ever names a button class again.
 
-Height must be explicit, because MD3's own default is 40 px and only one of our
-two sizes happens to match it. Measured in
-`m3e_button_theme.dart:_measurementsTable`:
+Height must be explicit rather than inherited, because the default and the
+measurement differ: MD3's default body is 40 px but Material pads the tap target
+to 48, so an unstated height is ambiguous. Declared values are from
+`m3e_button_theme.dart:_measurementsTable`; rendered values are measured:
 
-| `m3e` size | Height | hPadding | Sites | MD3 mapping |
-|---|---:|---:|---:|---|
-| `sm` | **40** | 16 | 17 | `minimumSize: Size(64, 40)`, `padding: h16` — unchanged rhythm |
-| `lg` | **96** | 48 | 1 | the hero Play button (§2.2.1) |
+| `m3e` size | Declared | **Rendered** | hPadding | Sites | MD3 mapping |
+|---|---:|---:|---:|---:|---|
+| `sm` | 40 | **48** | 16 | 17 | `minimumSize: (64, 40)` → also renders 48 (tap target) — unchanged |
+| `lg` | 96 | **96** | 48 | 1 | MD3 large, 56 px (§2.2.1) |
+
+The declared/rendered split matters: `sm` declares a 40 px body but Material pads
+the *tap target* to 48, and that is what a widget test measures. Both old and new
+code render **48**, so the dense rows do not move — verified by measuring the
+expressive button directly (`height=48.0 width=82.0`) before writing the
+replacement, and pinned by `test/ui/app_button_test.dart`.
 
 **2.2.1 The Play button is the one deliberate visual change.** It is the only
 `lg` site (`launch_screen.dart:187`) and today it is a 96 px-tall pill. MD3 has no
@@ -224,6 +231,31 @@ primitive, `Emphasis`, which:
 This keeps `tool/check_tokens.dart` meaningful (durations still come from
 `Durations`) and keeps "which package animates what" a one-file question.
 
+### 2.7 Three `m3e` conveniences `material_ui` does not have
+
+Discovery during W4/W5, not predictable from the docs. Each is a small wrapper
+rather than a spread of ad-hoc fixes at the six call sites:
+
+| `m3e` had | `material_ui` 1.7.0 | Consequence |
+|---|---|---|
+| `M3ESwitch(semanticLabel:)` | no `semanticLabel`; announces only "on"/"off" | `AppSwitch` wraps a `MergeSemantics` + `Semantics(label:, toggled:)` |
+| `M3ESlider(semanticLabel:)` | no `semanticLabel`; announces only the number | `AppSlider` wraps a `Semantics(label:)` around the slider |
+| `M3ERadioGroup` + `M3ERadio(label:)` | `RadioGroup` exists in `flutter/widgets.dart`; `RadioListTile` asserts under a `DecoratedBox` with a background | `AppRadioGroup` builds `m3.Radio` inside `m3.InkWell` rows; the setup panel is such a `DecoratedBox`, so the tile is unusable there |
+
+`Radio.groupValue`/`Radio.onChanged` are **deprecated** after 3.32; group state
+belongs on the `RadioGroup` ancestor. `AppRadioGroup` therefore takes
+`value`/`onChanged` and forwards them, which is also the shape the setup screen
+already had.
+
+### 2.8 Status colours are fixed, not seeded
+
+`ColorScheme` has `error` but no success/warning/info. Those three carry
+meaning - a version row is green because it is installed, not because green
+suits the accent - so `AppTheme.status(context)` returns fixed hues that resist
+the seed, with `danger` mapped to `scheme.error` so it still tracks the theme.
+This replaces the four roles `M3EColorScheme` used to supply.
+
+
 ---
 
 ## 3. Making motion informative
@@ -291,12 +323,28 @@ changes before any widget does, and the dependency is removed last.
 | **W1** | Theme: delete `AppTheme.expressive`, keep `AppTheme.material` as the only theme; drop the `m3e.M3ETheme` builder from `AppRoot` | `app_theme.dart`, `app_root.dart`, `app_theme_test.dart` | analyze + test |
 | **W2** | `AppButton`: `AppButtonStyle`/`AppButtonSize` enums, `m3.Filled/Outlined/TextButton`, explicit 40 px / MD3-large (see §2.2.1) | `app_button.dart`, `app_banner.dart`, `instance_card.dart`, `launch_screen.dart` | analyze + test |
 | **W3** | Shell: `m3.NavigationRail(extended: true)` | `app_shell.dart` + `app_shell_l10n_test.dart` | analyze + test |
-| **W4** | Inputs: `TextField`, `Switch`, `Slider` (drops the `onChangeEnd` workaround), `RadioGroup`/`RadioListTile` | `setup_screen.dart`, `args_field.dart`, `logs_screen.dart`, `download_screen.dart`, `instance_detail_screen.dart`, `instances_screen.dart` | analyze + test |
-| **W5** | Dialogs: `m3.AlertDialog` | `instances_screen.dart`, `instance_detail_screen.dart`, `java_panel.dart` | analyze + test |
+| **W4** | Inputs: `AppTextField`, `AppSwitch`, `AppSlider` (drops the `onChangeEnd` workaround), `AppRadioGroup` | `app_text_field.dart`, `app_switch.dart`, `app_slider.dart`, `app_radio_group.dart` + 5 screens | analyze + test |
+| **W5** | Dialogs: `AppDialog` over `m3.AlertDialog`; `AppTheme.status` replaces the four `m3e`-only semantic colours | `app_dialog.dart`, `instances_screen.dart`, `instance_detail_screen.dart`, `java_panel.dart`, `app_theme.dart` | analyze + test |
 | **W6** | Motion: `Emphasis` primitive, skeletons, trailing progress, `AnimatedList` logs, press feedback | `primitives.dart`, 3 screens | analyze + test + tokens |
 | **W7** | Remove the dependency, update the pin comment, `AGENTS.md` + this doc | `pubspec.yaml`, docs | all four gates |
 
-W1–W5 are mechanical and test-guarded; W6 is where judgement lives.
+**Status (2026-10-22):** W1–W7 are done and green — `flutter analyze` clean, both `tool/` gates
+pass, full `flutter test` green. `grep -rn material_3_expressive lib/ test/ pubspec.yaml` returns only
+this document's own history.
+
+W6 was landed as written, with three decisions worth recording:
+
+- **`Emphasis` listens, it does not gesture.** A `GestureDetector` around a button competes for the tap;
+  `Listener` sees the pointer without claiming it, so the press feedback cannot break the press.
+- **The progress clamp lives in one helper** (`_displayFraction` in `download_screen.dart`) and both the
+  bar and the percentage go through it. A bar that is honest and a number that says 100% would be worse
+  than either alone.
+- **The log console animates appends only.** A structured diff (`identical` element-wise) decides between
+  "insert these at the end" and "the visible set was replaced, rebuild without animation"; the initial
+  backfill and every filter/search change take the second path.
+- `flutter_animate` earns its place with exactly one effect (`AppendHighlight`'s tint); `skeletonizer`
+  with the skeletons. Both imports are fenced into `lib/ui/motion/primitives.dart` by
+  `tool/check_imports.dart`.
 
 ---
 
@@ -315,12 +363,13 @@ stay.
 
 ### 5.2 Type-driven finds must be replaced, not just renamed
 
-Three tests find widgets by `m3e` type and would pass vacuously otherwise:
+Four finders looked up `m3e` types and would have passed vacuously otherwise:
 
 | Test | Finds | Replace with |
 |---|---|---|
 | `download_screen_test.dart` | `find.byType(m3e.M3ESwitch)` | `find.byType(m3.Switch)` |
-| `setup_screen_test.dart` | `M3ESwitch`, default-value state | `m3.Switch`; add a test for the slider release fix (§2.4) |
+| `setup_screen_test.dart` | `M3ETextField` directly | `m3.TextField` via `find.descendant` (the key is on `AppTextField`, the finder must reach the `m3` widget) |
+| `setup_screen_test.dart` | `M3ESwitch`, default-value state | `m3.Switch`; plus the slider release test in §2.4 |
 | `launch_and_instances_test.dart` | `M3E*` buttons | `AppButton` by key, not by class |
 
 New tests this milestone needs:
@@ -333,6 +382,15 @@ New tests this milestone needs:
   `test/ui/motion_primitives_test.dart:83`;
 * **progress never reports 1.0 early** — feed incomplete state, assert the
   displayed value stays below 1.0.
+
+Landed in W4/W5 as `test/ui/app_controls_test.dart` (10 tests): a labelled
+`AppSwitch` announces its label *and* stays label-free when none is given; a
+`m3.Switch` with a null `onChanged` stays disabled; `AppSlider` exposes the
+control name the SDK slider drops, and forwards `divisions`/`label`; an
+`AppRadioGroup` reports the tapped option; it builds **no** `RadioListTile`, so
+it can live under the setup panel's `DecoratedBox` (§2.7); `AppDialog`'s visible
+title is its semantic label; and `AppTheme.status` keeps success green under a
+yellow seed while `danger` tracks `scheme.error`.
 
 ### 5.3 No animation switch
 
@@ -356,7 +414,7 @@ packages' own enable flags from the UI — the only switch is the policy layer.
 | Rail width change reflows every screen | `minExtendedWidth: 216` is pinned to today's `expandedWidth`, asserted in a widget test |
 | `Skeletonizer` wraps content in a paint layer that hides semantics | Wrap the *placeholder*, not the real content; assert the real tree returns when loading ends |
 | `flutter_animate` used directly in a screen, bypassing the policy | Import-law style check: `flutter_animate` may appear only in `lib/ui/motion/` (extend `tool/check_imports.dart`'s restricted table) |
-| Removing `material_3_expressive` re-resolves `material_ui` past the pin | Pin is exact (`1.7.0`) and the comment is rewritten in W7, then `flutter pub get` is re-run and the lock checked |
+| Removing `material_3_expressive` re-resolves `material_ui` past the pin | **Resolved:** the pin existed only to dodge `material_new_shapes`, which `m3e` pulled in. With both gone the constraint is `^1.7.0` and `pub get` still resolves 1.7.0 — checked in `pubspec.lock` |
 | The 2 px overflow fixed at `mainAxisExtent: 148` is re-broken by new button heights | `sm` stays pinned at 40 px (identical to today) and the card grid test stays |
 
 ---
@@ -368,6 +426,7 @@ packages' own enable flags from the UI — the only switch is the policy layer.
 * Motion layer diff is additive (`Emphasis` + the new call sites); `tokens.dart`,
   `motion_scope.dart` and `router.dart` are untouched.
 * Motion-off creates no ticker on every new animated surface.
-* All four gates green, test count ≥ today's 575 declarations.
+* All four gates green, test count ≥ today's 575 declarations (now **587**:
+  577 + the 10 in `app_controls_test.dart`).
 * `AGENTS.md` records: `material_ui` is the only style package; `flutter_animate`
   is confined to the motion layer; skeletons are the loading idiom.

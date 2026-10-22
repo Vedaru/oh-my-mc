@@ -198,7 +198,8 @@ void main() {
       await tester.pumpAndSettle();
 
       final router =
-          tester.widget<m3.MaterialApp>(find.byType(m3.MaterialApp))
+          tester
+                  .widget<m3.MaterialApp>(find.byType(m3.MaterialApp))
                   .routerConfig!
               as GoRouter;
       router.go('/setup');

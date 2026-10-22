@@ -1,6 +1,5 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:material_3_expressive/material_3_expressive.dart' as m3e;
 import 'package:material_ui/material_ui.dart' as m3;
 import 'package:oh_my_mc/ui/components/app_button.dart';
 
@@ -11,9 +10,12 @@ import '../../data/install_providers.dart';
 import '../../l10n/l10n.dart';
 import '../components/app_banner.dart';
 import '../components/hover_row.dart';
+import '../components/skeleton_block.dart';
 import '../motion/motion.dart';
 import '../shell/shell_icons.dart';
 import '../theme/app_theme.dart';
+import '../components/app_switch.dart';
+import '../components/app_text_field.dart';
 
 /// One manifest entry, flattened for the widget layer.
 ///
@@ -89,9 +91,10 @@ class _DownloadScreenState extends ConsumerState<DownloadScreen> {
         if (install is! InstallIdle) _InstallPanel(state: install),
         m3.Expanded(
           child: switch (list) {
-            VersionListLoading() => const m3.Center(
-              child: m3.CircularProgressIndicator(),
-            ),
+            // A skeleton, not a spinner: the row rhythm is known, so the list
+            // can say "rows this size are coming" instead of "something is
+            // happening" (PLAN-M11 §3.1).
+            VersionListLoading() => const _VersionSkeleton(),
             VersionListFailed(:final message) => _ListFailure(message: message),
             VersionListReady(:final manifest, :final fromCache) => _VersionList(
               versions: [
@@ -142,26 +145,25 @@ class _Toolbar extends StatelessWidget {
           m3.Expanded(
             child: m3.ConstrainedBox(
               constraints: const m3.BoxConstraints(maxWidth: 340),
-              child: m3e.M3ETextField(
+              child: AppTextField(
                 controller: search,
-                placeholder: l10n.downloadSearchHint,
+                hint: l10n.downloadSearchHint,
                 leading: const m3.Icon(ShellIcons.search, size: 15),
                 onChanged: (_) => onQuery(),
               ),
             ),
           ),
           const m3.SizedBox(width: 12),
-          m3e.M3ESwitch(
+          AppSwitch(
             value: snapshots,
             onChanged: onSnapshots,
-            semanticLabel: l10n.downloadShowSnapshots,
+            label: l10n.downloadShowSnapshots,
           ),
           const m3.SizedBox(width: 8),
           m3.Text(
             l10n.downloadShowSnapshots,
-            style: AppTheme.body(context).copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
+            style: AppTheme.body(context)
+                .copyWith(color: scheme.onSurfaceVariant),
           ),
         ],
       ),
@@ -247,7 +249,7 @@ class _VersionRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final scheme = m3.Theme.of(context).colorScheme;
-    final expressive = m3e.M3ETheme.of(context).colorScheme;
+    final success = AppTheme.status(context).success;
     final actionable = !installed && !busy;
 
     return HoverRow(
@@ -259,9 +261,7 @@ class _VersionRow extends StatelessWidget {
             child: m3.Icon(
               installed ? ShellIcons.check : ShellIcons.download,
               size: 16,
-              color: installed
-                  ? expressive.success
-                  : scheme.onSurfaceVariant,
+              color: installed ? success : scheme.onSurfaceVariant,
             ),
           ),
           m3.Expanded(
@@ -269,9 +269,8 @@ class _VersionRow extends StatelessWidget {
           ),
           m3.Text(
             version.isRelease ? l10n.downloadRelease : l10n.downloadSnapshot,
-            style: AppTheme.caption(context).copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
+            style: AppTheme.caption(context)
+                .copyWith(color: scheme.onSurfaceVariant),
           ),
           const m3.SizedBox(width: 16),
           m3.SizedBox(
@@ -279,9 +278,7 @@ class _VersionRow extends StatelessWidget {
             child: m3.Text(
               installed ? l10n.downloadInstalled : '',
               textAlign: m3.TextAlign.end,
-              style: AppTheme.caption(context).copyWith(
-                color: expressive.success,
-              ),
+              style: AppTheme.caption(context).copyWith(color: success),
             ),
           ),
         ],
@@ -302,7 +299,33 @@ class _InstallPanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = m3.Theme.of(context).colorScheme;
+    final motion = MotionScope.of(context);
     final notifier = ref.read(installControllerProvider.notifier);
+
+    // The panel's state changes are the progress report: queued → running →
+    // done/failed/cancelled. Switching them through an `AnimatedSwitcher` means
+    // the old state *leaves* (fades and shrinks) instead of the box snapping to
+    // a new height, which is what made a cancelled install look like a glitch
+    // rather than an outcome.
+    final panel = switch (state) {
+      InstallIdle() => const m3.SizedBox.shrink(),
+      InstallRunning running => _Running(state: running),
+      InstallDone(:final versionId, :final problemCount) => _Done(
+        versionId: versionId,
+        problemCount: problemCount,
+        onClose: notifier.reset,
+      ),
+      InstallCancelled() => _Message(
+        text: context.l10n.downloadCancelled,
+        onClose: notifier.reset,
+      ),
+      InstallFailed(:final versionId, :final message) => _Failure(
+        versionId: versionId,
+        message: message,
+        onRetry: () => notifier.install(versionId),
+        onClose: notifier.reset,
+      ),
+    };
 
     return m3.Padding(
       padding: const m3.EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -312,25 +335,23 @@ class _InstallPanel extends ConsumerWidget {
           color: scheme.surfaceContainerHigh,
           borderRadius: m3.BorderRadius.circular(14),
         ),
-        child: switch (state) {
-          InstallIdle() => const m3.SizedBox.shrink(),
-          InstallRunning running => _Running(state: running),
-          InstallDone(:final versionId, :final problemCount) => _Done(
-            versionId: versionId,
-            problemCount: problemCount,
-            onClose: notifier.reset,
+        child: m3.AnimatedSwitcher(
+          duration: motion.of(Durations.base),
+          switchInCurve: MotionCurves.enter,
+          switchOutCurve: MotionCurves.exit,
+          transitionBuilder: (child, animation) => m3.FadeTransition(
+            opacity: animation,
+            child: m3.SizeTransition(
+              sizeFactor: animation,
+              alignment: m3.Alignment.topCenter,
+              child: child,
+            ),
           ),
-          InstallCancelled() => _Message(
-            text: context.l10n.downloadCancelled,
-            onClose: notifier.reset,
+          child: m3.KeyedSubtree(
+            key: m3.ValueKey(state.runtimeType.toString()),
+            child: panel,
           ),
-          InstallFailed(:final versionId, :final message) => _Failure(
-            versionId: versionId,
-            message: message,
-            onRetry: () => notifier.install(versionId),
-            onClose: notifier.reset,
-          ),
-        },
+        ),
       ),
     );
   }
@@ -362,16 +383,15 @@ class _Running extends ConsumerWidget {
             ),
             m3.Text(
               l10n.downloadStepOf(progress.step, progress.steps),
-              style: AppTheme.caption(context).copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
+              style: AppTheme.caption(context)
+                  .copyWith(color: scheme.onSurfaceVariant),
             ),
             const m3.SizedBox(width: 12),
             AppButton(
               onPressed: () =>
                   ref.read(installControllerProvider.notifier).cancel(),
-              style: m3e.M3EButtonStyle.outlined,
-              size: m3e.M3EButtonSize.sm,
+              style: AppButtonStyle.outlined,
+              size: AppButtonSize.sm,
               label: m3.Text(l10n.downloadCancel),
             ),
           ],
@@ -383,7 +403,7 @@ class _Running extends ConsumerWidget {
         if (download == null)
           const MotionRespectingProgressBar()
         else
-          m3.LinearProgressIndicator(value: state.fraction.clamp(0.0, 1.0)),
+          _TrailingProgress(fraction: state.fraction),
         const m3.SizedBox(height: 6),
         m3.Row(
           children: [
@@ -394,6 +414,19 @@ class _Running extends ConsumerWidget {
               ),
             ),
             if (download != null) ...[
+              // The percentage is the same trailing value the bar shows, as
+              // digits: a bar answers "roughly how far", the number answers
+              // "how much longer". It counts rather than snapping for the same
+              // reason the bar trails (§3.2).
+              AnimatedCount(
+                value: (_displayFraction(state.fraction) * 100).floor(),
+                builder: (context, percent) => m3.Text(
+                  l10n.downloadPercent(percent),
+                  key: const m3.ValueKey('download-percent'),
+                  style: AppTheme.caption(context),
+                ),
+              ),
+              const m3.SizedBox(width: 12),
               m3.Text(
                 l10n.downloadBytes(
                   formatBytes(download.bytesDone),
@@ -407,9 +440,8 @@ class _Running extends ConsumerWidget {
                   // `formatRate` already appends "/s": passing it through the
                   // ".../s" message would render "1.0 MB/s/s".
                   l10n.downloadRate(formatBytes(rate.round())),
-                  style: AppTheme.caption(context).copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
+                  style: AppTheme.caption(context)
+                      .copyWith(color: scheme.onSurfaceVariant),
                 ),
               ],
             ],
@@ -447,14 +479,14 @@ class _Done extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final scheme = m3e.M3ETheme.of(context).colorScheme;
+    final status = AppTheme.status(context);
     final clean = problemCount == 0;
     return m3.Row(
       children: [
         m3.Icon(
           clean ? ShellIcons.checkCircle : ShellIcons.warning,
           size: 16,
-          color: clean ? scheme.success : scheme.warning,
+          color: clean ? status.success : status.warning,
         ),
         const m3.SizedBox(width: 8),
         m3.Expanded(
@@ -467,8 +499,8 @@ class _Done extends StatelessWidget {
         ),
         AppButton(
           onPressed: onClose,
-          style: m3e.M3EButtonStyle.text,
-          size: m3e.M3EButtonSize.sm,
+          style: AppButtonStyle.text,
+          size: AppButtonSize.sm,
           label: m3.Text(l10n.actionClose),
         ),
       ],
@@ -489,8 +521,8 @@ class _Message extends StatelessWidget {
         m3.Expanded(child: m3.Text(text, style: AppTheme.body(context))),
         AppButton(
           onPressed: onClose,
-          style: m3e.M3EButtonStyle.text,
-          size: m3e.M3EButtonSize.sm,
+          style: AppButtonStyle.text,
+          size: AppButtonSize.sm,
           label: m3.Text(context.l10n.actionClose),
         ),
       ],
@@ -532,15 +564,15 @@ class _Failure extends StatelessWidget {
         ),
         AppButton(
           onPressed: onRetry,
-          style: m3e.M3EButtonStyle.outlined,
-          size: m3e.M3EButtonSize.sm,
+          style: AppButtonStyle.outlined,
+          size: AppButtonSize.sm,
           label: m3.Text(l10n.actionRetry),
         ),
         const m3.SizedBox(width: 8),
         AppButton(
           onPressed: onClose,
-          style: m3e.M3EButtonStyle.text,
-          size: m3e.M3EButtonSize.sm,
+          style: AppButtonStyle.text,
+          size: AppButtonSize.sm,
           label: m3.Text(l10n.actionClose),
         ),
       ],
@@ -568,11 +600,98 @@ class _ListFailure extends ConsumerWidget {
           AppButton(
             onPressed: () =>
                 ref.read(versionListProvider.notifier).load(forceRefresh: true),
-            style: m3e.M3EButtonStyle.filled,
+            style: AppButtonStyle.filled,
             label: m3.Text(l10n.downloadRetry),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The version list's loading state.
+///
+/// Ten placeholder rows on the real row rhythm — icon gutter, name bar, type
+/// bar, the fixed-width installed column — so the list does not jump when the
+/// manifest arrives. A spinner here states nothing; a skeleton states "rows,
+/// about this many, this tall" (PLAN-M11 §3.1).
+class _VersionSkeleton extends StatelessWidget {
+  const _VersionSkeleton();
+
+  static const _rows = 10;
+
+  @override
+  Widget build(BuildContext context) {
+    return Skeleton(
+      child: m3.ListView.builder(
+        padding: const m3.EdgeInsets.fromLTRB(16, 0, 16, 16),
+        // Nothing here can scroll: there is no more content to reach.
+        physics: const m3.NeverScrollableScrollPhysics(),
+        itemCount: _rows,
+        itemBuilder: (context, index) => const m3.Padding(
+          padding: m3.EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          child: m3.Row(
+            children: [
+              m3.SizedBox(
+                width: 28,
+                child: SkeletonBlock(width: 16, height: 16, radius: 4),
+              ),
+              m3.Expanded(child: SkeletonBlock(height: 12)),
+              m3.SizedBox(width: 24),
+              SkeletonBlock(width: 48, height: 10),
+              m3.SizedBox(width: 16),
+              m3.SizedBox(
+                width: 96,
+                child: m3.Align(
+                  alignment: m3.Alignment.centerRight,
+                  child: SkeletonBlock(width: 64, height: 10),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The highest fraction an unfinished install may display.
+///
+/// One thousandth below the end keeps the bar visibly short of finished without
+/// looking stuck, and keeps the percentage honest: 100% is reserved for the done
+/// panel, because "100%" is the one number a user acts on.
+const _incompleteProgressCeiling = 0.999;
+
+/// [raw] clamped to what a *running* install is allowed to show.
+double _displayFraction(double raw) =>
+    raw.clamp(0.0, _incompleteProgressCeiling);
+
+/// A progress bar that trails the reported fraction instead of snapping to it.
+///
+/// Bytes arrive in bursts, so binding the bar straight to `state.fraction` makes
+/// it jump in steps. This animates toward the reported value over
+/// [Durations.fast], and it is **clamped below 1.0**: an install that is still
+/// running must never claim to be finished. Only the finished state may say
+/// 100%, which is why the clamp lives here rather than in the caller
+/// (PLAN-M11 §3.2).
+class _TrailingProgress extends StatelessWidget {
+  const _TrailingProgress({required this.fraction});
+
+  final double fraction;
+
+  @override
+  Widget build(BuildContext context) {
+    final motion = MotionScope.of(context);
+    final target = _displayFraction(fraction);
+
+    return TweenAnimationBuilder<double>(
+      // `begin` is replaced by the in-flight value on every rebuild, so this
+      // always animates from where the bar is to where the bytes say it should
+      // be.
+      tween: Tween<double>(begin: target, end: target),
+      duration: motion.of(Durations.fast),
+      curve: MotionCurves.enter,
+      builder: (context, value, _) => m3.LinearProgressIndicator(value: value),
     );
   }
 }

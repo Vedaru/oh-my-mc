@@ -1,9 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';
-import 'package:material_3_expressive/material_3_expressive.dart' as m3e;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart' as m3;
 import 'package:oh_my_mc/app/providers.dart';
 import 'package:oh_my_mc/data/instance_providers.dart';
 import 'package:oh_my_mc/data/instance_store.dart';
@@ -12,7 +12,9 @@ import 'package:oh_my_mc/data/settings.dart';
 import 'package:oh_my_mc/data/launch_factory.dart';
 import 'package:oh_my_mc/ui/motion/motion.dart';
 import 'package:oh_my_mc/ui/setup/setup_screen.dart';
+
 import '../support/harness.dart';
+
 import 'package:path/path.dart' as p;
 
 /// The setup screen, asserted against the stores rather than the pixels.
@@ -165,8 +167,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(container.read(appSettingsProvider).playerName, 'Player');
-    final field = tester.widget<m3e.M3ETextField>(
-      find.byKey(const ValueKey('setup-player-name')),
+    final field = tester.widget<m3.TextField>(
+      find.descendant(
+        of: find.byKey(const ValueKey('setup-player-name')),
+        matching: find.byType(m3.TextField),
+      ),
     );
     expect(field.controller!.text, 'Player');
   });
@@ -199,8 +204,11 @@ void main() {
     );
 
     expect(find.text('Animations off'), findsOneWidget);
-    final field = tester.widget<m3e.M3ETextField>(
-      find.byKey(const ValueKey('setup-player-name')),
+    final field = tester.widget<m3.TextField>(
+      find.descendant(
+        of: find.byKey(const ValueKey('setup-player-name')),
+        matching: find.byType(m3.TextField),
+      ),
     );
     expect(field.controller!.text, 'Alex');
   });

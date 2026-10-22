@@ -1,6 +1,5 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:material_3_expressive/material_3_expressive.dart' as m3e;
 import 'package:material_ui/material_ui.dart' as m3;
 
 import '../../app/providers.dart';
@@ -11,6 +10,10 @@ import '../motion/motion.dart';
 import '../shell/shell_icons.dart';
 import '../theme/app_theme.dart';
 import 'java_panel.dart';
+import '../components/app_radio_group.dart';
+import '../components/app_slider.dart';
+import '../components/app_switch.dart';
+import '../components/app_text_field.dart';
 
 /// Everything the launcher lets a user change.
 ///
@@ -78,13 +81,13 @@ class SetupScreen extends ConsumerWidget {
                     hint: l10n.setupMotionHint,
                     child: m3.Row(
                       children: [
-                        m3e.M3ESwitch(
+                        AppSwitch(
                           key: const m3.ValueKey('setup-motion'),
                           value: settings.uiAnimations,
                           // Turning this on cannot override the OS accessibility
                           // setting: MotionScope ORs them.
                           onChanged: notifier.setUiAnimations,
-                          semanticLabel: l10n.setupMotion,
+                          label: l10n.setupMotion,
                         ),
                         const m3.SizedBox(width: 10),
                         m3.Text(
@@ -181,9 +184,8 @@ class _SettingRow extends StatelessWidget {
                 padding: const m3.EdgeInsets.only(top: 2),
                 child: m3.Text(
                   hint,
-                  style: AppTheme.caption(context).copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
+                  style: AppTheme.caption(context)
+                      .copyWith(color: scheme.onSurfaceVariant),
                 ),
               ),
             ],
@@ -217,24 +219,11 @@ class _Choice<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return m3e.M3ERadioGroup<T>(
-      groupValue: value,
+    return AppRadioGroup<T>(
+      value: value,
+      options: options,
       onChanged: onChanged,
-      child: m3.Column(
-        crossAxisAlignment: m3.CrossAxisAlignment.start,
-        children: [
-          for (final entry in options.entries)
-            m3e.M3ERadio<T>(
-              key: m3.ValueKey('$keyPrefix-${entry.key}'),
-              value: entry.key,
-              groupValue: value,
-              onChanged: (selected) {
-                if (selected != null) onChanged(selected);
-              },
-              label: m3.Text(entry.value, style: AppTheme.body(context)),
-            ),
-        ],
-      ),
+      keyPrefix: keyPrefix,
     );
   }
 }
@@ -298,7 +287,7 @@ class _PlayerNameRowState extends ConsumerState<_PlayerNameRow> {
       hint: l10n.setupPlayerNameHint,
       child: m3.SizedBox(
         width: 260,
-        child: m3e.M3ETextField(
+        child: AppTextField(
           key: const m3.ValueKey('setup-player-name'),
           controller: _controller,
           focusNode: _focus,
@@ -340,24 +329,30 @@ class _GlobalMemoryRowState extends ConsumerState<_GlobalMemoryRow> {
       child: m3.Column(
         crossAxisAlignment: m3.CrossAxisAlignment.stretch,
         children: [
-          m3.Text(
-            l10n.instanceMemoryMb(value),
-            style: AppTheme.body(context),
+          // The memory number is the answer for this row, so it counts to its new
+          // value instead of snapping while the slider is dragged (§3.4). The
+          // label is rebuilt per tick so the l10n unit stays in one place.
+          AnimatedCount(
+            value: value,
+            builder: (context, mb) => m3.Text(
+              l10n.instanceMemoryMb(mb),
+              key: const m3.ValueKey('setup-memory-value'),
+              style: AppTheme.body(context),
+            ),
           ),
-          m3e.M3ESlider(
+          AppSlider(
             key: const m3.ValueKey('setup-memory'),
             value: clampMemoryMb(value).toDouble(),
             min: kMinMemoryMb.toDouble(),
             max: kMaxMemoryMb.toDouble(),
             divisions: (kMaxMemoryMb - kMinMemoryMb) ~/ _step,
-            semanticLabel: l10n.setupMemory,
+            label: l10n.setupMemory,
             onChanged: (v) =>
                 setState(() => _dragging = (v / _step).round() * _step),
-            // `onChangeEnd` reports the value the widget was built with, not the
-            // one the drag produced, so the released value comes from `_dragging`.
-            onChangeEnd: (_) {
-              final mb = _dragging;
-              if (mb == null) return;
+            // `onChangeEnd` carries the released value itself, so this reads its
+            // argument rather than the `_dragging` field the drag left behind.
+            onChangeEnd: (v) {
+              final mb = (v / _step).round() * _step;
               setState(() => _dragging = null);
               ref
                   .read(appSettingsProvider.notifier)
@@ -375,9 +370,8 @@ class _GlobalMemoryRowState extends ConsumerState<_GlobalMemoryRow> {
               m3.Expanded(
                 child: m3.Text(
                   l10n.instanceMemoryBigger,
-                  style: AppTheme.caption(context).copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
+                  style: AppTheme.caption(context)
+                      .copyWith(color: scheme.onSurfaceVariant),
                 ),
               ),
             ],

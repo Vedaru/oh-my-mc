@@ -606,6 +606,16 @@
       }
     }
   },
+  "downloadPercent": "{percent}%",
+  "@downloadPercent": {
+    "description": "How much of the current download is done, as a whole percentage. Sits next to the byte counter.",
+    "placeholders": {
+      "percent": {
+        "type": "int",
+        "example": "42"
+      }
+    }
+  },
   "downloadRate": "{rate}/s",
   "@downloadRate": {
     "description": "Download speed. The rate is preformatted, e.g. \"3.4 MB\".",

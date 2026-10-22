@@ -71,7 +71,9 @@ class SplashOverlay extends StatelessWidget {
                   // still frame that still tells the truth.
                   child: progress == null
                       ? const MotionRespectingProgressBar()
-                      : m3.LinearProgressIndicator(value: progress!.clamp(0, 1)),
+                      : m3.LinearProgressIndicator(
+                          value: progress!.clamp(0, 1),
+                        ),
                 ),
               ],
             ),
