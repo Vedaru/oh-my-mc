@@ -49,6 +49,26 @@
     "description": "Placeholder when the instance list is empty."
   },
   "launchEmptyHint": "Create one on the Instances page, then launch it from here.",
+  "launchVersionListTitle": "Versions",
+  "@launchVersionListTitle": {
+    "description": "Title of the dialog the version card opens."
+  },
+  "launchVersionListEmpty": "No versions installed yet. Create one from the download page.",
+  "@launchVersionListEmpty": {
+    "description": "Shown in the version list when nothing is installed."
+  },
+  "launchVersionSettings": "Version settings",
+  "@launchVersionSettings": {
+    "description": "Tooltip of the per-row action that opens that version's settings."
+  },
+  "launchManageInstances": "Manage",
+  "@launchManageInstances": {
+    "description": "Dialog action that opens the instance management screen."
+  },
+  "launchNewInstance": "New instance",
+  "@launchNewInstance": {
+    "description": "Dialog action that creates an instance."
+  },
   "@launchEmptyHint": {
     "description": "Shown on the launch screen while no instance is selected, under the title."
   },
@@ -323,6 +343,10 @@
     "description": "Log console title."
   },
   "logsEmpty": "No log output yet",
+  "launchLogEmptyHint": "Start the game and its output shows up here.",
+  "@launchLogEmptyHint": {
+    "description": "Second line of the empty log console on the launch page."
+  },
   "@logsEmpty": {
     "description": "Shown before any log line arrives."
   },

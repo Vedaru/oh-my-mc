@@ -279,6 +279,15 @@ the current gap table and the ordered backlog. Two rules from it bind new code:
   just downloaded.
 - **The version card is the selector**, and per-version settings live in
   `/instances/:id`, never in the global `/setup` page.
+- **The card opens 版本列表, a dialog** - not an anchored dropdown. The list is
+  also where a version is configured (a gear per row) and where versions are
+  created or managed, and a popup menu can only switch: it cannot carry primary
+  and secondary actions per row, and it sizes itself to its widest row, so it
+  floated as a 240 px sliver under a 500 px card.
+- **One console, one surface.** The launch page is card → actions → console, and
+  the console is the page's body (`Expanded`, not content-sized): a bordered box
+  inside a card is two frames for one panel, and a console that grows its first
+  line reflows the page.
 - **Isolation separates the game directory, not the install.** `versions/`,
   `libraries/` and `assets/` always come from the shared tree (`paths.gamePaths`),
   because they are content-addressed and identical; only `--gameDir` and the

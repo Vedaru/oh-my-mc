@@ -705,6 +705,45 @@ void main() {
       await handle.dispose();
     });
 
+    testWidgets('the version card opens the version list, not a menu', (
+      tester,
+    ) async {
+      final container = await pumpScreen(
+        tester,
+        const LaunchScreen(),
+        instances: [
+          sample(id: 'a', name: '26.2', versionId: '26.2'),
+          sample(
+            id: 'b',
+            name: 'Modded',
+            versionId: '1.20.1',
+            loader: LoaderKind.fabric,
+            loaderVersion: '0.20.1',
+          ),
+        ],
+        handle: FakeLaunchHandle.new,
+      );
+
+      await tester.tap(find.byKey(const ValueKey('launch-version-picker')));
+      await tester.pumpAndSettle();
+
+      // PCL's 版本列表: a dialog, because it is also where a version is configured
+      // and where new ones are created - an anchored menu could only switch.
+      expect(find.text('Versions'), findsOneWidget);
+      expect(find.byKey(const ValueKey('version-row-a')), findsOneWidget);
+      expect(find.byKey(const ValueKey('version-row-b')), findsOneWidget);
+      expect(find.textContaining('Fabric 0.20.1'), findsOneWidget);
+      expect(find.text('New instance'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('version-row-b')));
+      await tester.pumpAndSettle();
+
+      // The dialog closes and the choice sticks.
+      expect(find.text('Versions'), findsNothing);
+      final state = container.read(instanceListProvider) as InstanceListReady;
+      expect(state.selectedId, 'b');
+    });
+
     testWidgets('a launch refused for want of Java offers the download', (
       tester,
     ) async {

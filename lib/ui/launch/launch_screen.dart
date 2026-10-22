@@ -14,6 +14,8 @@ import '../../data/java_providers.dart';
 import '../../data/launch_providers.dart';
 import '../../l10n/l10n.dart';
 import '../components/app_banner.dart';
+import '../components/hover_row.dart';
+import 'version_list_dialog.dart';
 import '../components/page_body.dart';
 import '../motion/motion.dart';
 import '../instances/instance_card.dart';
@@ -79,8 +81,11 @@ class LaunchScreen extends ConsumerWidget {
             // stopped you, and here is the button that unblocks it".
             _RepairOfferArea(instance: selected, session: session),
             const m3.SizedBox(height: 20),
-            // Flexible, not Expanded: an idle console keeps its own height.
-            Flexible(child: _LogTail(lines: session.log)),
+            // Expanded: the console *is* the bottom half of this page. Sizing it
+            // to its content made an idle page end in a thin grey strip that
+            // looked like a broken panel, and made the whole layout jump the
+            // moment the first log line arrived.
+            Expanded(child: _LogTail(lines: session.log)),
           ],
         ],
       ),
@@ -256,6 +261,14 @@ class _JavaOfferArea extends ConsumerWidget {
 /// management screen (which is where creation lives, exactly like PCL's version
 /// list dialog). The selection goes through [instanceListProvider] so the choice
 /// survives a restart and every screen agrees on it.
+/// The version card - PCL's launch page subject.
+///
+/// The card is the selector: clicking it opens [VersionListDialog] (versions,
+/// their settings, and the way to create or manage them). It used to be a
+/// `PopupMenuButton`: a menu anchored under a 500 px card, sized to its widest
+/// row, floating over the log. That answered "which one" and nothing else, and it
+/// read as a broken widget rather than a version list - which is exactly what a
+/// user asked about it.
 class _VersionPicker extends ConsumerWidget {
   const _VersionPicker({required this.selected, required this.instances});
 
@@ -268,112 +281,58 @@ class _VersionPicker extends ConsumerWidget {
     final scheme = m3.Theme.of(context).colorScheme;
     final instance = selected;
 
+    // The loader and the version are what tell two instances apart; when the
+    // instance is *named* after its version, repeating it in the subtitle is
+    // noise ("26.2" over "26.2").
     final subtitle = instance == null
         ? l10n.noInstanceSelected
         : [
-            instance.versionId,
-            if (instance.loader.isModded) instance.loader.name,
+            if (instance.displayName != instance.versionId) instance.versionId,
+            if (instance.loader.isModded)
+              '${instance.loader.label} ${instance.loaderVersion ?? ''}'.trim(),
+            if (instance.displayName == instance.versionId &&
+                !instance.loader.isModded)
+              l10n.loaderVanilla,
           ].join('  ·  ');
 
-    return m3.PopupMenuButton<int>(
+    return HoverRow(
       key: const m3.ValueKey('launch-version-picker'),
-      tooltip: '',
-      position: m3.PopupMenuPosition.under,
-      onSelected: (value) {
-        if (value < 0) {
-          context.go(Routes.instances);
-          return;
-        }
-        ref.read(instanceListProvider.notifier).select(instances[value].id);
-      },
-      itemBuilder: (context) => [
-        for (var i = 0; i < instances.length; i++)
-          m3.PopupMenuItem<int>(
-            value: i,
-            child: m3.Row(
+      onTap: () => showVersionList(context),
+      padding: const m3.EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      builder: (hovered) => m3.Row(
+        children: [
+          m3.Icon(
+            instance != null && instance.loader.isModded
+                ? ShellIcons.addon
+                : ShellIcons.instance,
+            size: 26,
+            color: scheme.primary,
+          ),
+          const m3.SizedBox(width: 14),
+          m3.Expanded(
+            child: m3.Column(
+              crossAxisAlignment: m3.CrossAxisAlignment.start,
               children: [
-                m3.SizedBox(
-                  width: 22,
-                  child: identical(instances[i].id, instance?.id)
-                      ? m3.Icon(
-                          ShellIcons.check,
-                          size: 16,
-                          color: scheme.primary,
-                        )
-                      : null,
+                m3.Text(
+                  instance?.displayName ?? l10n.noInstanceSelected,
+                  key: const m3.ValueKey('launch-version-name'),
+                  style: AppTheme.title(context),
+                  maxLines: 1,
+                  overflow: m3.TextOverflow.ellipsis,
                 ),
-                m3.Expanded(
-                  child: m3.Column(
-                    crossAxisAlignment: m3.CrossAxisAlignment.start,
-                    children: [
-                      m3.Text(
-                        instances[i].displayName,
-                        style: AppTheme.body(context),
-                      ),
-                      m3.Text(
-                        instances[i].versionId,
-                        style: AppTheme.caption(context)
-                            .copyWith(color: scheme.onSurfaceVariant),
-                      ),
-                    ],
-                  ),
+                const m3.SizedBox(height: 2),
+                m3.Text(
+                  subtitle,
+                  style: AppTheme.caption(context)
+                      .copyWith(color: scheme.onSurfaceVariant),
+                  maxLines: 1,
+                  overflow: m3.TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
-        const m3.PopupMenuDivider(),
-        m3.PopupMenuItem<int>(
-          value: -1,
-          child: m3.Row(
-            children: [
-              m3.Icon(ShellIcons.list, size: 16),
-              const m3.SizedBox(width: 10),
-              m3.Text(l10n.navInstances, style: AppTheme.body(context)),
-            ],
-          ),
-        ),
-      ],
-      child: m3.Container(
-        padding: const m3.EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: m3.BoxDecoration(
-          color: scheme.surfaceContainerLow,
-          borderRadius: m3.BorderRadius.circular(16),
-        ),
-        child: m3.Row(
-          children: [
-            m3.Icon(
-              instance != null && instance.loader.isModded
-                  ? ShellIcons.addon
-                  : ShellIcons.instance,
-              size: 26,
-              color: scheme.primary,
-            ),
-            const m3.SizedBox(width: 14),
-            m3.Expanded(
-              child: m3.Column(
-                crossAxisAlignment: m3.CrossAxisAlignment.start,
-                children: [
-                  m3.Text(
-                    instance?.displayName ?? l10n.noInstanceSelected,
-                    key: const m3.ValueKey('launch-version-name'),
-                    style: AppTheme.title(context),
-                    maxLines: 1,
-                    overflow: m3.TextOverflow.ellipsis,
-                  ),
-                  const m3.SizedBox(height: 2),
-                  m3.Text(
-                    subtitle,
-                    style: AppTheme.caption(context)
-                        .copyWith(color: scheme.onSurfaceVariant),
-                    maxLines: 1,
-                    overflow: m3.TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            m3.Icon(m3.Icons.expand_more, color: scheme.onSurfaceVariant),
-          ],
-        ),
+          m3.Icon(m3.Icons.expand_more, color: scheme.onSurfaceVariant),
+        ],
       ),
     );
   }
@@ -589,72 +548,75 @@ class _LogTailState extends State<_LogTail> {
     final l10n = context.l10n;
     final scheme = m3.Theme.of(context).colorScheme;
 
+    // One surface, no inner box: the console is a single filled panel, and the
+    // border it used to draw around its own text was a second frame inside the
+    // first. Its height comes from the page (Expanded), so an idle console is as
+    // tall as a busy one and nothing reflows when output starts.
     return m3.Container(
+      key: const m3.ValueKey('launch-log-console'),
       decoration: m3.BoxDecoration(
         color: scheme.surfaceContainerLow,
         borderRadius: m3.BorderRadius.circular(16),
       ),
+      clipBehavior: m3.Clip.antiAlias,
       child: m3.Column(
         crossAxisAlignment: m3.CrossAxisAlignment.stretch,
-        // An idle console is as tall as its own message; a live one fills the
-        // space it was given.
-        mainAxisSize: widget.lines.isEmpty
-            ? m3.MainAxisSize.min
-            : m3.MainAxisSize.max,
         children: [
-          // The console has a header so it reads as a panel that is waiting for
-          // output, not as a hole in the page.
           m3.Padding(
-            padding: const m3.EdgeInsets.fromLTRB(16, 12, 16, 8),
+            padding: const m3.EdgeInsets.fromLTRB(16, 12, 16, 10),
             child: m3.Row(
               children: [
-                m3.Text(l10n.navLogs, style: AppTheme.subtitle(context)),
-                const m3.Spacer(),
+                m3.Text(l10n.navLogs, style: AppTheme.label(context)),
+                const m3.SizedBox(width: 8),
                 if (widget.lines.isNotEmpty)
                   m3.Text(
                     '${widget.lines.length}',
-                    style: AppTheme.caption(context)
+                    key: const m3.ValueKey('launch-log-count'),
+                    style: AppTheme.mono(context)
                         .copyWith(color: scheme.onSurfaceVariant),
                   ),
               ],
             ),
           ),
-          if (widget.lines.isEmpty)
-            m3.Padding(
-              padding: const m3.EdgeInsets.fromLTRB(16, 4, 16, 16),
-              child: m3.Text(
-                l10n.logsEmpty,
-                style: AppTheme.caption(context)
-                    .copyWith(color: scheme.onSurfaceVariant),
-              ),
-            )
-          else
-            m3.Expanded(
-              child: m3.Container(
-                margin: const m3.EdgeInsets.fromLTRB(12, 0, 12, 12),
-                decoration: m3.BoxDecoration(
-                  color: scheme.surfaceContainerLowest,
-                  borderRadius: m3.BorderRadius.circular(10),
-                  border: m3.Border.all(color: scheme.outlineVariant),
-                ),
-                child: m3.ListView.builder(
-                  controller: _controller,
-                  padding: const m3.EdgeInsets.all(12),
-                  itemCount: widget.lines.length,
-                  itemBuilder: (context, index) {
-                    final line = widget.lines[index];
-                    return m3.Text(
-                      line.text,
-                      style: AppTheme.mono(context).copyWith(
-                        color: line.channel == LogChannel.stderr
-                            ? scheme.error
-                            : scheme.onSurface,
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
+          m3.Expanded(
+            child: widget.lines.isEmpty
+                ? m3.Center(
+                    child: m3.Column(
+                      mainAxisSize: m3.MainAxisSize.min,
+                      children: [
+                        m3.Text(
+                          l10n.logsEmpty,
+                          style: AppTheme.body(context)
+                              .copyWith(color: scheme.onSurfaceVariant),
+                        ),
+                        const m3.SizedBox(height: 4),
+                        // A panel this large has to say what will fill it: a bare
+                        // "no output" reads as a console that does not work.
+                        m3.Text(
+                          l10n.launchLogEmptyHint,
+                          style: AppTheme.caption(context)
+                              .copyWith(color: scheme.outline),
+                        ),
+                      ],
+                    ),
+                  )
+                : m3.ListView.builder(
+                    controller: _controller,
+                    padding: const m3.EdgeInsets.fromLTRB(16, 0, 16, 14),
+                    itemCount: widget.lines.length,
+                    itemBuilder: (context, index) {
+                      final line = widget.lines[index];
+                      return m3.Text(
+                        line.text,
+                        style: AppTheme.mono(context).copyWith(
+                          color: line.channel == LogChannel.stderr
+                              ? scheme.error
+                              : scheme.onSurface,
+                        ),
+                      );
+                    },
+                  ),
+          ),
         ],
       ),
     );

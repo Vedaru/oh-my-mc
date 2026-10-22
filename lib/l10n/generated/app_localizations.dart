@@ -176,6 +176,36 @@ abstract class AppLocalizations {
   /// **'Create one on the Instances page, then launch it from here.'**
   String get launchEmptyHint;
 
+  /// Title of the dialog the version card opens.
+  ///
+  /// In en, this message translates to:
+  /// **'Versions'**
+  String get launchVersionListTitle;
+
+  /// Shown in the version list when nothing is installed.
+  ///
+  /// In en, this message translates to:
+  /// **'No versions installed yet. Create one from the download page.'**
+  String get launchVersionListEmpty;
+
+  /// Tooltip of the per-row action that opens that version's settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Version settings'**
+  String get launchVersionSettings;
+
+  /// Dialog action that opens the instance management screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage'**
+  String get launchManageInstances;
+
+  /// Dialog action that creates an instance.
+  ///
+  /// In en, this message translates to:
+  /// **'New instance'**
+  String get launchNewInstance;
+
   /// Creates a new instance.
   ///
   /// In en, this message translates to:
@@ -535,6 +565,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No log output yet'**
   String get logsEmpty;
+
+  /// Second line of the empty log console on the launch page.
+  ///
+  /// In en, this message translates to:
+  /// **'Start the game and its output shows up here.'**
+  String get launchLogEmptyHint;
 
   /// Placeholder in the log search box.
   ///

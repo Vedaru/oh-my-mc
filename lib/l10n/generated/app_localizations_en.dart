@@ -50,6 +50,22 @@ class AppLocalizationsEn extends AppLocalizations {
       'Create one on the Instances page, then launch it from here.';
 
   @override
+  String get launchVersionListTitle => 'Versions';
+
+  @override
+  String get launchVersionListEmpty =>
+      'No versions installed yet. Create one from the download page.';
+
+  @override
+  String get launchVersionSettings => 'Version settings';
+
+  @override
+  String get launchManageInstances => 'Manage';
+
+  @override
+  String get launchNewInstance => 'New instance';
+
+  @override
   String get instanceCreate => 'New instance';
 
   @override
@@ -250,6 +266,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get logsEmpty => 'No log output yet';
+
+  @override
+  String get launchLogEmptyHint =>
+      'Start the game and its output shows up here.';
 
   @override
   String get logsSearchHint => 'Search the log';

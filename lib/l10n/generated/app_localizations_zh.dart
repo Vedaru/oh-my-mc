@@ -49,6 +49,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get launchEmptyHint => '先在「实例」页新建一个，再回到这里启动。';
 
   @override
+  String get launchVersionListTitle => '版本列表';
+
+  @override
+  String get launchVersionListEmpty => '还没有安装任何版本。去下载页装一个。';
+
+  @override
+  String get launchVersionSettings => '版本设置';
+
+  @override
+  String get launchManageInstances => '管理实例';
+
+  @override
+  String get launchNewInstance => '新建实例';
+
+  @override
   String get instanceCreate => '新建实例';
 
   @override
@@ -245,6 +260,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get logsEmpty => '暂无日志输出';
+
+  @override
+  String get launchLogEmptyHint => '启动游戏后，日志会显示在这里。';
 
   @override
   String get logsSearchHint => '搜索日志';

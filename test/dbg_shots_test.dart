@@ -144,6 +144,7 @@ void main() {
     AppSettings settings = AppSettings.defaults,
     double scrollDown = 0,
     List<Override> overrides = const [],
+    String? openKey,
   }) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
@@ -171,6 +172,13 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 600));
     await tester.pump(const Duration(milliseconds: 600));
+
+    if (openKey != null) {
+      // A dialog is part of the screen it belongs to: capture it open rather than
+      // only photographing the resting page.
+      await tester.tap(find.byKey(w.ValueKey(openKey)));
+      await tester.pumpAndSettle();
+    }
 
     if (scrollDown > 0) {
       // A page taller than the window: the lower sections only exist once the
@@ -282,6 +290,20 @@ void main() {
       'instance-mods',
       instances: [_instance('a', 'Survival', '1.20.1')],
       overrides: [modsRepositoryProvider.overrideWithValue(_ShotMods())],
+    );
+  });
+
+  testWidgets('launch versions', (tester) async {
+    await shoot(
+      tester,
+      '/launch',
+      'launch-versions',
+      instances: [
+        _instance('a', '26.2', '26.2'),
+        _instance('b', 'Modded', '1.20.1'),
+        _instance('c', 'Creative', '1.19.2'),
+      ],
+      openKey: 'launch-version-picker',
     );
   });
 
