@@ -79,6 +79,27 @@ needs `build <5.0.0` → unsatisfiable. Don't "upgrade" it.
 the motion architecture — still the rationale of record), and `docs/PLAN-M3.4-M5.md` (**current
 status and next steps**: it audits the older plan against the code).
 
+## App shell traps (M3.4)
+
+- **`find.byType(FluentApp)` gives a context above `Localizations`.** Reading
+  `context.l10n` from it throws a null-check on the generated `of()` — which is the
+  intended loud failure, but it means a test must take its context from a widget
+  *inside* a page. `test/app/router_test.dart` has `localizedContext` for this.
+- **Never pass a fresh closure as `AppRoot.screens` on every build.** `_AppState`
+  compares it by identity, so a new closure per build rebuilds `GoRouter` and
+  resets navigation to `/launch`. Everything a screen can change (theme, locale,
+  motion) flows through `FluentApp`'s own config instead, precisely so the router
+  is not rebuilt.
+- **Riverpod 3.4 has no `overrideWithValue`.** Use
+  `provider.overrideWith((ref) => value)`.
+- **Language changes go through `appSettingsProvider.notifier`, not a constructor
+  argument.** Tests that re-pump `OhMyMcApp(locale: ...)` to switch language are
+  testing a mechanism no user can reach and will now fail.
+- **One transition source: `appPage` in `lib/app/router.dart`.** A screen that
+  builds its own `PageRoute` opts out of reduced motion silently. The reduced
+  motion mechanism is a zero *duration*, not a different page class, so there is
+  one code path — verified to settle in a single pump.
+
 ## Architecture rules
 
 - `lib/core/**` must not import `package:flutter` (it must stay pure-Dart testable).
