@@ -1,4 +1,3 @@
-import 'package:animations/animations.dart';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
@@ -53,10 +52,10 @@ GoRouter createRouter({
       // The rail belongs to the *shell*, not to the page.
       //
       // It used to be wrapped around each screen's widget, which meant the page
-      // transition owned it too: switching tabs faded and slid the whole
-      // window, tab bar included, because `SharedAxisTransition` was animated
-      // above it. A `ShellRoute` builds the rail once and hands the router only
-      // the content, so a transition moves the page and nothing else.
+      // transition owned it too: switching tabs faded and moved the whole
+      // window, tab bar included, because the transition sat above it. A
+      // `ShellRoute` builds the rail once and hands the router only the content,
+      // so a transition moves the page and nothing else.
       ShellRoute(
         builder: (context, state, child) =>
             AppShell(location: state.uri.path, child: child),
@@ -96,9 +95,14 @@ GoRoute _route(
 ///
 /// Two decisions live here and nowhere else:
 ///
-///  * **Direction.** The app is a flat, five-item nav pane, so every transition
-///    is horizontal. A screen that wants a different axis would have to argue for
-///    it here rather than inventing its own page class in a widget file.
+///  * **Slide, never a fade.** A fade is an `Opacity` over the whole page, which
+///    forces an offscreen save-layer of the entire window on every frame of the
+///    transition. On a 1.25-scale panel Flutter renders at device pixel ratio 2,
+///    so a fullscreen surface is 4088x2500 - ten megapixels re-rasterised per
+///    frame, which is exactly when the animation stops being smooth. A
+///    translation is composited from the page's own raster instead, and the
+///    `RepaintBoundary` keeps that raster valid for the whole move. The page
+///    entrance (`MotionEntrance`) made the same trade for the same reason.
 ///  * **Reduced motion.** Per `PLAN-M1-M4.md` §3, neither animation package
 ///    honours `MediaQuery.disableAnimations`, so `MotionScope` resolves the policy
 ///    and the duration is collapsed to zero here. Verified: a zero-duration
@@ -111,7 +115,6 @@ Page<void> appPage(
   BuildContext context, {
   required GoRouterState state,
   required Widget child,
-  SharedAxisTransitionType type = SharedAxisTransitionType.horizontal,
 }) {
   final motion = MotionScope.of(context);
   return CustomTransitionPage<void>(
@@ -119,13 +122,26 @@ Page<void> appPage(
     child: child,
     transitionDuration: motion.of(Durations.slow),
     reverseTransitionDuration: motion.of(Durations.slow),
-    transitionsBuilder: (context, animation, secondaryAnimation, child) =>
-        SharedAxisTransition(
-          animation: animation,
-          secondaryAnimation: secondaryAnimation,
-          transitionType: type,
-          child: child,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      // The incoming page travels a little; the outgoing one drifts the other
+      // way at half the distance, so the two read as one surface moving rather
+      // than a sheet slapped on top.
+      final enter = Tween<Offset>(
+        begin: const Offset(0.04, 0),
+        end: Offset.zero,
+      ).chain(CurveTween(curve: motion.curve)).animate(animation);
+      final exit = Tween<Offset>(
+        begin: Offset.zero,
+        end: const Offset(-0.02, 0),
+      ).chain(CurveTween(curve: MotionCurves.exit)).animate(secondaryAnimation);
+      return SlideTransition(
+        position: exit,
+        child: SlideTransition(
+          position: enter,
+          child: RepaintBoundary(child: child),
         ),
+      );
+    },
   );
 }
 

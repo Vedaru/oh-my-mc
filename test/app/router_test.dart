@@ -1,4 +1,3 @@
-import 'package:animations/animations.dart';
 import 'package:flutter/widgets.dart';
 import 'package:material_ui/material_ui.dart' as m3;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -175,7 +174,7 @@ void main() {
       expect(
         find.ancestor(
           of: find.byType(m3.NavigationRail),
-          matching: find.byType(SharedAxisTransition),
+          matching: find.byType(SlideTransition),
         ),
         findsNothing,
         reason: 'the rail must not be animated by the page transition',
@@ -264,12 +263,36 @@ void main() {
     });
   });
 
-  testWidgets('appPage is the only transition source (shared axis)', (
+  testWidgets('appPage is the only transition source (a slide)', (
     tester,
   ) async {
     // A guard against a screen quietly building its own MaterialPageRoute: if
     // every route goes through appPage, this finder sees one per page.
     await pumpApp(tester);
-    expect(find.byType(SharedAxisTransition), findsWidgets);
+    expect(find.byType(SlideTransition), findsWidgets);
+  });
+
+  testWidgets('the page transition never fades the whole page', (tester) async {
+    // A fade is an `Opacity` over the page, and animating it re-rasterises the
+    // entire window offscreen every frame. That is affordable at a small window
+    // and visibly drops frames at fullscreen on a 2x surface, which is exactly
+    // the report this pins: smooth in a tile, jittery fullscreen.
+    await pumpApp(tester);
+    liveRouter(tester).go(Routes.download);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    final incoming = find.text('route:${Routes.download}');
+    expect(incoming, findsOneWidget);
+    expect(
+      find.ancestor(of: incoming, matching: find.byType(FadeTransition)),
+      findsNothing,
+      reason: 'a full-page fade is a save-layer per frame',
+    );
+    expect(
+      find.ancestor(of: incoming, matching: find.byType(SlideTransition)),
+      findsWidgets,
+      reason: 'a transform is composited from the cached raster',
+    );
   });
 }
