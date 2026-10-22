@@ -276,7 +276,14 @@ class FileDownloader {
 
       for (final uri in candidates) {
         try {
-          await _transfer(uri, part, task, tracker, emit, cancel);
+          // Raced against the token, not merely checked inside: a socket that
+          // has sent its headers but no body sits in `await for` and would
+          // otherwise ignore a cancel until the client's idle timeout fires,
+          // which the user experiences as a hung download.
+          final transfer = _transfer(uri, part, task, tracker, emit, cancel);
+          await (cancel == null
+              ? transfer
+              : cancel.race(transfer, stage: 'download'));
           final actual = await _sha1Of(part);
           if (task.verifiable && actual != task.sha1.toLowerCase()) {
             await part.delete();
@@ -291,6 +298,12 @@ class FileDownloader {
           await _commit(part, target);
           hashCache.record(task.targetPath, actual);
           return;
+        } on CancelledException {
+          // Never retried and never wrapped: "the user asked to stop" is not a
+          // source failure, and retrying it would keep the UI waiting after it
+          // was told the work had stopped.
+          if (await part.exists()) await part.delete();
+          rethrow;
         } catch (e) {
           failures.add(e);
           if (MirrorChain.sourceOf(uri) != DownloadSource.official) {

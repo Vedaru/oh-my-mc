@@ -14,6 +14,7 @@ import '../core/launch/launch_handle.dart';
 import '../core/mc/host.dart';
 import '../core/mc/install_plan.dart';
 import '../core/mc/java_manager.dart';
+import '../core/mc/java_provisioner.dart';
 import '../core/mc/local_host.dart';
 import '../core/mc/launch_service.dart';
 import '../core/mc/version_json.dart';
@@ -127,6 +128,9 @@ Future<LaunchOutcome> prepareInstanceLaunch({
       javaHome: instance.javaPath == null
           ? Platform.environment['JAVA_HOME']
           : p.dirname(p.dirname(instance.javaPath!)),
+      // Runtimes the launcher downloaded itself. Without this a managed JRE is
+      // invisible to the launch path, which is the whole point of shipping one.
+      managedRoots: managedJavaExecutables(paths.data),
     );
   }
 

@@ -205,6 +205,9 @@ List<JavaSearchRoot> javaSearchRoots(HostOs os) => switch (os) {
 ///
 /// Ordered by likelihood: an explicit override, the launcher's own managed
 /// runtimes, `JAVA_HOME`, then the usual per-OS install roots.
+///
+/// [managedRoots] holds executable paths, not directories — `scan` probes every
+/// entry directly, so a directory would be run as if it were a program.
 List<String> defaultJavaSearchPaths({
   required HostOs os,
   String? javaHome,
@@ -266,7 +269,14 @@ JavaRuntime? selectRuntime(List<JavaRuntime> available, int requiredMajor) {
     if (byMajor != 0) return byMajor;
     // Prefer a 64-bit runtime, then a launcher-managed one.
     if (a.is64Bit != b.is64Bit) return a.is64Bit ? -1 : 1;
-    return a.source == JavaSource.managed ? -1 : 1;
+    // Both comparisons must be antisymmetric. Returning 1 whenever `a` was not
+    // managed made "scanned vs managed" and "managed vs scanned" both report
+    // "a is greater", so the sort was inconsistent and the winner depended on
+    // the order runtimes happened to be discovered in.
+    if (a.source != b.source) {
+      return a.source == JavaSource.managed ? -1 : 1;
+    }
+    return 0;
   });
   return usable.first;
 }
@@ -306,6 +316,12 @@ class JavaManager {
   }) async {
     _scanned = true;
     final seen = {for (final r in _runtimes) r.path};
+    // A runtime found under one of our own directories is ours: it is the
+    // launcher's to replace or delete, and `selectRuntime` prefers it on a tie.
+    // Without this every provisioned JRE would be indistinguishable from a
+    // system JDK, and "delete the runtime we downloaded" would have no way to
+    // know which ones it may touch.
+    final managed = managedRoots.toSet();
     for (final path in defaultJavaSearchPaths(
       os: hostOs,
       javaHome: javaHome,
@@ -314,7 +330,20 @@ class JavaManager {
     )) {
       if (!seen.add(path)) continue;
       final runtime = await probe.probe(path);
-      if (runtime != null) _runtimes.add(runtime);
+      if (runtime == null) continue;
+      _runtimes.add(
+        managed.contains(path)
+            ? JavaRuntime(
+                path: runtime.path,
+                majorVersion: runtime.majorVersion,
+                versionString: runtime.versionString,
+                vendor: runtime.vendor,
+                arch: runtime.arch,
+                is64Bit: runtime.is64Bit,
+                source: JavaSource.managed,
+              )
+            : runtime,
+      );
     }
     _runtimes.sort((a, b) => a.majorVersion.compareTo(b.majorVersion));
     return runtimes;
