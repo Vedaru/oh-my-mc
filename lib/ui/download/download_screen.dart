@@ -213,6 +213,18 @@ class _Toolbar extends StatelessWidget {
                 value: LoaderKind.quilt,
                 label: m3.Text(LoaderKind.quilt.label),
               ),
+              // Forge and NeoForge run their own installer jar instead of
+              // publishing a profile, but to the user they are one more loader in
+              // the same row - which is also why the label is the brand and not
+              // "installer".
+              m3.ButtonSegment<LoaderKind>(
+                value: LoaderKind.forge,
+                label: m3.Text(LoaderKind.forge.label),
+              ),
+              m3.ButtonSegment<LoaderKind>(
+                value: LoaderKind.neoforge,
+                label: m3.Text(LoaderKind.neoforge.label),
+              ),
             ],
             selected: {loader},
             // `null` disables the whole control, which is what a running install

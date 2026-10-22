@@ -5,11 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/install/version_installer.dart';
 import '../core/instance/instance.dart';
+import '../core/mc/forge_install.dart';
 import '../core/mc/loader_meta.dart';
 import '../core/mc/local_host.dart';
 import '../core/net/cancellation.dart';
 import '../core/net/version_manifest.dart';
 import 'instance_providers.dart';
+import 'java_providers.dart';
 import 'launch_factory.dart';
 
 /// Runs one install at a time and exposes its progress.
@@ -132,7 +134,14 @@ class InstallController extends Notifier<InstallState> {
     final installer = ref.read(installerFactoryProvider)();
     _installer = installer;
     final kind = loader ?? LoaderKind.vanilla;
-    final meta = kind == LoaderKind.vanilla ? null : LoaderMeta();
+    // Forge and NeoForge are installed by running their installer jar, not by
+    // fetching a profile, so they get their own meta client and a different branch
+    // below. Fabric and Quilt publish a complete profile JSON; vanilla has neither.
+    final byInstaller = kind == LoaderKind.forge || kind == LoaderKind.neoforge;
+    final meta = kind == LoaderKind.fabric || kind == LoaderKind.quilt
+        ? LoaderMeta()
+        : null;
+    final forgeMeta = byInstaller ? ForgeMeta() : null;
 
     state = InstallRunning(
       versionId: versionId,
@@ -145,6 +154,104 @@ class InstallController extends Notifier<InstallState> {
       // the rest of this install identical to vanilla's.
       var installId = versionId;
       var resolvedLoaderVersion = loaderVersion;
+      if (byInstaller) {
+        final forge = forgeMeta!;
+        var version = resolvedLoaderVersion;
+        if (version == null || version.isEmpty) {
+          version = await forge.recommendedVersion(
+            kind,
+            versionId,
+            cancel: cancel,
+          );
+        }
+        resolvedLoaderVersion = version;
+        state = InstallRunning(
+          versionId: versionId,
+          progress: InstallProgress(
+            phase: InstallPhase.versionJson,
+            step: 2,
+            detail: '${kind.label} $version',
+          ),
+        );
+
+        // Vanilla first: the installer patches `versions/<game>/<game>.jar` in
+        // place, and its own libraries are written relative to the same directory.
+        final base = await installer.install(
+          versionId: versionId,
+          paths: paths.gamePaths,
+          host: localRuleContext(),
+          includeAssets: includeAssets,
+          cancel: cancel,
+          onProgress: (progress) {
+            if (cancel.isCancelled || !ref.mounted) return;
+            state = InstallRunning(
+              versionId: versionId,
+              progress: progress,
+              bytesPerSecond: progress.download?.bytesPerSecond,
+            );
+          },
+        );
+
+        final runner = ForgeInstaller(meta: forge);
+        try {
+          installId = await runner.install(
+            kind: kind,
+            gameVersion: versionId,
+            loaderVersion: version,
+            paths: paths.gamePaths,
+            java: await _installerJava(),
+            cancel: cancel,
+            onStage: (detail) {
+              if (cancel.isCancelled || !ref.mounted) return;
+              state = InstallRunning(
+                versionId: versionId,
+                progress: InstallProgress(
+                  phase: InstallPhase.download,
+                  step: 3,
+                  detail: detail,
+                ),
+              );
+            },
+          );
+        } finally {
+          runner.close();
+        }
+
+        // The installer fetched its own libraries; this pass verifies them and
+        // fills anything it skipped, without re-touching assets.
+        final result = await installer.install(
+          versionId: installId,
+          paths: paths.gamePaths,
+          host: localRuleContext(),
+          includeAssets: false,
+          cancel: cancel,
+          onProgress: (progress) {
+            if (cancel.isCancelled || !ref.mounted) return;
+            state = InstallRunning(
+              versionId: versionId,
+              progress: progress,
+              bytesPerSecond: progress.download?.bytesPerSecond,
+            );
+          },
+        );
+        if (!ref.mounted) return;
+        state = InstallDone(
+          versionId: versionId,
+          problemCount: result.verification.problems.length,
+          fileCount:
+              base.verification.checkedFiles + result.verification.checkedFiles,
+        );
+        await ref.read(installedVersionsProvider.notifier).refresh();
+        await ref
+            .read(instanceListProvider.notifier)
+            .ensureForVersion(
+              installId,
+              loader: kind,
+              loaderVersion: version,
+              name: '$versionId · ${kind.label}',
+            );
+        return;
+      }
       if (meta != null) {
         // `null` means "whatever is current": the download page lets the user pick
         // a loader, not a loader build, which is the choice PCL makes for them too.
@@ -226,10 +333,31 @@ class InstallController extends Notifier<InstallState> {
       }
     } finally {
       meta?.close();
+      forgeMeta?.close();
       installer.close();
       if (identical(_installer, installer)) _installer = null;
       _cancel = null;
     }
+  }
+
+  /// A JVM for the installer jar.
+  ///
+  /// Forge's processors on 1.20+ are compiled for 17: an 8 will fail halfway
+  /// through, and a bare failure is much harder to read than "no Java", so the
+  /// newest 17+ runtime is preferred and anything below it is a last resort.
+  Future<String> _installerJava() async {
+    final runtimes = await ref.read(javaScanProvider.future);
+    if (runtimes.isEmpty) {
+      throw StateError(
+        'Forge needs Java to run its installer: install a runtime from the launch '
+        'page, or point at a JDK in Settings > Java',
+      );
+    }
+    final sorted = [...runtimes]
+      ..sort((a, b) => b.majorVersion.compareTo(a.majorVersion));
+    return sorted
+        .firstWhere((r) => r.majorVersion >= 17, orElse: () => sorted.first)
+        .path;
   }
 
   /// Stops the running install. Returns immediately; the state moves to

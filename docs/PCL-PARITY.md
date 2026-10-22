@@ -62,7 +62,7 @@ wrong: installing wrote files, and nothing pointed the launcher at them.
 | 版本设置: 模组/资源包/光影/存档入口与数量 | **done** | `scanGameFolders`, `/instances/:id` → Files |
 | Java: bundled runtime downloaded on demand, JVMs of other launchers discovered, user directories | **done** | `java_provisioner.dart`, `javaSearchRoots`/`extraRoots`, `/setup` → Java |
 | Loaders: Fabric / Quilt profile install | **done** | `lib/core/mc/loader_meta.dart`, download page loader selector |
-| Loaders: Forge / NeoForge installer jar | **missing** (P1) | - |
+| Loaders: Forge / NeoForge installer jar | **done** | `forge_install.dart`, `/download` loader selector |
 | UI: language, theme, accent colour | **done** | `/setup` |
 | **Loader install** (Forge/NeoForge) | **missing** | needs the official installer jar; Fabric/Quilt are done |
 | **Mod management** (scan `fabric.mod.json`/`mods.toml`/`mcmod.info`, enable/disable/delete) | **missing** | - |

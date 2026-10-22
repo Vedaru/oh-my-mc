@@ -293,6 +293,24 @@ void main() {
     expect(installs.loaders, [LoaderKind.fabric]);
   });
 
+  testWidgets('every loader the launcher can install is offered', (
+    tester,
+  ) async {
+    await pump(tester);
+    final control = find.byKey(const ValueKey('download-loader'));
+
+    // Forge and NeoForge install through a different mechanism (an installer jar),
+    // but to the user they are one more choice in the same row.
+    for (final kind in LoaderKind.values) {
+      expect(
+        find.descendant(of: control, matching: find.text(kind.label)),
+        findsOneWidget,
+        reason: '${kind.name} is missing from the loader switcher',
+      );
+    }
+    expect(tester.getSize(control).width, lessThan(700));
+  });
+
   testWidgets('the loader switcher keeps its width when the choice moves', (
     tester,
   ) async {

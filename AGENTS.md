@@ -262,6 +262,11 @@ the current gap table and the ordered backlog. Two rules from it bind new code:
   `/instances/:id`, never in the global `/setup` page.
 - **The instance grid is home**; there is no Launch tab. `/launch` is the running
   view (log, stop, version settings) that a Play navigates to.
+- **A loader is not always a profile.** Fabric/Quilt publish a version JSON
+  (install = write it); Forge/NeoForge publish an installer jar that must run with a
+  JVM. The installer path also writes `launcher_profiles.json` first and trusts
+  `versions/<id>/<id>.json` over the exit code, because the installer exits 0 even
+  when it prints "There was an error during installation".
 - **Java: own runtime first.** A version that runs elsewhere usually fails here
   because *that* launcher shipped the JVM, so the scan looks inside Prism/official
   launcher/JetBrains/sdkman layouts, the launcher downloads its own runtime on
