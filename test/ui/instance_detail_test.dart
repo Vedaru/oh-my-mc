@@ -1,10 +1,12 @@
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart' hide Text, Icon, Colors;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oh_my_mc/app/providers.dart';
 import 'package:oh_my_mc/core/instance/instance.dart';
+import 'package:oh_my_mc/core/mc/game_folders.dart';
 import 'package:oh_my_mc/core/mc/host.dart';
 import 'package:oh_my_mc/core/mc/java_manager.dart';
 import 'package:oh_my_mc/data/instance_providers.dart';
@@ -48,6 +50,7 @@ void main() {
     AppSettings settings = AppSettings.defaults,
     VoidCallback? onClose,
     Future<JavaRuntime?> Function(String)? probe,
+    List<GameFolder>? folders,
   }) async {
     // A real temp directory, because the page reads the game path from
     // `launcherPathsProvider` and a missing override is a hard error.
@@ -75,6 +78,8 @@ void main() {
         // No real JVM is probed in a widget test.
         javaRuntimesProvider.overrideWith(() => _EmptyRuntimes()),
         javaProbeRunnerProvider.overrideWithValue(probe ?? (exe) async => null),
+        if (folders != null)
+          gameFolderScannerProvider.overrideWithValue((root) async => folders),
       ],
     );
     addTearDown(container.dispose);
@@ -369,6 +374,107 @@ void main() {
       // Staying on a page for an instance that no longer exists would show the
       // "no longer exists" fallback, which reads like an error.
       expect(closed, 1);
+    });
+  });
+
+  group('window size', () {
+    testWidgets('the size is written to the store on submit', (tester) async {
+      final container = await pump(tester, instances: [sample()]);
+
+      await tester.enterText(
+        find.byKey(const ValueKey('instance-window-width')),
+        '1280',
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey('instance-window-height')),
+        '720',
+      );
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+
+      expect(stored(container).windowWidth, 1280);
+      expect(stored(container).windowHeight, 720);
+    });
+
+    testWidgets('a half-filled pair is not stored', (tester) async {
+      final container = await pump(tester, instances: [sample()]);
+
+      await tester.enterText(
+        find.byKey(const ValueKey('instance-window-width')),
+        '1280',
+      );
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+
+      expect(stored(container).windowWidth, isNull);
+      expect(stored(container).windowHeight, isNull);
+    });
+
+    testWidgets('the fullscreen switch persists', (tester) async {
+      final container = await pump(tester, instances: [sample()]);
+
+      await tester.tap(find.byKey(const ValueKey('instance-fullscreen')));
+      await tester.pumpAndSettle();
+
+      expect(stored(container).fullscreen, isTrue);
+    });
+  });
+
+  group('content folders', () {
+    testWidgets('each folder shows its count, and an empty one says so', (
+      tester,
+    ) async {
+      // The scan itself is covered on disk in
+      // test/core/window_and_folders_test.dart; here it is the rendering.
+      await pump(
+        tester,
+        instances: [sample()],
+        folders: const [
+          GameFolder(kind: GameFolderKind.mods, path: '/g/mods', entries: 2),
+          GameFolder(
+            kind: GameFolderKind.resourcePacks,
+            path: '/g/resourcepacks',
+            entries: 0,
+          ),
+          GameFolder(
+            kind: GameFolderKind.shaderPacks,
+            path: '/g/shaderpacks',
+            entries: 0,
+          ),
+          GameFolder(kind: GameFolderKind.saves, path: '/g/saves', entries: 1),
+        ],
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey('instance-folder-count-mods')),
+        findsOneWidget,
+      );
+      expect(
+        tester
+            .widget<Text>(
+              find.byKey(const ValueKey('instance-folder-count-mods')),
+            )
+            .data,
+        '2',
+      );
+      expect(
+        tester
+            .widget<Text>(
+              find.byKey(const ValueKey('instance-folder-count-saves')),
+            )
+            .data,
+        '1',
+      );
+      // Nothing installed yet reads as empty rather than as zero.
+      expect(
+        tester
+            .widget<Text>(
+              find.byKey(const ValueKey('instance-folder-count-shaderPacks')),
+            )
+            .data,
+        'Empty',
+      );
     });
   });
 }

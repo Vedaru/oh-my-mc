@@ -255,6 +255,36 @@ class AppLocalizationsZh extends AppLocalizations {
   String get instanceSectionRuntime => 'Java 与内存';
 
   @override
+  String get instanceSectionWindow => '窗口';
+
+  @override
+  String get instanceWindowWidth => '宽度';
+
+  @override
+  String get instanceWindowHeight => '高度';
+
+  @override
+  String get instanceWindowHint => '留空则使用游戏默认的窗口大小。';
+
+  @override
+  String get instanceFullscreen => '全屏';
+
+  @override
+  String get instanceFolderMods => '模组';
+
+  @override
+  String get instanceFolderResourcePacks => '资源包';
+
+  @override
+  String get instanceFolderShaderPacks => '光影';
+
+  @override
+  String get instanceFolderSaves => '存档';
+
+  @override
+  String get instanceFolderEmpty => '空';
+
+  @override
   String get instanceSectionFiles => '文件';
 
   @override

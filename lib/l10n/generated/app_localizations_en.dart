@@ -260,6 +260,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get instanceSectionRuntime => 'Java and memory';
 
   @override
+  String get instanceSectionWindow => 'Window';
+
+  @override
+  String get instanceWindowWidth => 'Width';
+
+  @override
+  String get instanceWindowHeight => 'Height';
+
+  @override
+  String get instanceWindowHint =>
+      'Leave empty to use the game\'s own window size.';
+
+  @override
+  String get instanceFullscreen => 'Fullscreen';
+
+  @override
+  String get instanceFolderMods => 'Mods';
+
+  @override
+  String get instanceFolderResourcePacks => 'Resource packs';
+
+  @override
+  String get instanceFolderShaderPacks => 'Shaders';
+
+  @override
+  String get instanceFolderSaves => 'Saves';
+
+  @override
+  String get instanceFolderEmpty => 'Empty';
+
+  @override
   String get instanceSectionFiles => 'Files';
 
   @override

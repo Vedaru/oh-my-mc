@@ -145,22 +145,47 @@ Future<LaunchOutcome> prepareInstanceLaunch({
     version: version,
     paths: gamePaths,
     host: host ?? localRuleContext(),
-    request: LaunchRequest(
-      versionId: version.jar ?? version.id,
-      playerName: settings.playerName,
-      // Offline mode: the UUID is derived from the name the way the game does it
-      // offline (`OfflinePlayer:<name>`), so worlds and inventories stay stable
-      // across launcher restarts. Microsoft sign-in replaces both later.
-      uuid: offlineUuid(settings.playerName),
-      accessToken: '0',
-      versionType: version.type,
-      memoryMb: instance.memoryMb ?? settings.memoryMb,
-      extraJvmArgs: instance.jvmArgs,
-      extraGameArgs: instance.gameArgs,
+    request: buildLaunchRequest(
+      instance: instance,
+      settings: settings,
+      version: version,
     ),
     java: java,
   );
 }
+
+/// The request a launch is built from, isolated so the argv it produces is
+/// assertable without a JVM or a version tree.
+LaunchRequest buildLaunchRequest({
+  required Instance instance,
+  required AppSettings settings,
+  required VersionJson version,
+}) => LaunchRequest(
+  versionId: version.jar ?? version.id,
+  playerName: settings.playerName,
+  // Offline mode: the UUID is derived from the name the way the game does it
+  // offline (`OfflinePlayer:<name>`), so worlds and inventories stay stable
+  // across launcher restarts. Microsoft sign-in replaces both later.
+  uuid: offlineUuid(settings.playerName),
+  accessToken: '0',
+  versionType: version.type,
+  memoryMb: instance.memoryMb ?? settings.memoryMb,
+  extraJvmArgs: instance.jvmArgs,
+  extraGameArgs: [
+    ...instance.gameArgs,
+    // Window size as command-line flags rather than the version JSON's
+    // `has_custom_resolution` branch: those args are gated behind a feature flag
+    // and carry `${resolution_width}` placeholders, and passing both would send
+    // `--width` twice.
+    if (instance.windowWidth != null && instance.windowHeight != null) ...[
+      '--width',
+      '${instance.windowWidth}',
+      '--height',
+      '${instance.windowHeight}',
+    ],
+    if (instance.fullscreen) '--fullscreen',
+  ],
+);
 
 JavaRuntime? _runtimeAt(List<JavaRuntime> runtimes, String path) {
   final normalized = p.normalize(p.absolute(path));

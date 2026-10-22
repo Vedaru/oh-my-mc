@@ -560,6 +560,66 @@ abstract class AppLocalizations {
   /// **'Java and memory'**
   String get instanceSectionRuntime;
 
+  /// Section heading for the per-instance game window size.
+  ///
+  /// In en, this message translates to:
+  /// **'Window'**
+  String get instanceSectionWindow;
+
+  /// Label of the window width field, in pixels.
+  ///
+  /// In en, this message translates to:
+  /// **'Width'**
+  String get instanceWindowWidth;
+
+  /// Label of the window height field, in pixels.
+  ///
+  /// In en, this message translates to:
+  /// **'Height'**
+  String get instanceWindowHeight;
+
+  /// Hint under the window size fields.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave empty to use the game\'s own window size.'**
+  String get instanceWindowHint;
+
+  /// Label of the fullscreen switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Fullscreen'**
+  String get instanceFullscreen;
+
+  /// The mods folder in version settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Mods'**
+  String get instanceFolderMods;
+
+  /// The resourcepacks folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Resource packs'**
+  String get instanceFolderResourcePacks;
+
+  /// The shaderpacks folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Shaders'**
+  String get instanceFolderShaderPacks;
+
+  /// The saves folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Saves'**
+  String get instanceFolderSaves;
+
+  /// Shown instead of a count when a content folder has nothing in it.
+  ///
+  /// In en, this message translates to:
+  /// **'Empty'**
+  String get instanceFolderEmpty;
+
   /// Detail page section: game folder and playtime.
   ///
   /// In en, this message translates to:

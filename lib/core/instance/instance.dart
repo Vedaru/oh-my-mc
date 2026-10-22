@@ -19,6 +19,9 @@ class Instance {
     this.memoryMb,
     this.jvmArgs = const [],
     this.gameArgs = const [],
+    this.windowWidth,
+    this.windowHeight,
+    this.fullscreen = false,
     this.createdAt,
     this.lastPlayedAt,
     this.totalPlaytime = Duration.zero,
@@ -57,6 +60,16 @@ class Instance {
   final List<String> jvmArgs;
   final List<String> gameArgs;
 
+  /// Window size handed to the game as `--width/--height`, or `null` for the
+  /// game's own default. PCL calls this 窗口大小 and puts it in 版本设置, because a
+  /// modpack and a vanilla instance want very different windows.
+  final int? windowWidth;
+  final int? windowHeight;
+
+  /// `--fullscreen`. Kept separate from the size so a user can resize the window
+  /// later without losing the fullscreen preference.
+  final bool fullscreen;
+
   final DateTime? createdAt;
   final DateTime? lastPlayedAt;
 
@@ -83,6 +96,10 @@ class Instance {
     bool clearMemoryMb = false,
     List<String>? jvmArgs,
     List<String>? gameArgs,
+    int? windowWidth,
+    int? windowHeight,
+    bool? fullscreen,
+    bool clearWindowSize = false,
     DateTime? lastPlayedAt,
     Duration? totalPlaytime,
   }) => Instance(
@@ -98,6 +115,11 @@ class Instance {
     memoryMb: clearMemoryMb ? null : (memoryMb ?? this.memoryMb),
     jvmArgs: jvmArgs ?? this.jvmArgs,
     gameArgs: gameArgs ?? this.gameArgs,
+    // Explicit nulls cannot clear these, so a reset asks for it by name - the
+    // same convention as `clearMemoryMb`.
+    windowWidth: clearWindowSize ? null : (windowWidth ?? this.windowWidth),
+    windowHeight: clearWindowSize ? null : (windowHeight ?? this.windowHeight),
+    fullscreen: fullscreen ?? this.fullscreen,
     createdAt: createdAt,
     lastPlayedAt: lastPlayedAt ?? this.lastPlayedAt,
     totalPlaytime: totalPlaytime ?? this.totalPlaytime,
@@ -114,6 +136,9 @@ class Instance {
     if (memoryMb != null) 'memoryMb': memoryMb,
     if (jvmArgs.isNotEmpty) 'jvmArgs': jvmArgs,
     if (gameArgs.isNotEmpty) 'gameArgs': gameArgs,
+    if (windowWidth != null) 'windowWidth': windowWidth,
+    if (windowHeight != null) 'windowHeight': windowHeight,
+    if (fullscreen) 'fullscreen': true,
     if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
     if (lastPlayedAt != null) 'lastPlayedAt': lastPlayedAt!.toIso8601String(),
     if (totalPlaytime != Duration.zero)
@@ -142,6 +167,9 @@ class Instance {
       memoryMb: (json['memoryMb'] as num?)?.toInt(),
       jvmArgs: _stringList(json['jvmArgs']),
       gameArgs: _stringList(json['gameArgs']),
+      windowWidth: _positiveInt(json['windowWidth']),
+      windowHeight: _positiveInt(json['windowHeight']),
+      fullscreen: json['fullscreen'] == true,
       createdAt: _date(json['createdAt']),
       lastPlayedAt: _date(json['lastPlayedAt']),
       totalPlaytime: Duration(
@@ -153,6 +181,14 @@ class Instance {
   static List<String> _stringList(Object? value) => value is List
       ? value.whereType<String>().toList(growable: false)
       : const [];
+
+  /// A window dimension, or null. Zero and negatives are corrupt values, not
+  /// "smallest window": the game refuses them, so they degrade to the default.
+  static int? _positiveInt(Object? value) {
+    if (value is! num) return null;
+    final parsed = value.toInt();
+    return parsed > 0 ? parsed : null;
+  }
 
   static DateTime? _date(Object? value) =>
       value is String ? DateTime.tryParse(value) : null;
@@ -171,6 +207,9 @@ class Instance {
           other.memoryMb == memoryMb &&
           _sameList(other.jvmArgs, jvmArgs) &&
           _sameList(other.gameArgs, gameArgs) &&
+          other.windowWidth == windowWidth &&
+          other.windowHeight == windowHeight &&
+          other.fullscreen == fullscreen &&
           other.lastPlayedAt == lastPlayedAt &&
           other.totalPlaytime == totalPlaytime;
 

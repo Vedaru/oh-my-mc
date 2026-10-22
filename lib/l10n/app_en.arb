@@ -329,6 +329,46 @@
     "description": "Detail page section: name, version, folder mode."
   },
   "instanceSectionRuntime": "Java and memory",
+  "instanceSectionWindow": "Window",
+  "@instanceSectionWindow": {
+    "description": "Section heading for the per-instance game window size."
+  },
+  "instanceWindowWidth": "Width",
+  "@instanceWindowWidth": {
+    "description": "Label of the window width field, in pixels."
+  },
+  "instanceWindowHeight": "Height",
+  "@instanceWindowHeight": {
+    "description": "Label of the window height field, in pixels."
+  },
+  "instanceWindowHint": "Leave empty to use the game's own window size.",
+  "@instanceWindowHint": {
+    "description": "Hint under the window size fields."
+  },
+  "instanceFullscreen": "Fullscreen",
+  "@instanceFullscreen": {
+    "description": "Label of the fullscreen switch."
+  },
+  "instanceFolderMods": "Mods",
+  "@instanceFolderMods": {
+    "description": "The mods folder in version settings."
+  },
+  "instanceFolderResourcePacks": "Resource packs",
+  "@instanceFolderResourcePacks": {
+    "description": "The resourcepacks folder."
+  },
+  "instanceFolderShaderPacks": "Shaders",
+  "@instanceFolderShaderPacks": {
+    "description": "The shaderpacks folder."
+  },
+  "instanceFolderSaves": "Saves",
+  "@instanceFolderSaves": {
+    "description": "The saves folder."
+  },
+  "instanceFolderEmpty": "Empty",
+  "@instanceFolderEmpty": {
+    "description": "Shown instead of a count when a content folder has nothing in it."
+  },
   "@instanceSectionRuntime": {
     "description": "Detail page section: heap size and JVM choice."
   },

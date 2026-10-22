@@ -10,6 +10,7 @@ import '../../app/providers.dart';
 import '../../app/router.dart';
 import '../../core/instance/instance.dart';
 import '../../core/instance/memory.dart';
+import '../../core/mc/game_folders.dart';
 import '../../data/instance_providers.dart';
 import '../../data/java_providers.dart';
 import '../../data/launch_factory.dart';
@@ -205,6 +206,24 @@ class InstanceDetailScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               _Section(
+                title: l10n.instanceSectionWindow,
+                children: [
+                  _WindowRow(
+                    instance: instance,
+                    onSize: (width, height) => notifier.update(
+                      instance!.copyWith(
+                        windowWidth: width,
+                        windowHeight: height,
+                        clearWindowSize: width == null && height == null,
+                      ),
+                    ),
+                    onFullscreen: (value) =>
+                        notifier.update(instance!.copyWith(fullscreen: value)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _Section(
                 title: l10n.instanceSectionArguments,
                 children: [
                   ArgsField(
@@ -238,6 +257,11 @@ class InstanceDetailScreen extends ConsumerWidget {
                     monospace: true,
                   ),
                   _PlaytimeRow(instance: instance),
+                  _ContentFolders(
+                    instance: instance,
+                    onOpen: (folder) =>
+                        _openFolder(context, ref, instance!, folder: folder),
+                  ),
                   m3.Align(
                     alignment: m3.AlignmentDirectional.centerStart,
                     child: AppButton(
@@ -266,9 +290,16 @@ class InstanceDetailScreen extends ConsumerWidget {
   Future<void> _openFolder(
     BuildContext context,
     WidgetRef ref,
-    Instance instance,
-  ) async {
-    final root = ref.read(launcherPathsProvider).gamePathsFor(instance).root;
+    Instance instance, {
+    GameFolderKind? folder,
+  }) async {
+    final gameRoot = ref
+        .read(launcherPathsProvider)
+        .gamePathsFor(instance)
+        .root;
+    final root = folder == null
+        ? gameRoot
+        : '$gameRoot/${folder.directoryName}';
     await Directory(root).create(recursive: true);
 
     final (exe, args) = switch (Platform.operatingSystem) {
@@ -841,4 +872,203 @@ class _PlaytimeRow extends StatelessWidget {
   }
 
   static String _two(int v) => v.toString().padLeft(2, '0');
+}
+
+/// Window width/height and the fullscreen switch.
+///
+/// Kept as text fields rather than a slider: users copy window sizes from a
+/// screenshot or a config, and 854x480 is a real answer. Both fields or neither —
+/// half a pair is a typo, and the game rejects it.
+class _WindowRow extends StatefulWidget {
+  const _WindowRow({
+    required this.instance,
+    required this.onSize,
+    required this.onFullscreen,
+  });
+
+  final Instance instance;
+  final void Function(int? width, int? height) onSize;
+  final m3.ValueChanged<bool> onFullscreen;
+
+  @override
+  State<_WindowRow> createState() => _WindowRowState();
+}
+
+class _WindowRowState extends State<_WindowRow> {
+  late final _width = m3.TextEditingController(
+    text: widget.instance.windowWidth?.toString() ?? '',
+  );
+  late final _height = m3.TextEditingController(
+    text: widget.instance.windowHeight?.toString() ?? '',
+  );
+
+  @override
+  void dispose() {
+    _width.dispose();
+    _height.dispose();
+    super.dispose();
+  }
+
+  void _commit() {
+    final width = int.tryParse(_width.text.trim());
+    final height = int.tryParse(_height.text.trim());
+    final valid = width != null && height != null && width > 0 && height > 0;
+    widget.onSize(valid ? width : null, valid ? height : null);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final scheme = m3.Theme.of(context).colorScheme;
+
+    return m3.Column(
+      crossAxisAlignment: m3.CrossAxisAlignment.stretch,
+      mainAxisSize: m3.MainAxisSize.min,
+      children: [
+        m3.Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          crossAxisAlignment: m3.WrapCrossAlignment.center,
+          children: [
+            m3.SizedBox(
+              width: 130,
+              child: AppTextField(
+                key: const m3.ValueKey('instance-window-width'),
+                controller: _width,
+                label: l10n.instanceWindowWidth,
+                onSubmitted: (_) => _commit(),
+              ),
+            ),
+            m3.SizedBox(
+              width: 130,
+              child: AppTextField(
+                key: const m3.ValueKey('instance-window-height'),
+                controller: _height,
+                label: l10n.instanceWindowHeight,
+                onSubmitted: (_) => _commit(),
+              ),
+            ),
+            m3.Row(
+              mainAxisSize: m3.MainAxisSize.min,
+              children: [
+                AppSwitch(
+                  key: const m3.ValueKey('instance-fullscreen'),
+                  value: widget.instance.fullscreen,
+                  onChanged: widget.onFullscreen,
+                  label: l10n.instanceFullscreen,
+                ),
+                const m3.SizedBox(width: 8),
+                m3.Text(l10n.instanceFullscreen, style: AppTheme.body(context)),
+              ],
+            ),
+          ],
+        ),
+        const m3.SizedBox(height: 8),
+        m3.Text(
+          l10n.instanceWindowHint,
+          style: AppTheme.caption(context)
+              .copyWith(color: scheme.onSurfaceVariant),
+        ),
+      ],
+    );
+  }
+}
+
+/// The four content folders, with how much is in each.
+///
+/// This is the answer to "where do I put my mods": the folder is named in the UI,
+/// the count says whether the game will see anything, and one click opens it. The
+/// scan is cached per game root so a rebuild does not hit the filesystem again.
+class _ContentFolders extends StatefulWidget {
+  const _ContentFolders({required this.instance, required this.onOpen});
+
+  final Instance instance;
+  final void Function(GameFolderKind folder) onOpen;
+
+  @override
+  State<_ContentFolders> createState() => _ContentFoldersState();
+}
+
+class _ContentFoldersState extends State<_ContentFolders> {
+  Future<List<GameFolder>>? _folders;
+  String? _root;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final container = ProviderScope.containerOf(context);
+    final root = container
+        .read(launcherPathsProvider)
+        .gamePathsFor(widget.instance)
+        .root;
+    if (_root != root) {
+      _root = root;
+      _folders = container.read(gameFolderScannerProvider)(root);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final scheme = m3.Theme.of(context).colorScheme;
+
+    return FutureBuilder<List<GameFolder>>(
+      future: _folders,
+      builder: (context, snapshot) {
+        final folders = snapshot.data;
+        if (folders == null) {
+          return const m3.SizedBox(height: 8);
+        }
+        return m3.Column(
+          mainAxisSize: m3.MainAxisSize.min,
+          children: [
+            for (final folder in folders)
+              m3.Padding(
+                padding: const m3.EdgeInsets.only(bottom: 4),
+                child: m3.Row(
+                  children: [
+                    m3.Icon(ShellIcons.folder, size: 15, color: scheme.primary),
+                    const m3.SizedBox(width: 8),
+                    m3.Expanded(
+                      child: m3.Text(
+                        _folderLabel(l10n, folder.kind),
+                        style: AppTheme.body(context),
+                      ),
+                    ),
+                    m3.Text(
+                      folder.entries == 0
+                          ? l10n.instanceFolderEmpty
+                          : '${folder.entries}',
+                      key: m3.ValueKey(
+                        'instance-folder-count-${folder.kind.name}',
+                      ),
+                      style: AppTheme.caption(context)
+                          .copyWith(color: scheme.onSurfaceVariant),
+                    ),
+                    const m3.SizedBox(width: 8),
+                    AppButton(
+                      key: m3.ValueKey(
+                        'instance-open-${folder.kind.directoryName}',
+                      ),
+                      onPressed: () => widget.onOpen(folder.kind),
+                      style: AppButtonStyle.text,
+                      size: AppButtonSize.sm,
+                      label: m3.Text(l10n.instanceOpenFolder),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  static String _folderLabel(AppLocalizations l10n, GameFolderKind kind) =>
+      switch (kind) {
+        GameFolderKind.mods => l10n.instanceFolderMods,
+        GameFolderKind.resourcePacks => l10n.instanceFolderResourcePacks,
+        GameFolderKind.shaderPacks => l10n.instanceFolderShaderPacks,
+        GameFolderKind.saves => l10n.instanceFolderSaves,
+      };
 }
