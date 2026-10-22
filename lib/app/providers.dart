@@ -40,3 +40,9 @@ class AppSettingsNotifier extends Notifier<AppSettings> {
 final appSettingsProvider = NotifierProvider<AppSettingsNotifier, AppSettings>(
   AppSettingsNotifier.new,
 );
+
+/// Just the global heap cap, so a widget that only shows "the default is N"
+/// does not rebuild when the theme changes.
+final appSettingsMemoryProvider = Provider<int>(
+  (ref) => ref.watch(appSettingsProvider.select((s) => s.memoryMb)),
+);

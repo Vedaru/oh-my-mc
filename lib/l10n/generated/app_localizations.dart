@@ -314,6 +314,66 @@ abstract class AppLocalizations {
   /// **'Theme'**
   String get setupThemeMode;
 
+  /// Hint under the theme choice.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow system changes with the OS.'**
+  String get setupThemeHint;
+
+  /// Explains the zh_Hant fallback in the language chooser.
+  ///
+  /// In en, this message translates to:
+  /// **'Simplified Chinese and Traditional Chinese both use the Chinese translations.'**
+  String get setupLanguageHint;
+
+  /// Language choice: English.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get languageEnglish;
+
+  /// Language choice: Chinese (either script).
+  ///
+  /// In en, this message translates to:
+  /// **'Chinese'**
+  String get languageChinese;
+
+  /// Hint under the animation switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Also follows your system\'s reduce-motion setting.'**
+  String get setupMotionHint;
+
+  /// Animation switch, on.
+  ///
+  /// In en, this message translates to:
+  /// **'Animations on'**
+  String get setupMotionOn;
+
+  /// Animation switch, off.
+  ///
+  /// In en, this message translates to:
+  /// **'Animations off'**
+  String get setupMotionOff;
+
+  /// Label for the offline player name field.
+  ///
+  /// In en, this message translates to:
+  /// **'Player name'**
+  String get setupPlayerName;
+
+  /// The validation rule for the player name.
+  ///
+  /// In en, this message translates to:
+  /// **'3-16 letters, digits or underscores.'**
+  String get setupPlayerNameHint;
+
+  /// Explains what the global heap slider affects.
+  ///
+  /// In en, this message translates to:
+  /// **'Used by instances that do not set their own.'**
+  String get setupMemoryHint;
+
   /// Light theme.
   ///
   /// In en, this message translates to:
@@ -344,6 +404,30 @@ abstract class AppLocalizations {
   /// **'No log output yet'**
   String get logsEmpty;
 
+  /// Placeholder in the log search box.
+  ///
+  /// In en, this message translates to:
+  /// **'Search the log'**
+  String get logsSearchHint;
+
+  /// Toggle that hides ordinary log lines and keeps failures.
+  ///
+  /// In en, this message translates to:
+  /// **'Errors only'**
+  String get logsOnlyErrors;
+
+  /// Shown when the log has lines but the search or filter hides them all.
+  ///
+  /// In en, this message translates to:
+  /// **'No lines match the filter.'**
+  String get logsNoMatches;
+
+  /// Copies the whole log to the clipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get logsCopy;
+
   /// Retry a failed action.
   ///
   /// In en, this message translates to:
@@ -367,6 +451,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Never played'**
   String get instanceNeverPlayed;
+
+  /// Context menu item that opens the instance detail page.
+  ///
+  /// In en, this message translates to:
+  /// **'Open settings'**
+  String get instanceOpen;
+
+  /// Shown when a detail link points at a deleted instance.
+  ///
+  /// In en, this message translates to:
+  /// **'This instance no longer exists.'**
+  String get instanceMissing;
+
+  /// Returns to the previous screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get actionBack;
+
+  /// Detail page section: name, version, folder mode.
+  ///
+  /// In en, this message translates to:
+  /// **'General'**
+  String get instanceSectionGeneral;
+
+  /// Detail page section: heap size and JVM choice.
+  ///
+  /// In en, this message translates to:
+  /// **'Java and memory'**
+  String get instanceSectionRuntime;
+
+  /// Detail page section: game folder and playtime.
+  ///
+  /// In en, this message translates to:
+  /// **'Files'**
+  String get instanceSectionFiles;
+
+  /// Label for the instance name field.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get instanceNameLabel;
+
+  /// Label for the read-only version row.
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get instanceVersionLabel;
+
+  /// Label for the isolation switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Separate game folder'**
+  String get instanceIsolationLabel;
+
+  /// Warns that toggling isolation leaves files where they are.
+  ///
+  /// In en, this message translates to:
+  /// **'Existing files are not moved when this changes.'**
+  String get instanceIsolationHint;
+
+  /// Isolation switch, on: this instance has its own files.
+  ///
+  /// In en, this message translates to:
+  /// **'Separate folder'**
+  String get instanceIsolationOn;
+
+  /// Isolation switch, off: files are shared with other instances.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared folder'**
+  String get instanceIsolationOff;
+
+  /// Label for the per-instance heap setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Memory'**
+  String get instanceMemoryLabel;
+
+  /// Explains the unset state of the memory override.
+  ///
+  /// In en, this message translates to:
+  /// **'Off means the global default.'**
+  String get instanceMemoryHint;
+
+  /// Memory override off; the global value is shown.
+  ///
+  /// In en, this message translates to:
+  /// **'Using the default ({mb} MB)'**
+  String instanceMemoryUsingDefault(int mb);
+
+  /// A heap size in megabytes.
+  ///
+  /// In en, this message translates to:
+  /// **'{mb} MB'**
+  String instanceMemoryMb(int mb);
+
+  /// Shown under the heap slider to discourage maxing it out.
+  ///
+  /// In en, this message translates to:
+  /// **'More memory is not always faster: garbage collection takes longer on a large heap.'**
+  String get instanceMemoryBigger;
+
+  /// Label for the per-instance JVM choice.
+  ///
+  /// In en, this message translates to:
+  /// **'Java'**
+  String get instanceJavaLabel;
+
+  /// Explains the Java picker.
+  ///
+  /// In en, this message translates to:
+  /// **'Which JVM runs this instance.'**
+  String get instanceJavaHint;
+
+  /// Default Java choice: the version decides.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic (picked by version)'**
+  String get instanceJavaAutomatic;
+
+  /// Java picker hint when the launcher has no managed runtime.
+  ///
+  /// In en, this message translates to:
+  /// **'No downloaded runtimes yet. Get one from Setup.'**
+  String get instanceJavaNoneDownloaded;
+
+  /// Java picker hint when runtimes are available.
+  ///
+  /// In en, this message translates to:
+  /// **'Only runtimes this launcher downloaded are listed here.'**
+  String get instanceJavaHintDetail;
+
+  /// Label for the playtime row.
+  ///
+  /// In en, this message translates to:
+  /// **'Playtime'**
+  String get instancePlaytimeLabel;
+
+  /// Total playtime and the last session's date.
+  ///
+  /// In en, this message translates to:
+  /// **'{duration} in total, last played {date}'**
+  String instancePlaytimeValue(String duration, String date);
+
+  /// Label for the instance's directory path.
+  ///
+  /// In en, this message translates to:
+  /// **'Game folder'**
+  String get instancePathLabel;
+
+  /// Opens the game folder in the file manager.
+  ///
+  /// In en, this message translates to:
+  /// **'Open folder'**
+  String get instanceOpenFolder;
+
+  /// Shown when no file manager could be launched.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the folder.'**
+  String get instanceOpenFolderFailed;
 
   /// Placeholder in the new-instance name field.
   ///

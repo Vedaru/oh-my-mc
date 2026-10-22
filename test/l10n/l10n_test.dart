@@ -53,6 +53,9 @@ void main() {
       const identicalByDesign = {
         'appTitle', // product name
         'setupJava', // "Java" is "Java" in Chinese
+        'instanceJavaLabel', // same
+        'instanceMemoryMb', // a number and the SI-ish unit "MB"
+        'languageEnglish', // a language is named in its own language
       };
       final untranslated = [
         for (final key in en.keys)

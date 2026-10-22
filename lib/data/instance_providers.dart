@@ -166,6 +166,21 @@ class InstanceListNotifier extends Notifier<InstanceListState> {
     );
   }
 
+  /// Replaces one instance with an edited copy.
+  ///
+  /// The id is the directory name and is never changed here: an edit that
+  /// rewrites the identity would orphan the instance's files. The caller passes
+  /// the already-edited value so this stays a single write of the whole list,
+  /// which is the only atomic thing the store offers.
+  Future<void> update(Instance instance) async {
+    final existing = ready?.instances ?? const <Instance>[];
+    if (!existing.any((i) => i.id == instance.id)) return;
+    await _commit([
+      for (final i in existing)
+        if (i.id == instance.id) instance else i,
+    ]);
+  }
+
   Future<void> select(String? id) async {
     final current = ready;
     if (current == null) return;

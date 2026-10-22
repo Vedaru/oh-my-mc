@@ -129,6 +129,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get setupThemeMode => 'Theme';
 
   @override
+  String get setupThemeHint => 'Follow system changes with the OS.';
+
+  @override
+  String get setupLanguageHint =>
+      'Simplified Chinese and Traditional Chinese both use the Chinese translations.';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get languageChinese => 'Chinese';
+
+  @override
+  String get setupMotionHint =>
+      'Also follows your system\'s reduce-motion setting.';
+
+  @override
+  String get setupMotionOn => 'Animations on';
+
+  @override
+  String get setupMotionOff => 'Animations off';
+
+  @override
+  String get setupPlayerName => 'Player name';
+
+  @override
+  String get setupPlayerNameHint => '3-16 letters, digits or underscores.';
+
+  @override
+  String get setupMemoryHint => 'Used by instances that do not set their own.';
+
+  @override
   String get themeLight => 'Light';
 
   @override
@@ -144,6 +176,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logsEmpty => 'No log output yet';
 
   @override
+  String get logsSearchHint => 'Search the log';
+
+  @override
+  String get logsOnlyErrors => 'Errors only';
+
+  @override
+  String get logsNoMatches => 'No lines match the filter.';
+
+  @override
+  String get logsCopy => 'Copy';
+
+  @override
   String get actionRetry => 'Retry';
 
   @override
@@ -154,6 +198,97 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get instanceNeverPlayed => 'Never played';
+
+  @override
+  String get instanceOpen => 'Open settings';
+
+  @override
+  String get instanceMissing => 'This instance no longer exists.';
+
+  @override
+  String get actionBack => 'Back';
+
+  @override
+  String get instanceSectionGeneral => 'General';
+
+  @override
+  String get instanceSectionRuntime => 'Java and memory';
+
+  @override
+  String get instanceSectionFiles => 'Files';
+
+  @override
+  String get instanceNameLabel => 'Name';
+
+  @override
+  String get instanceVersionLabel => 'Version';
+
+  @override
+  String get instanceIsolationLabel => 'Separate game folder';
+
+  @override
+  String get instanceIsolationHint =>
+      'Existing files are not moved when this changes.';
+
+  @override
+  String get instanceIsolationOn => 'Separate folder';
+
+  @override
+  String get instanceIsolationOff => 'Shared folder';
+
+  @override
+  String get instanceMemoryLabel => 'Memory';
+
+  @override
+  String get instanceMemoryHint => 'Off means the global default.';
+
+  @override
+  String instanceMemoryUsingDefault(int mb) {
+    return 'Using the default ($mb MB)';
+  }
+
+  @override
+  String instanceMemoryMb(int mb) {
+    return '$mb MB';
+  }
+
+  @override
+  String get instanceMemoryBigger =>
+      'More memory is not always faster: garbage collection takes longer on a large heap.';
+
+  @override
+  String get instanceJavaLabel => 'Java';
+
+  @override
+  String get instanceJavaHint => 'Which JVM runs this instance.';
+
+  @override
+  String get instanceJavaAutomatic => 'Automatic (picked by version)';
+
+  @override
+  String get instanceJavaNoneDownloaded =>
+      'No downloaded runtimes yet. Get one from Setup.';
+
+  @override
+  String get instanceJavaHintDetail =>
+      'Only runtimes this launcher downloaded are listed here.';
+
+  @override
+  String get instancePlaytimeLabel => 'Playtime';
+
+  @override
+  String instancePlaytimeValue(String duration, String date) {
+    return '$duration in total, last played $date';
+  }
+
+  @override
+  String get instancePathLabel => 'Game folder';
+
+  @override
+  String get instanceOpenFolder => 'Open folder';
+
+  @override
+  String get instanceOpenFolderFailed => 'Could not open the folder.';
 
   @override
   String get instanceNameHint => 'Name this instance';

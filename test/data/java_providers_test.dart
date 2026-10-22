@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +7,7 @@ import 'package:oh_my_mc/core/mc/host.dart';
 import 'package:oh_my_mc/core/mc/java_catalog.dart';
 import 'package:oh_my_mc/core/mc/java_manager.dart';
 import 'package:oh_my_mc/core/mc/java_provisioner.dart';
+import 'package:oh_my_mc/core/net/cancellation.dart';
 import 'package:oh_my_mc/data/java_providers.dart';
 import 'package:oh_my_mc/data/launch_factory.dart';
 import 'package:path/path.dart' as p;
@@ -305,6 +307,211 @@ void main() {
       },
     );
   });
+
+  group('javaRequirementProvider', () {
+    /// A version on disk whose JSON declares [major], which is what makes the
+    /// provider's answer specific to that version rather than a guess.
+    Future<void> writeVersion(String id, {required int major}) async {
+      final paths = _pathsFor(data);
+      final file = File(paths.gamePaths.versionJson(id));
+      await file.create(recursive: true);
+      await file.writeAsString(
+        jsonEncode({
+          'id': id,
+          'type': 'release',
+          'mainClass': 'net.minecraft.client.main.Main',
+          'javaVersion': {'majorVersion': major},
+          'libraries': <Object>[],
+        }),
+      );
+    }
+
+    /// A container whose scan answers with [managed] and whose catalog is
+    /// offline, so a satisfied requirement cannot accidentally depend on a
+    /// network answer.
+    ProviderContainer containerWith({
+      required List<JavaRuntime> managed,
+      List<int>? catalogFetches,
+    }) {
+      final fetches = catalogFetches ?? <int>[];
+      final container = ProviderContainer(
+        overrides: [
+          launcherPathsProvider.overrideWithValue(_pathsFor(data)),
+          javaScanProvider.overrideWith((ref) async => managed),
+          javaCatalogProvider.overrideWith(() => _CountingCatalog(fetches)),
+        ],
+      );
+      addTearDown(container.dispose);
+      return container;
+    }
+
+    test(
+      'an installed JVM satisfies the version without fetching a catalog',
+      () async {
+        await writeVersion('1.20.1', major: 17);
+        final container = containerWith(managed: [runtime(17)]);
+
+        final requirement = await container.read(
+          javaRequirementProvider('1.20.1').future,
+        );
+
+        expect(requirement, isA<JavaRequirementSatisfied>());
+        expect(
+          (requirement as JavaRequirementSatisfied).runtime.majorVersion,
+          17,
+        );
+      },
+    );
+
+    test('a version file that is not installed is reported as such', () async {
+      final container = containerWith(managed: [runtime(17)]);
+
+      final requirement = await container.read(
+        javaRequirementProvider('absent').future,
+      );
+
+      expect(
+        (requirement as JavaRequirementUnavailable).reason,
+        JavaUnavailableReason.versionNotInstalled,
+        reason: 'a refresh must not turn a missing version into a crash',
+      );
+    });
+    test('a completed install refreshes the requirement on its own', () async {
+      // The regression this pins: the requirement is cached per version and the
+      // panel watches it, so an install that does not invalidate leaves the
+      // offer for the runtime the user just finished downloading.
+      //
+      // Driven through the real controller because the invalidation lives
+      // there; a test that invalidates by hand would pass with the bug intact.
+      await writeVersion('1.20.1', major: 17);
+      final scanned = <JavaRuntime>[];
+      final container = ProviderContainer(
+        overrides: [
+          launcherPathsProvider.overrideWithValue(_pathsFor(data)),
+          javaScanProvider.overrideWith((ref) async => [...scanned]),
+          javaCatalogProvider.overrideWith(() => _CountingCatalog(<int>[])),
+          javaProvisionerFactoryProvider.overrideWithValue(
+            () => _FakeProvisioner(onInstall: () => scanned.add(runtime(17))),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      expect(
+        await container.read(javaRequirementProvider('1.20.1').future),
+        isA<JavaRequirementUnavailable>(),
+      );
+
+      final build = catalogWith(
+        platform: 'linux',
+        components: ['java-runtime-gamma'],
+      ).builds('linux', 'java-runtime-gamma').single;
+      await container
+          .read(javaProvisionControllerProvider.notifier)
+          .install(
+            JavaRuntimeChoice(
+              component: 'java-runtime-gamma',
+              majorVersion: 17,
+              build: build,
+            ),
+          );
+
+      expect(
+        container.read(javaProvisionControllerProvider),
+        isA<JavaInstallDone>(),
+      );
+      expect(
+        await container.read(javaRequirementProvider('1.20.1').future),
+        isA<JavaRequirementSatisfied>(),
+        reason: 'a completed download must not leave the offer on screen',
+      );
+    });
+
+    test('an older JVM is not reported as satisfying the version', () async {
+      await writeVersion('1.20.1', major: 17);
+      final container = containerWith(managed: [runtime(8)]);
+
+      final requirement = await container.read(
+        javaRequirementProvider('1.20.1').future,
+      );
+
+      // Java 8 cannot run 1.20.1; the panel must offer Java 17, not claim the
+      // machine is ready.
+      expect(requirement, isNot(isA<JavaRequirementSatisfied>()));
+    });
+
+    test('the declared major comes from the version file, not the id', () async {
+      // 1.20.1 needs 17 and 1.21 needs 21; an id-based rule would be wrong for
+      // both eventually. The file is the source of truth.
+      await writeVersion('whatever-name', major: 21);
+      final container = containerWith(managed: [runtime(21)]);
+
+      final requirement = await container.read(
+        javaRequirementProvider('whatever-name').future,
+      );
+
+      expect(
+        (requirement as JavaRequirementSatisfied).runtime.majorVersion,
+        21,
+      );
+    });
+  });
+}
+
+/// A provisioner that writes nothing and reports success.
+///
+/// The thing under test is the controller's invalidation, not the extraction:
+/// [onInstall] stands in for the runtime appearing on disk, which is the only
+/// fact the rest of the app can observe.
+class _FakeProvisioner extends JavaProvisioner {
+  _FakeProvisioner({required this.onInstall});
+
+  final void Function() onInstall;
+
+  @override
+  Future<JavaRuntimeManifest> fetchManifest(
+    JavaCatalogBuild build, {
+    CancelToken? cancel,
+  }) async => const JavaRuntimeManifest(entries: []);
+
+  @override
+  Future<JavaProvisionResult> provision({
+    required JavaRuntimeChoice choice,
+    required JavaRuntimeManifest manifest,
+    required Directory runtimesDir,
+    required HostOs hostOs,
+    CancelToken? cancel,
+    void Function(JavaProvisionProgress)? onProgress,
+  }) async {
+    onInstall();
+    return JavaProvisionResult(
+      root: '/runtimes/${runtimeDirName(choice)}',
+      executable: '/runtimes/${runtimeDirName(choice)}/bin/java',
+      choice: choice,
+      filesWritten: 1,
+      bytesWritten: 1024,
+      skippedEntries: 0,
+    );
+  }
+
+  @override
+  void close() {}
+}
+
+/// A catalog that never reaches the network and counts how often it was asked.
+///
+/// The count is the assertion: the requirement must not go looking for a
+/// downloadable runtime when one is already installed.
+class _CountingCatalog extends JavaCatalogController {
+  _CountingCatalog(this.fetches);
+
+  final List<int> fetches;
+
+  @override
+  Future<JavaCatalogState> build() async {
+    fetches.add(fetches.length);
+    return const JavaCatalogUnavailable('offline in tests');
+  }
 }
 
 /// A [LauncherPaths] whose data directory is [data] and whose game tree is a

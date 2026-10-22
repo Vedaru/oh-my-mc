@@ -128,6 +128,36 @@ class AppLocalizationsZh extends AppLocalizations {
   String get setupThemeMode => '主题';
 
   @override
+  String get setupThemeHint => '跟随系统的明暗变化。';
+
+  @override
+  String get setupLanguageHint => '简体与繁体中文均使用中文翻译。';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get languageChinese => '中文';
+
+  @override
+  String get setupMotionHint => '同时遵循系统的「减少动态效果」设置。';
+
+  @override
+  String get setupMotionOn => '已开启动画';
+
+  @override
+  String get setupMotionOff => '已关闭动画';
+
+  @override
+  String get setupPlayerName => '玩家名称';
+
+  @override
+  String get setupPlayerNameHint => '3-16 个字母、数字或下划线。';
+
+  @override
+  String get setupMemoryHint => '供未单独设置内存的实例使用。';
+
+  @override
   String get themeLight => '浅色';
 
   @override
@@ -143,6 +173,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get logsEmpty => '暂无日志输出';
 
   @override
+  String get logsSearchHint => '搜索日志';
+
+  @override
+  String get logsOnlyErrors => '仅错误';
+
+  @override
+  String get logsNoMatches => '没有符合筛选条件的日志。';
+
+  @override
+  String get logsCopy => '复制';
+
+  @override
   String get actionRetry => '重试';
 
   @override
@@ -153,6 +195,93 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get instanceNeverPlayed => '从未启动';
+
+  @override
+  String get instanceOpen => '打开设置';
+
+  @override
+  String get instanceMissing => '这个实例已不存在。';
+
+  @override
+  String get actionBack => '返回';
+
+  @override
+  String get instanceSectionGeneral => '常规';
+
+  @override
+  String get instanceSectionRuntime => 'Java 与内存';
+
+  @override
+  String get instanceSectionFiles => '文件';
+
+  @override
+  String get instanceNameLabel => '名称';
+
+  @override
+  String get instanceVersionLabel => '版本';
+
+  @override
+  String get instanceIsolationLabel => '独立游戏目录';
+
+  @override
+  String get instanceIsolationHint => '切换后已有文件不会被移动。';
+
+  @override
+  String get instanceIsolationOn => '独立目录';
+
+  @override
+  String get instanceIsolationOff => '共享目录';
+
+  @override
+  String get instanceMemoryLabel => '内存';
+
+  @override
+  String get instanceMemoryHint => '关闭时使用全局默认值。';
+
+  @override
+  String instanceMemoryUsingDefault(int mb) {
+    return '使用默认值（$mb MB）';
+  }
+
+  @override
+  String instanceMemoryMb(int mb) {
+    return '$mb MB';
+  }
+
+  @override
+  String get instanceMemoryBigger => '内存更大不一定更快：堆越大，垃圾回收一次耗时越久。';
+
+  @override
+  String get instanceJavaLabel => 'Java';
+
+  @override
+  String get instanceJavaHint => '指定这个实例由哪个 Java 运行。';
+
+  @override
+  String get instanceJavaAutomatic => '自动（按版本选择）';
+
+  @override
+  String get instanceJavaNoneDownloaded => '还没有下载过 Java 运行时，可前往「设置」获取。';
+
+  @override
+  String get instanceJavaHintDetail => '这里只列出本启动器下载的运行时。';
+
+  @override
+  String get instancePlaytimeLabel => '游戏时长';
+
+  @override
+  String instancePlaytimeValue(String duration, String date) {
+    return '共 $duration，上次游玩 $date';
+  }
+
+  @override
+  String get instancePathLabel => '游戏目录';
+
+  @override
+  String get instanceOpenFolder => '打开目录';
+
+  @override
+  String get instanceOpenFolderFailed => '无法打开该目录。';
 
   @override
   String get instanceNameHint => '实例名称';

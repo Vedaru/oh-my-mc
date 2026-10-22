@@ -17,13 +17,14 @@ import 'data/launch_factory.dart';
 import 'data/launch_providers.dart';
 import 'data/prefs_settings_store.dart';
 import 'data/settings.dart';
-import 'l10n/l10n.dart';
+
 import 'ui/download/download_screen.dart';
+import 'ui/logs/logs_screen.dart';
 import 'ui/setup/setup_screen.dart';
+import 'ui/instances/instance_detail_screen.dart';
 import 'ui/instances/instances_screen.dart';
 import 'ui/launch/launch_screen.dart';
 import 'ui/shell/app_shell.dart';
-import 'ui/shell/shell_icons.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -125,11 +126,13 @@ class OhMyMcApp extends StatelessWidget {
   /// would restart its selection animation.
   Widget _screenFor(BuildContext context, GoRouterState state) {
     final child = switch (state.uri.path) {
-      Routes.instances ||
-      Routes.instanceDetailPattern => const InstancesScreen(),
+      Routes.instances => const InstancesScreen(),
+      Routes.instanceDetailPattern => InstanceDetailScreen(
+        id: state.pathParameters['id'] ?? '',
+      ),
       Routes.download => const DownloadScreen(),
       Routes.setup => const SetupScreen(),
-      Routes.logs => _Pending(icon: ShellIcons.forRoute(state.uri.path)),
+      Routes.logs => const LogsScreen(),
       _ => const LaunchScreen(),
     };
     return AppShell(location: state.uri.path, child: child);
@@ -156,30 +159,6 @@ class OhMyMcApp extends StatelessWidget {
           'en' => LanguagePreference.english,
           _ => LanguagePreference.system,
         },
-      ),
-    );
-  }
-}
-
-/// A screen with no implementation yet. Named by its icon so a user who reaches
-/// it by deep link can tell which screen is missing.
-class _Pending extends StatelessWidget {
-  const _Pending({required this.icon});
-
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final theme = FluentTheme.of(context);
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 32, color: theme.inactiveColor),
-          const SizedBox(height: 8),
-          Text(l10n.screenNotReady, style: theme.typography.caption),
-        ],
       ),
     );
   }

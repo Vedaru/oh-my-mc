@@ -237,9 +237,12 @@ class JavaInstallController extends Notifier<JavaInstallState> {
         majorVersion: result.choice.majorVersion,
         bytes: result.bytesWritten,
       );
-      // The runtime list is read from the filesystem, so it must be re-scanned
-      // or the just-installed runtime does not appear anywhere.
+      // Both of these are read from the filesystem and both are now stale.
+      // Without the invalidation the panel keeps offering the download the user
+      // just completed, and the launch that follows still says "no Java".
       ref.invalidate(javaRuntimesProvider);
+      ref.invalidate(javaScanProvider);
+      ref.invalidate(javaRequirementProvider);
     } on CancelledException {
       if (ref.mounted) state = const JavaInstallCancelled();
     } catch (e) {
@@ -367,7 +370,11 @@ class JavaRuntimesController extends AsyncNotifier<List<ManagedJavaRuntime>> {
     if (await runtime.directory.exists()) {
       await runtime.directory.delete(recursive: true);
     }
+    // Deleting the runtime a version was using turns "satisfied" back into
+    // "downloadable"; leaving the requirement cached would claim a JVM exists.
     ref.invalidateSelf();
+    ref.invalidate(javaScanProvider);
+    ref.invalidate(javaRequirementProvider);
     return true;
   }
 
@@ -422,6 +429,21 @@ JavaRequirement resolveJavaRequirement({
   }
 }
 
+/// Every JVM on this machine, including the ones this launcher downloaded.
+///
+/// Separate from [javaRequirementProvider] because probing a JVM costs a process
+/// spawn: resolving the requirement once per *instance* would re-scan the whole
+/// machine for each one, and a list of ten instances would spend a second
+/// spawning `java -version` to answer the same question ten times.
+final javaScanProvider = FutureProvider<List<JavaRuntime>>((ref) async {
+  final paths = ref.read(launcherPathsProvider);
+  final manager = JavaManager(hostOs: localHostOs);
+  return manager.scan(
+    environment: const {},
+    managedRoots: managedJavaExecutables(paths.data),
+  );
+});
+
 /// What [versionId] needs on this machine, resolved once per instance.
 ///
 /// Reads the version JSON (which names both the required major and the exact
@@ -443,14 +465,15 @@ final javaRequirementProvider = FutureProvider.family<JavaRequirement, String>((
   );
   final declared = version.javaVersion;
 
-  final installed = <JavaRuntime>[];
-  final manager = JavaManager(hostOs: localHostOs);
-  installed.addAll(
-    await manager.scan(
-      environment: const {},
-      managedRoots: managedJavaExecutables(paths.data),
-    ),
-  );
+  final requiredMajor = declared?.majorVersion ?? 8;
+  final installed = await ref.watch(javaScanProvider.future);
+
+  // Stop before touching the catalog when a usable JVM is already here. The
+  // catalog is a network request to Mojang, and asking for it in order to answer
+  // a question the local machine already settled is both slow and a way for an
+  // offline user to see "no Java" while Java sits on their disk.
+  final existing = selectRuntime(installed, requiredMajor);
+  if (existing != null) return JavaRequirementSatisfied(existing);
 
   final catalogState = await ref.watch(javaCatalogProvider.future);
   final catalog = catalogState is JavaCatalogReady
@@ -458,7 +481,7 @@ final javaRequirementProvider = FutureProvider.family<JavaRequirement, String>((
       : null;
 
   return resolveJavaRequirement(
-    requiredMajor: declared?.majorVersion ?? 8,
+    requiredMajor: requiredMajor,
     declaredComponent: declared?.component,
     installed: installed,
     catalog: catalog,

@@ -13,7 +13,6 @@ import 'package:oh_my_mc/data/instance_store.dart';
 import 'package:oh_my_mc/data/launch_providers.dart';
 import 'package:oh_my_mc/data/settings.dart';
 import 'package:oh_my_mc/l10n/l10n.dart';
-import 'package:oh_my_mc/ui/instances/instance_card.dart';
 import 'package:oh_my_mc/ui/instances/instances_screen.dart';
 import 'package:oh_my_mc/ui/launch/launch_screen.dart';
 import 'package:oh_my_mc/ui/motion/motion.dart';
@@ -440,30 +439,44 @@ void main() {
       expect(find.text('Never played'), findsOneWidget);
     });
 
-    testWidgets('tapping a card selects it', (tester) async {
-      final container = await pumpScreen(
+    testWidgets('tapping a card opens it', (tester) async {
+      final opened = <String>[];
+      await pumpScreen(
         tester,
-        const InstancesScreen(),
+        InstancesScreen(onOpen: (instance) => opened.add(instance.id)),
         instances: [
           sample(id: 'a', name: 'A'),
           sample(id: 'b', name: 'B'),
         ],
       );
 
-      // The first is selected on load; tap the second.
       await tester.tap(find.text('B'));
       await tester.pumpAndSettle();
 
-      expect(
-        (container.read(instanceListProvider) as InstanceListReady).selectedId,
-        'b',
+      // A tap opens the detail page rather than only recolouring a border:
+      // selection happens there, and the grid has no other per-instance action.
+      expect(opened, ['b']);
+    });
+
+    testWidgets('play runs the instance it belongs to', (tester) async {
+      final launched = <String>[];
+      await pumpScreen(
+        tester,
+        InstancesScreen(onLaunch: (instance) => launched.add(instance.id)),
+        instances: [
+          sample(id: 'a', name: 'A'),
+          sample(id: 'b', name: 'B'),
+        ],
       );
-      final cards = tester.widgetList<InstanceCard>(find.byType(InstanceCard));
-      expect(
-        cards.where((c) => c.selected).length,
-        1,
-        reason: 'exactly one card must look selected',
-      );
+
+      final playButtons = find.widgetWithText(Button, 'Play');
+      expect(playButtons, findsNWidgets(2));
+      await tester.tap(playButtons.at(1));
+      await tester.pumpAndSettle();
+
+      // The bug this pins: the grid used to be constructed with no launch
+      // callback at all, so every Play button was permanently disabled.
+      expect(launched, ['b']);
     });
 
     testWidgets('a modded instance shows its loader', (tester) async {

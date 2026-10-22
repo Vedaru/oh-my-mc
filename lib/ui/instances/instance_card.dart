@@ -17,6 +17,7 @@ class InstanceCard extends StatelessWidget {
     required this.onTap,
     this.onPlay,
     this.busy = false,
+    this.onMenu,
     super.key,
   });
 
@@ -31,6 +32,10 @@ class InstanceCard extends StatelessWidget {
   /// A launch is in flight for this instance.
   final bool busy;
 
+  /// Opens the card's context menu. Invoked by a right click, which is where a
+  /// desktop user looks for per-item actions.
+  final VoidCallback? onMenu;
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -44,7 +49,7 @@ class InstanceCard extends StatelessWidget {
         ? theme.accentColor.defaultBrushFor(theme.brightness)
         : theme.resources.controlStrokeColorDefault;
 
-    return HoverButton(
+    final card = HoverButton(
       onPressed: onTap,
       focusEnabled: true,
       builder: (context, states) => AnimatedContainer(
@@ -150,6 +155,15 @@ class InstanceCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+
+    final onMenu = this.onMenu;
+    if (onMenu == null) return card;
+    return GestureDetector(
+      // Only the secondary button: a primary tap is already the card's action,
+      // and long-press is not a menu gesture on desktop.
+      onSecondaryTap: onMenu,
+      child: card,
     );
   }
 }

@@ -28,4 +28,7 @@ abstract final class ShellIcons {
   static const search = FluentIcons.search;
   static const download = FluentIcons.download;
   static const check = FluentIcons.check_mark;
+  static const edit = FluentIcons.edit;
+  static const trash = FluentIcons.delete;
+  static const settings = FluentIcons.settings;
 }

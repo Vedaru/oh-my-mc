@@ -153,6 +153,46 @@
     "description": "Toggles UI motion."
   },
   "setupThemeMode": "Theme",
+  "setupThemeHint": "Follow system changes with the OS.",
+  "@setupThemeHint": {
+    "description": "Hint under the theme choice."
+  },
+  "setupLanguageHint": "Simplified Chinese and Traditional Chinese both use the Chinese translations.",
+  "@setupLanguageHint": {
+    "description": "Explains the zh_Hant fallback in the language chooser."
+  },
+  "languageEnglish": "English",
+  "@languageEnglish": {
+    "description": "Language choice: English."
+  },
+  "languageChinese": "Chinese",
+  "@languageChinese": {
+    "description": "Language choice: Chinese (either script)."
+  },
+  "setupMotionHint": "Also follows your system's reduce-motion setting.",
+  "@setupMotionHint": {
+    "description": "Hint under the animation switch."
+  },
+  "setupMotionOn": "Animations on",
+  "@setupMotionOn": {
+    "description": "Animation switch, on."
+  },
+  "setupMotionOff": "Animations off",
+  "@setupMotionOff": {
+    "description": "Animation switch, off."
+  },
+  "setupPlayerName": "Player name",
+  "@setupPlayerName": {
+    "description": "Label for the offline player name field."
+  },
+  "setupPlayerNameHint": "3-16 letters, digits or underscores.",
+  "@setupPlayerNameHint": {
+    "description": "The validation rule for the player name."
+  },
+  "setupMemoryHint": "Used by instances that do not set their own.",
+  "@setupMemoryHint": {
+    "description": "Explains what the global heap slider affects."
+  },
   "@setupThemeMode": {
     "description": "Light/dark/system theme choice."
   },
@@ -176,6 +216,22 @@
   "@logsEmpty": {
     "description": "Shown before any log line arrives."
   },
+  "logsSearchHint": "Search the log",
+  "@logsSearchHint": {
+    "description": "Placeholder in the log search box."
+  },
+  "logsOnlyErrors": "Errors only",
+  "@logsOnlyErrors": {
+    "description": "Toggle that hides ordinary log lines and keeps failures."
+  },
+  "logsNoMatches": "No lines match the filter.",
+  "@logsNoMatches": {
+    "description": "Shown when the log has lines but the search or filter hides them all."
+  },
+  "logsCopy": "Copy",
+  "@logsCopy": {
+    "description": "Copies the whole log to the clipboard."
+  },
   "actionRetry": "Retry",
   "@actionRetry": {
     "description": "Retry a failed action."
@@ -191,6 +247,132 @@
   "instanceNeverPlayed": "Never played",
   "@instanceNeverPlayed": {
     "description": "Shown on an instance card that has never been launched."
+  },
+  "instanceOpen": "Open settings",
+  "@instanceOpen": {
+    "description": "Context menu item that opens the instance detail page."
+  },
+  "instanceMissing": "This instance no longer exists.",
+  "@instanceMissing": {
+    "description": "Shown when a detail link points at a deleted instance."
+  },
+  "actionBack": "Back",
+  "@actionBack": {
+    "description": "Returns to the previous screen."
+  },
+  "instanceSectionGeneral": "General",
+  "@instanceSectionGeneral": {
+    "description": "Detail page section: name, version, folder mode."
+  },
+  "instanceSectionRuntime": "Java and memory",
+  "@instanceSectionRuntime": {
+    "description": "Detail page section: heap size and JVM choice."
+  },
+  "instanceSectionFiles": "Files",
+  "@instanceSectionFiles": {
+    "description": "Detail page section: game folder and playtime."
+  },
+  "instanceNameLabel": "Name",
+  "@instanceNameLabel": {
+    "description": "Label for the instance name field."
+  },
+  "instanceVersionLabel": "Version",
+  "@instanceVersionLabel": {
+    "description": "Label for the read-only version row."
+  },
+  "instanceIsolationLabel": "Separate game folder",
+  "@instanceIsolationLabel": {
+    "description": "Label for the isolation switch."
+  },
+  "instanceIsolationHint": "Existing files are not moved when this changes.",
+  "@instanceIsolationHint": {
+    "description": "Warns that toggling isolation leaves files where they are."
+  },
+  "instanceIsolationOn": "Separate folder",
+  "@instanceIsolationOn": {
+    "description": "Isolation switch, on: this instance has its own files."
+  },
+  "instanceIsolationOff": "Shared folder",
+  "@instanceIsolationOff": {
+    "description": "Isolation switch, off: files are shared with other instances."
+  },
+  "instanceMemoryLabel": "Memory",
+  "@instanceMemoryLabel": {
+    "description": "Label for the per-instance heap setting."
+  },
+  "instanceMemoryHint": "Off means the global default.",
+  "@instanceMemoryHint": {
+    "description": "Explains the unset state of the memory override."
+  },
+  "instanceMemoryUsingDefault": "Using the default ({mb} MB)",
+  "@instanceMemoryUsingDefault": {
+    "description": "Memory override off; the global value is shown.",
+    "placeholders": {
+      "mb": {
+        "type": "int"
+      }
+    }
+  },
+  "instanceMemoryMb": "{mb} MB",
+  "@instanceMemoryMb": {
+    "description": "A heap size in megabytes.",
+    "placeholders": {
+      "mb": {
+        "type": "int"
+      }
+    }
+  },
+  "instanceMemoryBigger": "More memory is not always faster: garbage collection takes longer on a large heap.",
+  "@instanceMemoryBigger": {
+    "description": "Shown under the heap slider to discourage maxing it out."
+  },
+  "instanceJavaLabel": "Java",
+  "@instanceJavaLabel": {
+    "description": "Label for the per-instance JVM choice."
+  },
+  "instanceJavaHint": "Which JVM runs this instance.",
+  "@instanceJavaHint": {
+    "description": "Explains the Java picker."
+  },
+  "instanceJavaAutomatic": "Automatic (picked by version)",
+  "@instanceJavaAutomatic": {
+    "description": "Default Java choice: the version decides."
+  },
+  "instanceJavaNoneDownloaded": "No downloaded runtimes yet. Get one from Setup.",
+  "@instanceJavaNoneDownloaded": {
+    "description": "Java picker hint when the launcher has no managed runtime."
+  },
+  "instanceJavaHintDetail": "Only runtimes this launcher downloaded are listed here.",
+  "@instanceJavaHintDetail": {
+    "description": "Java picker hint when runtimes are available."
+  },
+  "instancePlaytimeLabel": "Playtime",
+  "@instancePlaytimeLabel": {
+    "description": "Label for the playtime row."
+  },
+  "instancePlaytimeValue": "{duration} in total, last played {date}",
+  "@instancePlaytimeValue": {
+    "description": "Total playtime and the last session's date.",
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "instancePathLabel": "Game folder",
+  "@instancePathLabel": {
+    "description": "Label for the instance's directory path."
+  },
+  "instanceOpenFolder": "Open folder",
+  "@instanceOpenFolder": {
+    "description": "Opens the game folder in the file manager."
+  },
+  "instanceOpenFolderFailed": "Could not open the folder.",
+  "@instanceOpenFolderFailed": {
+    "description": "Shown when no file manager could be launched."
   },
   "instanceNameHint": "Name this instance",
   "instancesEmpty": "No instances yet",
