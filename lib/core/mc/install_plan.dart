@@ -89,6 +89,7 @@ InstallPlan planInstall({
   Map<String, bool> features = const {},
   AssetIndex? assetIndex,
   bool includeAssets = true,
+  String assetBaseUrl = defaultAssetBaseUrl,
 }) {
   final tasks = <DownloadTask>[];
   final stages = <InstallStage, int>{};
@@ -169,7 +170,7 @@ InstallPlan planInstall({
         add(
           InstallStage.assets,
           paths.assetObject(blob.hash),
-          blob.url,
+          blob.urlWithBase(assetBaseUrl),
           blob.hash,
           blob.size,
           priority: DownloadPriority.asset,

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 
+import 'cancellation.dart';
 import 'mirror.dart';
 import 'progress.dart';
 
@@ -136,9 +137,15 @@ class FileDownloader {
   /// Emits an aggregate [DownloadProgress] stream. Completes when every task is
   /// either on disk and verified, or a [DownloadFailedException] has been
   /// thrown (fail-fast: the caller decides whether to retry the batch).
+  ///
+  /// Ordering is honoured in the sense that matters: metadata first, then
+  /// libraries, then assets. Within a priority band files are fetched in
+  /// parallel, because a modern install is ~3000 small assets and fetching them
+  /// one at a time is minutes of avoidable latency.
   Stream<DownloadProgress> download(
     List<DownloadTask> tasks, {
     int concurrency = 8,
+    CancelToken? cancel,
     void Function(int done, int total)? onProgressCount,
   }) {
     final totalBytes = tasks.fold<int>(0, (sum, t) => sum + t.size);
@@ -161,11 +168,8 @@ class FileDownloader {
     () async {
       try {
         emit(force: true);
-        for (final task in _order(tasks)) {
-          tracker.startFile(task.targetPath);
-          await _fetchOne(task, tracker, emit);
-          tracker.completeFile();
-          emit(force: true);
+        for (final batch in _priorityBatches(_order(tasks))) {
+          await _runBatch(batch, concurrency, tracker, emit, cancel);
         }
         emit(force: true);
         await controller.close();
@@ -176,6 +180,66 @@ class FileDownloader {
     }();
 
     return controller.stream;
+  }
+
+  /// Runs one priority band with a bounded worker pool.
+  ///
+  /// Bands run one after another so metadata is complete before anything that
+  /// might need it, while the band itself runs in parallel. On the first error
+  /// the remaining workers stop picking up new tasks; already-running transfers
+  /// are awaited so no `.part` is left half-flushed by a returned future.
+  Future<void> _runBatch(
+    List<DownloadTask> batch,
+    int concurrency,
+    ProgressTracker tracker,
+    void Function({bool force}) emit,
+    CancelToken? cancel,
+  ) async {
+    if (batch.isEmpty) return;
+    final workers = concurrency < 1 ? 1 : concurrency;
+    var next = 0;
+    Object? failure;
+
+    Future<void> worker() async {
+      while (true) {
+        if (failure != null) return;
+        if (cancel?.isCancelled ?? false) {
+          failure ??= const CancelledException('download');
+          return;
+        }
+        final index = next++;
+        if (index >= batch.length) return;
+
+        final task = batch[index];
+        try {
+          tracker.startFile(task.targetPath);
+          await _fetchOne(task, tracker, emit, cancel);
+          tracker.completeFile();
+          emit(force: true);
+        } catch (e) {
+          failure ??= e;
+          return;
+        }
+      }
+    }
+
+    await Future.wait([
+      for (var i = 0; i < workers && i < batch.length; i++) worker(),
+    ]);
+    if (failure != null) throw failure!;
+  }
+
+  /// Splits priority-sorted tasks into contiguous runs of equal priority.
+  static List<List<DownloadTask>> _priorityBatches(List<DownloadTask> ordered) {
+    final batches = <List<DownloadTask>>[];
+    for (final task in ordered) {
+      if (batches.isEmpty || batches.last.first.priority != task.priority) {
+        batches.add([task]);
+      } else {
+        batches.last.add(task);
+      }
+    }
+    return batches;
   }
 
   static List<DownloadTask> _order(List<DownloadTask> tasks) {
@@ -190,8 +254,9 @@ class FileDownloader {
   Future<void> _fetchOne(
     DownloadTask task,
     ProgressTracker tracker,
-    void Function({bool force}) emit,
-  ) async {
+    void Function({bool force}) emit, [
+    CancelToken? cancel,
+  ]) async {
     final target = File(task.targetPath);
 
     // Already present and trusted: count it and move on.
@@ -211,7 +276,7 @@ class FileDownloader {
 
       for (final uri in candidates) {
         try {
-          await _transfer(uri, part, task, tracker, emit);
+          await _transfer(uri, part, task, tracker, emit, cancel);
           final actual = await _sha1Of(part);
           if (task.verifiable && actual != task.sha1.toLowerCase()) {
             await part.delete();
@@ -247,8 +312,11 @@ class FileDownloader {
     File part,
     DownloadTask task,
     ProgressTracker tracker,
-    void Function({bool force}) emit,
-  ) async {
+    void Function({bool force}) emit, [
+    CancelToken? cancel,
+  ]) async {
+    cancel?.throwIfCancelled('download');
+
     var startAt = 0;
     if (await part.exists()) {
       startAt = await part.length();
@@ -283,6 +351,9 @@ class FileDownloader {
     var aborted = false;
     try {
       await for (final chunk in response) {
+        // Checked per chunk, not per file: a 300 MB asset must stop promptly
+        // when the user cancels, not after it finishes.
+        cancel?.throwIfCancelled('download');
         sink.add(chunk);
         received += chunk.length;
         tracker.addBytes(chunk.length);

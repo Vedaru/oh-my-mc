@@ -172,8 +172,30 @@ The milestone that makes the launcher capable of installing something.
 
 Acceptance: local `HttpServer` fixture serves a **synthetic** version chain with natives and a
 `virtual` asset index; assert final tree byte-for-byte (file set, hashes, natives contents,
-virtual copies). Cancel mid-extraction leaves no natives dir. `@Tags(['network'])` test installs
-real 1.20.1 into a temp dir and asserts `verifyInstall` is empty.
+virtual copies). Cancel mid-extraction leaves no natives dir. Network test installs real 1.20.1
+into a temp dir and asserts `verifyInstall` is empty.
+
+**Status: 3.5.1-3.5.6 done.** 44 new tests (323 total, 1 skipped). Details in
+`docs/PLAN-M3.5.md`. The network test really was run: a full 1.20.1 install
+(1000+ files, ~250 MB) completed in **90 s** with `verifyInstall(checkHashes: true)`
+clean. It is skipped by default behind `OH_MY_MC_NETWORK_TESTS=1` but stays in the
+normal suite so the gate still compiles it.
+
+Three defects in the *existing* code were found and fixed, because the pipeline
+could not be correct without them:
+
+1. `FileDownloader.download(concurrency:)` was ignored — every file was fetched
+   serially. With ~3000 assets that is the difference between 90 s and several
+   minutes.
+2. `ZipDecoder` returns an *empty* archive for non-zip bytes instead of throwing,
+   so a truncated natives archive produced a silently empty natives directory and
+   an install that reported success.
+3. Asset index keys (from a downloaded file) were joined into a path with no
+   traversal check, unlike natives entries. A poisoned index could write outside
+   the game directory.
+
+Cancellation (`CancelToken`) did not exist at all; it now covers downloads
+(per chunk), extraction, and asset copying.
 
 Why synthetic for the main test: the fixture must exercise natives + virtual assets *together*,
 and no single real version has both. 1.12.2 has natives, 1.6.4 has `virtual` — a synthetic merge

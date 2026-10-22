@@ -349,3 +349,38 @@ re-add it. `arch_compat` only has to handle the macOS-arm64 case below.
 * Job logs are not in the REST API. Fetch them from the web UI:
   `https://git.vedaru.cn/<owner>/<repo>/actions/runs/<n>/jobs/<i>/logs`.
 * `assert s.count(x)` against YAML written by hand is fragile — rewrite the file instead of patching it.
+
+## Installer traps (M3.5)
+
+* **`FileDownloader.download(concurrency:)` was ignored** — the loop awaited each
+  task in turn. A modern version is ~3000 small assets, so the difference is
+  minutes. Fixed with a bounded worker pool that still runs priority *bands* in
+  sequence (metadata before libraries before assets). The concurrency test needs
+  a server-side delay plus a count of in-flight requests; without the delay a
+  serial implementation passes because localhost is too fast to overlap.
+* **`ZipDecoder` returns an empty `Archive` for bytes that are not a zip** rather
+  than throwing. A truncated download or a mirror's HTML error page therefore
+  produced a *silently empty* natives directory and a "successful" install. Check
+  for the `PK` header and a non-empty entry list explicitly.
+* **Asset index keys are attacker-influenced.** The index is a downloaded file and
+  its keys were joined straight into a path, so a poisoned index could write
+  outside the game directory. `safeRelativeEntryName` is now shared by natives
+  extraction and asset materialization. The `p.isWithin` re-check after
+  normalisation is genuinely unreachable given the name guard — it is kept as
+  defence in depth, which means removing it does **not** fail a test. Do not
+  read its survival as "untested logic is fine"; the name guard is what is
+  tested.
+* **The client jar lands under the *child's* directory** when a modloader profile
+  omits `jar`. Only a profile that sets `jar` points at the parent. Assertions
+  about jar location get this backwards easily.
+* **`resources.download.minecraft.net` is hardcoded in `AssetObject.url`**; a test
+  cannot intercept it. `urlWithBase(base)` plus `planInstall(assetBaseUrl:)` and
+  `VersionInstaller.install(assetBaseUrl:)` exist so the synthetic fixture never
+  touches the network. Mirror support will want the same seam.
+* **A test that writes to a fixed `/tmp` path is self-poisoning**: the first
+  failing run leaves the file, and the next run's `existsSync() == false`
+  assertion passes for the wrong reason. Use the per-test temp dir.
+* **`dart_test.yaml` `exclude_tags` cannot be overridden from the command line**
+  (`--tags network` still excludes it, and `-x ""` is rejected). Gate the network
+  test on an env var instead, and keep it in the normal suite so `flutter test`
+  still compiles it — otherwise the file rots silently.

@@ -32,9 +32,18 @@ class AssetObject {
   /// Relative location under `assets/objects/`.
   String get objectPath => '${hash.substring(0, 2)}/$hash';
 
-  String get url =>
-      'https://resources.download.minecraft.net/${hash.substring(0, 2)}/$hash';
+  /// Canonical location of the blob.
+  ///
+  /// [base] exists because `resources.download.minecraft.net` is not reachable
+  /// from a test and is not the only host serving these bytes: a mirror needs a
+  /// different base, and injecting it here keeps that decision out of the plan.
+  String urlWithBase(String base) => '$base/${hash.substring(0, 2)}/$hash';
+
+  String get url => urlWithBase(defaultAssetBaseUrl);
 }
+
+/// Mojang's asset object host.
+const defaultAssetBaseUrl = 'https://resources.download.minecraft.net';
 
 class AssetIndex {
   const AssetIndex({
