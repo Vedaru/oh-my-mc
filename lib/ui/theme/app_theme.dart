@@ -89,11 +89,23 @@ abstract final class AppTheme {
   /// Named families first, then `monospace`: a launcher has to run on whatever
   /// fontconfig resolves, and a single hardcoded family (the previous code used
   /// `Consolas`) renders as the default sans on any Linux box that lacks it.
-  static TextStyle mono(BuildContext context) => caption(context).copyWith(
-    fontFamily: 'JetBrains Mono',
-    fontFamilyFallback: const ['Consolas', 'DejaVu Sans Mono', 'monospace'],
-    height: 1.45,
-  );
+  static TextStyle mono(BuildContext context) {
+    final base = caption(context);
+    return base.copyWith(
+      fontFamily: 'JetBrains Mono',
+      // The theme's own family is the *last* fallback on purpose: a machine with
+      // no mono face at all (a bare container, a stripped CI image) then renders
+      // the log in the body face instead of a wall of tofu boxes. Proportional
+      // digits beat unreadable squares.
+      fontFamilyFallback: [
+        'Consolas',
+        'DejaVu Sans Mono',
+        'monospace',
+        ?base.fontFamily,
+      ],
+      height: 1.45,
+    );
+  }
 
   static m3.TextTheme _text(BuildContext context) =>
       m3.Theme.of(context).textTheme;

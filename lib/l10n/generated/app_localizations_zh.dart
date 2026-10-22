@@ -117,6 +117,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get downloadIncomplete => '未完成';
 
   @override
+  String get installLogCopy => '复制安装日志';
+
+  @override
+  String get installLogCopied => '已复制安装日志';
+
+  @override
   String get launchRepairTitle => '安装没有完成';
 
   @override

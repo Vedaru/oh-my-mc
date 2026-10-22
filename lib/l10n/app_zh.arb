@@ -31,6 +31,8 @@
   "downloadInstall": "安装",
   "downloadInstalled": "已安装",
   "downloadIncomplete": "未完成",
+  "installLogCopy": "复制安装日志",
+  "installLogCopied": "已复制安装日志",
   "launchRepairTitle": "安装没有完成",
   "launchRepairMissingTitle": "这个版本还没有安装",
   "launchRepairMissingBody": "{version} 已经不在磁盘上了，重新安装后才能启动这个实例。",

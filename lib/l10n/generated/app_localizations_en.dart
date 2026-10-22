@@ -120,6 +120,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get downloadIncomplete => 'Incomplete';
 
   @override
+  String get installLogCopy => 'Copy install log';
+
+  @override
+  String get installLogCopied => 'Install log copied';
+
+  @override
   String get launchRepairTitle => 'The install did not finish';
 
   @override

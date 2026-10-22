@@ -284,6 +284,18 @@ abstract class AppLocalizations {
   /// **'Incomplete'**
   String get downloadIncomplete;
 
+  /// Copies the whole install log to the clipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy install log'**
+  String get installLogCopy;
+
+  /// Confirmation after copying the install log.
+  ///
+  /// In en, this message translates to:
+  /// **'Install log copied'**
+  String get installLogCopied;
+
   /// Heading of the repair offer on the launch page.
   ///
   /// In en, this message translates to:

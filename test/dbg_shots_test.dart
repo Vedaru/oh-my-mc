@@ -297,6 +297,18 @@ void main() {
     );
   });
 
+  testWidgets('download failed', (tester) async {
+    await shoot(
+      tester,
+      '/download',
+      'download-failed',
+      overrides: [
+        installControllerProvider.overrideWith(_ShotFailedInstall.new),
+        installLogProvider.overrideWith(_ShotFailedLog.new),
+      ],
+    );
+  });
+
   testWidgets('download', (tester) async {
     await shoot(tester, '/download', 'download');
   });
@@ -438,5 +450,23 @@ class _ShotInstallLog extends InstallLogNotifier {
     '21:04:52  manifest [1/9]',
     '21:04:53  versionJson [2/9] 1.20.1',
     '21:04:55  download [6/9] 12/67 files 5.0/20.0 MB',
+  ];
+}
+
+class _ShotFailedInstall extends InstallController {
+  @override
+  InstallState build() => const InstallFailed(
+    versionId: '1.20.1',
+    message: 'HTTP 503 from piston-data.mojang.com while fetching lz4-java',
+  );
+}
+
+class _ShotFailedLog extends InstallLogNotifier {
+  @override
+  List<String> build() => const [
+    '21:04:51  install started: 1.20.1',
+    '21:04:53  versionJson [2/9] 1.20.1',
+    '21:05:02  download [6/9] 12/67 files 5.0/20.0 MB',
+    '21:05:31  install failed: HTTP 503 from piston-data.mojang.com',
   ];
 }

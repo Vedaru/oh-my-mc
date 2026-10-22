@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:material_ui/material_ui.dart' as m3;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -400,29 +401,118 @@ void main() {
     }
   });
 
-  testWidgets(
-    'a resumed install shows what it has done, not only where it is',
-    (tester) async {
-      // The phase label is one line that is replaced as the install moves; the log
-      // tail is what tells a user who pressed "resume" that anything started.
-      installs.stall = true;
-      await pump(
-        tester,
-        incomplete: {'1.20.1'},
-        logLines: [
-          '21:04:51  install started: 1.20.1',
-          '21:04:53  download [6/9] 12/67 files',
-          '21:05:10  resume started: 1.20.1',
-        ],
-      );
+  testWidgets('a resumed install shows what it has done, not only where it is', (
+    tester,
+  ) async {
+    // The phase label is one line that is replaced as the install moves; the log
+    // tail is what tells a user who pressed "resume" that anything started.
+    installs.stall = true;
+    await pump(
+      tester,
+      incomplete: {'1.20.1'},
+      logLines: [
+        '21:04:51  install started: 1.20.1',
+        '21:04:53  download [6/9] 12/67 files',
+        '21:05:10  resume started: 1.20.1',
+      ],
+    );
 
-      await tester.tap(find.text('1.20.1').first);
-      await tester.pump(const Duration(milliseconds: 100));
+    await tester.tap(find.text('1.20.1').first);
+    await tester.pump(const Duration(milliseconds: 100));
 
-      expect(find.byKey(const ValueKey('install-log-tail')), findsOneWidget);
-      expect(find.textContaining('resume started: 1.20.1'), findsOneWidget);
-    },
-  );
+    expect(find.byKey(const ValueKey('install-log-tail')), findsOneWidget);
+    expect(find.textContaining('resume started: 1.20.1'), findsOneWidget);
+
+    // Copyable and left aligned: the timestamps are the visual ruler of a log,
+    // and centring them would break the column.
+    final text = tester.widget<m3.SelectableText>(
+      find.byKey(const ValueKey('install-log-text')),
+    );
+    expect(text.textAlign, m3.TextAlign.left);
+    expect(text.textSpan?.toPlainText(), contains('install started: 1.20.1'));
+  });
+
+  testWidgets('the log tail colours what happened, not just the words', (
+    tester,
+  ) async {
+    installs.stall = true;
+    await pump(
+      tester,
+      logLines: [
+        '21:04:51  install started: 1.20.1',
+        '21:06:02  download failed: HTTP 503 from piston-data',
+      ],
+    );
+    await tester.tap(find.text('1.20.1'));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    final scheme = m3.Theme.of(
+      tester.element(find.byKey(const ValueKey('install-log-tail'))),
+    ).colorScheme;
+    final span = tester
+        .widget<m3.SelectableText>(
+          find.byKey(const ValueKey('install-log-text')),
+        )
+        .textSpan!;
+
+    final coloured = <String, m3.Color>{};
+    void visit(m3.InlineSpan node) {
+      if (node is! m3.TextSpan) return;
+      if (node.text != null && node.style?.color != null) {
+        coloured[node.text!] = node.style!.color!;
+      }
+      for (final child in node.children ?? const <m3.InlineSpan>[]) {
+        visit(child);
+      }
+    }
+
+    visit(span);
+    // A failure must read as a failure without the user parsing the sentence.
+    expect(
+      coloured.entries.any(
+        (e) => e.key.contains('failed') && e.value == scheme.error,
+      ),
+      isTrue,
+      reason: 'the failure line should use the error colour: $coloured',
+    );
+  });
+
+  testWidgets('one button copies the whole log', (tester) async {
+    final copied = <String>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copied.add((call.arguments as Map)['text'] as String);
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+
+    installs.stall = true;
+    await pump(
+      tester,
+      logLines: [
+        '21:04:51  install started: 1.20.1',
+        '21:04:53  download [6/9] 12/67 files',
+      ],
+    );
+    await tester.tap(find.text('1.20.1'));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    await tester.tap(find.byKey(const ValueKey('install-log-copy')));
+    await tester.pumpAndSettle();
+
+    expect(copied, hasLength(1));
+    // The whole log, not only the four visible lines.
+    expect(copied.single.split('\n'), hasLength(2));
+  });
 
   testWidgets('a running install shows phase, bytes, speed and a cancel', (
     tester,

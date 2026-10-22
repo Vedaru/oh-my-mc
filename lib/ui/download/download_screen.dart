@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart' as m3;
@@ -485,6 +486,21 @@ class _InstallPanel extends ConsumerWidget {
 /// The phase label answers "what is it doing now"; this answers "did it start, and
 /// where did it stop" - which is the question a resumed install raises, because the
 /// panel that shows a phase only exists while the install is running.
+/// The last few install-log lines, in the console face.
+///
+/// Three things it has to get right, because it is the only trace a resumed or
+/// failed install leaves:
+///
+/// * **Readable**: monospace with a proportional fallback (see `AppTheme.mono`),
+///   and left aligned - a log is scanned from the left edge, never centred, and
+///   centring makes timestamps stop lining up between lines.
+/// * **Copyable**: the lines are selectable, and one button copies the whole log
+///   (a selected rectangle is useless when the point is to paste it into a bug
+///   report).
+/// * **Highlighted**: the timestamp is dimmed and the message takes its colour
+///   from what happened - a failure in `error`, a cancellation in `warning`, a
+///   completion in `success`. A log where every line looks the same makes the
+///   reader do the parsing.
 class _InstallTail extends ConsumerWidget {
   const _InstallTail({this.lines = 4});
 
@@ -492,32 +508,94 @@ class _InstallTail extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final log = ref.watch(installLogProvider);
     if (log.isEmpty) return const m3.SizedBox.shrink();
     final scheme = m3.Theme.of(context).colorScheme;
     final tail = log.length <= lines ? log : log.sublist(log.length - lines);
+    final base = AppTheme.mono(context);
+    final status = AppTheme.status(context);
+
+    m3.TextStyle styleFor(String message) {
+      final lower = message.toLowerCase();
+      if (lower.contains('failed') || lower.contains('error')) {
+        return base.copyWith(color: scheme.error);
+      }
+      if (lower.contains('cancelled')) {
+        return base.copyWith(color: status.warning);
+      }
+      if (lower.contains('done')) {
+        return base.copyWith(color: status.success);
+      }
+      // "started" / "resume started": the lines that say a run began.
+      if (lower.contains('started')) {
+        return base.copyWith(color: scheme.onSurface);
+      }
+      return base.copyWith(color: scheme.onSurfaceVariant);
+    }
+
+    /// `HH:MM:SS  message` → dim timestamp, coloured message.
+    List<m3.TextSpan> spansFor(String line) {
+      final match = RegExp(r'^(\d{2}:\d{2}:\d{2}\s+)(.*)$').firstMatch(line);
+      if (match == null) {
+        return [m3.TextSpan(text: line, style: styleFor(line))];
+      }
+      return [
+        m3.TextSpan(
+          text: match.group(1),
+          style: base.copyWith(color: scheme.outline),
+        ),
+        m3.TextSpan(text: match.group(2), style: styleFor(match.group(2)!)),
+      ];
+    }
 
     return m3.Container(
       key: const m3.ValueKey('install-log-tail'),
       width: double.infinity,
       margin: const m3.EdgeInsets.only(top: 8),
-      padding: const m3.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const m3.EdgeInsets.fromLTRB(10, 6, 4, 6),
       decoration: m3.BoxDecoration(
         color: scheme.surfaceContainerHighest,
         borderRadius: m3.BorderRadius.circular(8),
       ),
-      child: m3.Column(
-        crossAxisAlignment: m3.CrossAxisAlignment.stretch,
-        mainAxisSize: m3.MainAxisSize.min,
+      child: m3.Row(
+        crossAxisAlignment: m3.CrossAxisAlignment.start,
         children: [
-          for (final line in tail)
-            m3.Text(
-              line,
-              maxLines: 1,
-              overflow: m3.TextOverflow.ellipsis,
-              style: AppTheme.mono(context)
-                  .copyWith(color: scheme.onSurfaceVariant),
+          m3.Expanded(
+            child: m3.SelectableText.rich(
+              m3.TextSpan(
+                children: [
+                  for (var i = 0; i < tail.length; i++) ...[
+                    if (i > 0) const m3.TextSpan(text: '\n'),
+                    ...spansFor(tail[i]),
+                  ],
+                ],
+              ),
+              key: const m3.ValueKey('install-log-text'),
+              // Left, always: the timestamps are the visual ruler of a log.
+              textAlign: m3.TextAlign.left,
+              style: base.copyWith(color: scheme.onSurfaceVariant),
             ),
+          ),
+          m3.IconButton(
+            key: const m3.ValueKey('install-log-copy'),
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: log.join('\n')));
+              m3.ScaffoldMessenger.maybeOf(context)
+                ?..hideCurrentSnackBar()
+                ..showSnackBar(
+                  m3.SnackBar(
+                    content: m3.Text(l10n.installLogCopied),
+                    behavior: m3.SnackBarBehavior.floating,
+                    width: 200,
+                  ),
+                );
+            },
+            tooltip: l10n.installLogCopy,
+            icon: const m3.Icon(ShellIcons.copy, size: 14),
+            color: scheme.onSurfaceVariant,
+            visualDensity: m3.VisualDensity.compact,
+          ),
         ],
       ),
     );
