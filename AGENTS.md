@@ -284,6 +284,19 @@ the current gap table and the ordered backlog. Two rules from it bind new code:
   created or managed, and a popup menu can only switch: it cannot carry primary
   and secondary actions per row, and it sizes itself to its widest row, so it
   floated as a 240 px sliver under a 500 px card.
+- **One primary action per state.** Idle: 启动游戏. Preparing: the same button
+  says 正在启动… and is disabled. Running: it is *gone*, and 停止 is the filled
+  button. A disabled launch button sitting next to a stop button for the whole
+  session made the page's most prominent control a no-op.
+- **Nothing switchable while a game runs.** The version card's list is locked
+  (`session.isBusy`): switching underneath a live session would show one version's
+  output under another version's card, and the stop button would point at neither.
+  The chevron is hidden too - an affordance that does nothing is worse than none.
+- **The console shows the launch summary, not the argv.** A Minecraft classpath is
+  100-200 entries and several kilobytes; printing it pushed the game's own output
+  off the screen. One line goes to the console (`launch: java · N classpath
+  entries · main`), the exact command line goes to `<data>/logs/launch-*.log`
+  with `--accessToken` masked.
 - **One console, one surface.** The launch page is card → actions → console, and
   the console is the page's body (`Expanded`, not content-sized): a bordered box
   inside a card is two frames for one panel, and a console that grows its first

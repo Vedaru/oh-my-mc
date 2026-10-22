@@ -14,6 +14,8 @@ import 'package:oh_my_mc/core/mods/mod_scanner.dart';
 import 'package:oh_my_mc/data/install_providers.dart';
 import 'package:oh_my_mc/core/install/version_installer.dart';
 import 'package:oh_my_mc/core/net/progress.dart';
+import 'package:oh_my_mc/data/launch_providers.dart';
+import 'package:oh_my_mc/core/launch/launch_handle.dart';
 import 'package:oh_my_mc/data/instance_providers.dart';
 import 'package:oh_my_mc/data/mods_providers.dart';
 import 'package:oh_my_mc/data/instance_store.dart';
@@ -149,6 +151,12 @@ void main() {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
+
+    // `AppSettings.defaults` follows the system, and the test binding says "light"
+    // unless told otherwise - so a shot could come out light or dark depending on
+    // which test ran before it. The launcher is used dark; pin it.
+    tester.platformDispatcher.platformBrightnessTestValue = w.Brightness.dark;
+    addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
 
     final data = (await tester.runAsync(
       () => Directory.systemTemp.createTemp('shot'),
@@ -293,6 +301,16 @@ void main() {
     );
   });
 
+  testWidgets('launch running', (tester) async {
+    await shoot(
+      tester,
+      '/launch',
+      'launch-running',
+      instances: [_instance('a', '26.2', '26.2')],
+      overrides: [launchControllerProvider.overrideWith(_ShotRunning.new)],
+    );
+  });
+
   testWidgets('launch versions', (tester) async {
     await shoot(
       tester,
@@ -374,6 +392,12 @@ void main() {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
+
+    // `AppSettings.defaults` follows the system, and the test binding says "light"
+    // unless told otherwise - so a shot could come out light or dark depending on
+    // which test ran before it. The launcher is used dark; pin it.
+    tester.platformDispatcher.platformBrightnessTestValue = w.Brightness.dark;
+    addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
     final data = (await tester.runAsync(
       () => Directory.systemTemp.createTemp('shot2'),
     ))!;
@@ -491,4 +515,31 @@ class _ShotFailedLog extends InstallLogNotifier {
     '21:05:02  download [6/9] 12/67 files 5.0/20.0 MB',
     '21:05:31  install failed: HTTP 503 from piston-data.mojang.com',
   ];
+}
+
+/// A live session, for the screenshot: stop is the primary action and the version
+/// card is locked.
+class _ShotRunning extends LaunchController {
+  @override
+  LaunchSession build() => LaunchSession(
+    state: LaunchState.running,
+    instanceId: 'a',
+    uptime: const Duration(minutes: 3),
+    log: const [
+      LogLine(
+        'launch: java · 132 classpath entries · net.minecraft.client.main.Main',
+        LogChannel.launcher,
+      ),
+      LogLine('[Render thread/INFO]: Setting user: Vedaru', LogChannel.stdout),
+      LogLine(
+        '[Render thread/INFO]: Backend library: LWJGL version 3.4.1+1',
+        LogChannel.stdout,
+      ),
+      LogLine(
+        '[Render thread/INFO]: Using shaderpack: BSL_v8.4',
+        LogChannel.stdout,
+      ),
+      LogLine('[Worker-Main-5/INFO]: Loaded 1283 recipes', LogChannel.stdout),
+    ],
+  );
 }

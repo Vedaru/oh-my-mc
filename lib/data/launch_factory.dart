@@ -71,6 +71,14 @@ LaunchHandle Function(Instance) realLaunchHandleFactory(Ref ref) {
     final paths = ref.read(launcherPathsProvider);
     final settings = ref.read(appSettingsProvider);
     return ProcessLaunchHandle(
+      // One file per session under `<data>/logs`: the console ring is bounded and
+      // dies with the window, so a crash two restarts ago is only diagnosable from
+      // disk.
+      logFile: File(
+        '${paths.data.path}/logs/launch-'
+        '${DateTime.now().toIso8601String().replaceAll(':', '-').substring(0, 19)}'
+        '.log',
+      ),
       prepare: () => prepareInstanceLaunch(
         instance: instance,
         paths: paths,

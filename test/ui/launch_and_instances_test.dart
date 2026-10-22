@@ -28,7 +28,15 @@ import 'package:oh_my_mc/ui/components/app_button.dart';
 /// subscribes to it exactly as it does in production, which is where the
 /// subscription-lifetime bugs live.
 class FakeLaunchHandle implements LaunchHandle {
-  FakeLaunchHandle({this.prepareOutcome, this.failPreparation = false});
+  FakeLaunchHandle({
+    this.prepareOutcome,
+    this.failPreparation = false,
+    this.stallStart = false,
+  });
+
+  /// Leaves the session in `preparing`: a real launch spends time there while the
+  /// version is resolved and the JVM is picked.
+  final bool stallStart;
 
   final _controller = StreamController<LaunchEvent>.broadcast();
   LaunchState _state = LaunchState.idle;
@@ -94,6 +102,11 @@ class FakeLaunchHandle implements LaunchHandle {
         ),
       );
       _set(LaunchState.exited);
+      if (!_started.isCompleted) _started.complete();
+      return;
+    }
+    if (stallStart) {
+      // Stay in `preparing`: the test asserts what the page shows while it waits.
       if (!_started.isCompleted) _started.complete();
       return;
     }
@@ -553,7 +566,42 @@ void main() {
       },
     );
 
-    testWidgets('starting shows the launching state and disables play', (
+    testWidgets('while preparing, play says so and does nothing', (
+      tester,
+    ) async {
+      final handle = FakeLaunchHandle(stallStart: true);
+      await pumpScreen(
+        tester,
+        const LaunchScreen(),
+        instances: [sample()],
+        handle: () => handle,
+      );
+
+      await tester.tap(find.widgetWithText(AppButton, 'Play'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 150));
+
+      expect(find.text('Launching…'), findsOneWidget);
+      final button = tester.widget<AppButton>(
+        find.byKey(const ValueKey('play')),
+      );
+      expect(
+        button.onPressed,
+        isNull,
+        reason:
+            'a second click while a game is starting would spawn a second '
+            'JVM',
+      );
+      // The version list is locked for the whole session, preparing included.
+      await tester.tap(find.byKey(const ValueKey('launch-version-picker')));
+      // `pump`, not `pumpAndSettle`: the pulsing dot inside the button never
+      // settles while the launch is in flight.
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.text('Versions'), findsNothing);
+      await handle.dispose();
+    });
+
+    testWidgets('once running, stop is the only primary action', (
       tester,
     ) async {
       final handle = FakeLaunchHandle();
@@ -567,18 +615,15 @@ void main() {
       await tester.tap(find.widgetWithText(AppButton, 'Play'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 150));
+      await tester.pump();
 
-      // `preparing` then `running`; both are "busy" and both must say so.
-      expect(find.text('Launching…'), findsOneWidget);
-      final button = tester.widget<AppButton>(
-        find.byKey(const ValueKey('play')),
-      );
+      // A disabled play button beside a stop button made the most prominent
+      // control on the page a no-op for the entire session.
+      expect(find.byKey(const ValueKey('play')), findsNothing);
+      expect(find.byKey(const ValueKey('stop')), findsOneWidget);
       expect(
-        button.onPressed,
-        isNull,
-        reason:
-            'a second click while a game is starting would spawn a second '
-            'JVM',
+        tester.widget<AppButton>(find.byKey(const ValueKey('stop'))).style,
+        AppButtonStyle.filled,
       );
       await handle.dispose();
     });

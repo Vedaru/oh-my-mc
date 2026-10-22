@@ -16,22 +16,29 @@ ProcessLaunchHandle handleFor(
   String script, {
   int historyLimit = 2000,
   Duration grace = const Duration(seconds: 2),
+  File? logFile,
+  List<String> classpath = const [],
 }) => ProcessLaunchHandle(
-  prepare: () async =>
-      LaunchReady(plan: _plan(script), java: _java, graph: _graph),
+  prepare: () async => LaunchReady(
+    plan: _plan(script, classpath: classpath),
+    java: _java,
+    graph: _graph,
+  ),
   defaultGrace: grace,
   historyLimit: historyLimit,
+  logFile: logFile,
 );
 
 /// Only executable, args and working directory are read by the handle.
-LaunchPlan _plan(String script) => LaunchPlan(
-  executable: '/bin/sh',
-  args: ['-c', script],
-  classpath: const [],
-  nativeArchives: const [],
-  mainClass: 'Stub',
-  workingDirectory: Directory.systemTemp.path,
-);
+LaunchPlan _plan(String script, {List<String> classpath = const []}) =>
+    LaunchPlan(
+      executable: '/bin/sh',
+      args: ['-c', script],
+      classpath: classpath,
+      nativeArchives: const [],
+      mainClass: 'Stub',
+      workingDirectory: Directory.systemTemp.path,
+    );
 
 final _java = const JavaRuntime(
   path: '/bin/sh',
@@ -445,12 +452,71 @@ void main() {
           (l) => l.channel == LogChannel.launcher,
         );
         expect(launcherLogs, isNotEmpty);
+        // The console line names the executable but is a summary: the full
+        // command line is several kilobytes on a modded install and goes to the
+        // session log file instead (see the diagnostics group).
         expect(
-          launcherLogs.any((l) => l.text.contains('/bin/sh')),
+          launcherLogs.any(
+            (l) => l.text.startsWith('launch:') && l.text.contains('sh'),
+          ),
           isTrue,
-          reason: 'the command line is the first thing a bug report needs',
+          reason: 'the summary names what was started',
         );
+        for (final line in launcherLogs) {
+          expect(line.text, isNot(contains('--accessToken 0')));
+        }
       },
     );
+  });
+
+  group('diagnostics', () {
+    test('the console gets a summary, the file gets the command line', () async {
+      final tmp = Directory.systemTemp.createTempSync('launch-log');
+      addTearDown(() => tmp.deleteSync(recursive: true));
+      final logFile = File('${tmp.path}/logs/launch.log');
+      // A realistic classpath: 120 entries is a normal modded install.
+      final classpath = [
+        for (var i = 0; i < 120; i++) '/g/libraries/lib-$i/final-$i.jar',
+      ];
+
+      final handle = handleFor(
+        'echo hello',
+        logFile: logFile,
+        classpath: classpath,
+      );
+      // Subscribe before starting: a broadcast stream drops what it emits while
+      // nobody is listening, and the summary is the first line of the launch.
+      final events = handle.events.asBroadcastStream();
+      final summary = waitFor<LaunchLog>(
+        events,
+        (e) => e.text.startsWith('launch:'),
+      );
+      await handle.start();
+      final line = await summary;
+
+      // The console line is one readable sentence, not a 6 KB classpath dump that
+      // pushes the game's own output off the screen.
+      expect(line.text.length, lessThan(160));
+      expect(line.text, contains('120 classpath entries'));
+      expect(line.text, isNot(contains('final-119.jar')));
+
+      // The exact argv survives on disk, where it is useful and out of the way.
+      await handle.dispose();
+      final written = logFile.readAsStringSync();
+      expect(written, contains('/bin/sh -c echo hello'));
+
+      // ...and the token in it is masked before it is written.
+      expect(
+        ProcessLaunchHandle.maskSecrets([
+          '/jdk/bin/java',
+          '--accessToken',
+          'secret-value',
+          '--version',
+        ]),
+        '/jdk/bin/java --accessToken *** --version',
+      );
+
+      await handle.dispose();
+    });
   });
 }

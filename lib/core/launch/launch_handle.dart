@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
+
 import '../mc/arch_compat.dart';
 import '../mc/launch_service.dart';
 
@@ -144,6 +146,7 @@ class ProcessLaunchHandle implements LaunchHandle {
   ProcessLaunchHandle({
     required this.prepare,
     ProcessStarter? starter,
+    this.logFile,
     this.historyLimit = 2000,
     this.defaultGrace = const Duration(seconds: 5),
     this.drainTimeout = const Duration(seconds: 2),
@@ -160,6 +163,13 @@ class ProcessLaunchHandle implements LaunchHandle {
   final Future<LaunchOutcome> Function() prepare;
 
   final ProcessStarter _starter;
+
+  /// Where every line goes, in addition to the console.
+  ///
+  /// The console keeps a bounded ring (`historyLimit`) and dies with the window;
+  /// a launch that failed two restarts ago is only diagnosable if the output and
+  /// the exact command line survived. `null` in tests.
+  final File? logFile;
 
   final int historyLimit;
   final Duration defaultGrace;
@@ -192,12 +202,44 @@ class ProcessLaunchHandle implements LaunchHandle {
   void _emit(LaunchEvent event) {
     if (_controller.isClosed) return;
     if (event is LaunchLog) {
+      // The file gets everything the console gets, plus the command line (which
+      // the console deliberately does not show).
+      _writeToFile(
+        event.channel == LogChannel.stderr ? '! ${event.text}' : event.text,
+      );
       _recent.add(event);
       if (_recent.length > historyLimit) {
         _recent.removeRange(0, _recent.length - historyLimit);
       }
     }
     _controller.add(event);
+  }
+
+  /// A command line with the value after `--accessToken` replaced by `***`.
+  ///
+  /// Static and public so the launch tests can pin it: this is the one place a
+  /// credential could leave the process.
+  static String maskSecrets(List<String> commandLine) {
+    final masked = [...commandLine];
+    for (var i = 0; i < masked.length - 1; i++) {
+      if (masked[i] == '--accessToken') masked[i + 1] = '***';
+    }
+    return masked.join(' ');
+  }
+
+  /// Appends one line to [logFile], best effort.
+  ///
+  /// A log that cannot be written must never fail a launch: the console copy is
+  /// the primary one, and a full disk already has its own problem.
+  void _writeToFile(String text) {
+    final file = logFile;
+    if (file == null) return;
+    try {
+      file.parent.createSync(recursive: true);
+      file.writeAsStringSync('$text\n', mode: FileMode.append, flush: false);
+    } on FileSystemException {
+      // See above.
+    }
   }
 
   void _setState(LaunchState next) {
@@ -264,13 +306,20 @@ class ProcessLaunchHandle implements LaunchHandle {
     }
 
     final plan = outcome.plan;
+    // The console gets a summary, not the command line: a Minecraft classpath is
+    // 100-200 entries and several kilobytes, so printing it pushed the game's own
+    // output off the screen the moment the launch started. The full line goes to
+    // the log file, where it is useful and out of the way.
     _emit(
       LaunchLog(
-        // The access token is deliberately absent from `commandLine`.
-        plan.commandLine.join(' '),
+        'launch: ${p.basename(plan.executable)} · '
+        '${plan.classpath.length} classpath entries · ${plan.mainClass}',
         channel: LogChannel.launcher,
       ),
     );
+    // The full argv goes to the file, with the auth token masked: a session log
+    // that gets attached to a bug report must not contain a credential.
+    _writeToFile(maskSecrets(plan.commandLine));
 
     try {
       final process = await _starter(

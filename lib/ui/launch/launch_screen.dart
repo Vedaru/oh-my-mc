@@ -64,7 +64,15 @@ class LaunchScreen extends ConsumerWidget {
           if (selected == null)
             const Expanded(child: _NothingSelected())
           else ...[
-            _VersionPicker(selected: selected, instances: all),
+            _VersionPicker(
+              selected: selected,
+              instances: all,
+              // A running game owns the page: switching versions underneath it
+              // would leave the console showing one version's output under
+              // another version's card, and the stop button pointing at neither.
+              // PCL locks the version list for the same reason.
+              enabled: !session.isBusy,
+            ),
             const m3.SizedBox(height: 20),
             _PlayRow(
               instance: selected,
@@ -270,10 +278,18 @@ class _JavaOfferArea extends ConsumerWidget {
 /// read as a broken widget rather than a version list - which is exactly what a
 /// user asked about it.
 class _VersionPicker extends ConsumerWidget {
-  const _VersionPicker({required this.selected, required this.instances});
+  const _VersionPicker({
+    required this.selected,
+    required this.instances,
+    this.enabled = true,
+  });
 
   final Instance? selected;
   final List<Instance> instances;
+
+  /// False while a session is live: the card then says what is running instead of
+  /// offering to change it.
+  final bool enabled;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -297,7 +313,7 @@ class _VersionPicker extends ConsumerWidget {
 
     return HoverRow(
       key: const m3.ValueKey('launch-version-picker'),
-      onTap: () => showVersionList(context),
+      onTap: enabled ? () => showVersionList(context) : null,
       padding: const m3.EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       builder: (hovered) => m3.Row(
         children: [
@@ -331,7 +347,10 @@ class _VersionPicker extends ConsumerWidget {
               ],
             ),
           ),
-          m3.Icon(m3.Icons.expand_more, color: scheme.onSurfaceVariant),
+          // No chevron while the list is locked: an affordance that does nothing
+          // is worse than none.
+          if (enabled)
+            m3.Icon(m3.Icons.expand_more, color: scheme.onSurfaceVariant),
         ],
       ),
     );
@@ -354,7 +373,6 @@ class _PlayRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final motion = MotionScope.of(context);
     final scheme = m3.Theme.of(context).colorScheme;
 
     return m3.Column(
@@ -365,45 +383,61 @@ class _PlayRow extends StatelessWidget {
           runSpacing: 8,
           crossAxisAlignment: m3.WrapCrossAlignment.center,
           children: [
-            // Press feedback: the button gives under the pointer and springs back.
-            // It reads as "heard you" on the one control the whole screen exists
-            // for; motion-off returns the plain button, no listener (PLAN-M11 §3.4).
-            Emphasis(
-              child: AppButton(
-                key: const m3.ValueKey('play'),
-                onPressed: onPlay,
+            // One primary action, and it always means "the thing you can do
+            // now": start when idle, stop while the game runs. The old row showed
+            // a disabled "launching…" button *next to* a stop button for the whole
+            // session, so the most prominent control on the page did nothing and
+            // lied about the state.
+            if (session.canStop)
+              AppButton(
+                key: const m3.ValueKey('stop'),
+                onPressed: onStop,
                 style: AppButtonStyle.filled,
                 size: AppButtonSize.lg,
-                // A pulsing dot, not a spinner: the launch is one indeterminate wait,
-                // and a dot says "alive" without pretending to know how far along it
-                // is. AmbientLoop renders its resting frame and creates no ticker
-                // when motion is off.
-                icon: session.isBusy
-                    ? AmbientLoop(
-                        tween: Tween<double>(begin: 0.35, end: 1),
-                        duration: Durations.slow,
-                        builder: (context, value, _) => m3.Opacity(
-                          opacity: value,
-                          child: m3.SizedBox(
-                            width: 10,
-                            height: 10,
-                            child: m3.DecoratedBox(
-                              decoration: m3.BoxDecoration(
-                                color: scheme.onPrimary,
-                                shape: m3.BoxShape.circle,
+                icon: const m3.Icon(ShellIcons.stop, size: 15),
+                label: m3.Text(l10n.stopButton),
+              )
+            else
+              // Press feedback: the button gives under the pointer and springs
+              // back. It reads as "heard you" on the one control the whole screen
+              // exists for; motion-off returns the plain button, no listener.
+              Emphasis(
+                child: AppButton(
+                  key: const m3.ValueKey('play'),
+                  onPressed: onPlay,
+                  style: AppButtonStyle.filled,
+                  size: AppButtonSize.lg,
+                  // A pulsing dot, not a spinner: the launch is one indeterminate
+                  // wait, and a dot says "alive" without pretending to know how
+                  // far along it is.
+                  icon: session.isBusy
+                      ? AmbientLoop(
+                          tween: Tween<double>(begin: 0.35, end: 1),
+                          duration: Durations.slow,
+                          builder: (context, value, _) => m3.Opacity(
+                            opacity: value,
+                            child: m3.SizedBox(
+                              width: 10,
+                              height: 10,
+                              child: m3.DecoratedBox(
+                                decoration: m3.BoxDecoration(
+                                  color: scheme.onPrimary,
+                                  shape: m3.BoxShape.circle,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      )
-                    : const m3.Icon(ShellIcons.play, size: 16),
-                label: m3.Text(
-                  session.isBusy ? l10n.launching : l10n.playButton,
+                        )
+                      : const m3.Icon(ShellIcons.play, size: 16),
+                  label: m3.Text(
+                    session.isBusy ? l10n.launching : l10n.playButton,
+                  ),
                 ),
               ),
-            ),
-            // PCL puts version settings right next to Play, because that is the moment
-            // the user notices "this one needs more memory / another Java".
+            // PCL puts version settings right next to Play, because that is the
+            // moment the user notices "this one needs more memory / another Java".
+            // It stays available while the game runs: the change applies to the
+            // next launch.
             if (instance != null)
               AppButton(
                 key: const m3.ValueKey('launch-open-settings'),
@@ -415,22 +449,6 @@ class _PlayRow extends StatelessWidget {
                 icon: const m3.Icon(ShellIcons.settings, size: 14),
                 label: m3.Text(l10n.instanceOpen),
               ),
-            // The stop button only exists while something can be stopped, and it
-            // fades rather than popping so the row does not jump.
-            m3.AnimatedSwitcher(
-              duration: motion.of(Durations.fast),
-              switchInCurve: MotionCurves.enter,
-              switchOutCurve: MotionCurves.exit,
-              child: session.canStop
-                  ? AppButton(
-                      key: const m3.ValueKey('stop'),
-                      onPressed: onStop,
-                      style: AppButtonStyle.outlined,
-                      icon: const m3.Icon(ShellIcons.stop, size: 13),
-                      label: m3.Text(l10n.stopButton),
-                    )
-                  : const m3.SizedBox.shrink(key: m3.ValueKey('no-stop')),
-            ),
           ],
         ),
         if (session.state == LaunchState.exited) ...[
