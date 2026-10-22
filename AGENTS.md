@@ -229,6 +229,18 @@ Rules that are enforced, not stylistic:
 - Never animate an initial backfill (a log opened with 500 lines): animation there delays the first
   useful frame and communicates nothing.
 
+## PCL parity contract
+
+`docs/PCL-PARITY.md` is the behavioural contract: PCL 2's structure (启动 / 下载 / 设置,
+version card as selector, 版本设置 as the per-version hub), the user flow we mirror,
+the current gap table and the ordered backlog. Two rules from it bind new code:
+
+- **Download ⇒ playable.** Every install path ends by making the result launchable
+  (`InstanceListController.ensureForVersion`); the user never registers what they
+  just downloaded.
+- **The version card is the selector**, and per-version settings live in
+  `/instances/:id`, never in the global `/setup` page.
+
 ## Ship targets (decided — do not "helpfully" add more)
 
 **windows-x64, linux-x64, macos-arm64.** No Windows arm64, no Linux arm64. macOS is arm-only via

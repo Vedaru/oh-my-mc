@@ -52,6 +52,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get instanceCreate => '新建实例';
 
   @override
+  String get instanceVersionLabel => '版本';
+
+  @override
+  String get instanceNoVersions => '还没有安装任何游戏版本';
+
+  @override
+  String get instanceNoVersionsHint => '实例必须绑定一个已安装的版本。请先在「下载」页安装一个。';
+
+  @override
   String get instanceImport => '导入';
 
   @override
@@ -278,9 +287,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get instanceNameLabel => '名称';
-
-  @override
-  String get instanceVersionLabel => '版本';
 
   @override
   String get instanceIsolationLabel => '独立游戏目录';

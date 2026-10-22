@@ -158,6 +158,25 @@ class InstanceListNotifier extends Notifier<InstanceListState> {
     return instance;
   }
 
+  /// Makes [versionId] launchable: reuse an instance that already points at it,
+  /// otherwise create one named after the version, and select it either way.
+  ///
+  /// This is PCL's post-download behaviour - a finished download *is* a launchable
+  /// card on the launch page - and it is why "I installed 26.3 but cannot play it"
+  /// was a real dead end: installing wrote files, and nothing pointed the launcher
+  /// at them.
+  Future<Instance> ensureForVersion(String versionId) async {
+    final existing = ready?.instances ?? const <Instance>[];
+    for (final instance in existing) {
+      if (instance.versionId == versionId &&
+          instance.loader == LoaderKind.vanilla) {
+        await select(instance.id);
+        return instance;
+      }
+    }
+    return create(name: versionId, versionId: versionId);
+  }
+
   /// Renames in place. The id does **not** change: it is the directory name, and
   /// moving a multi-hundred-megabyte directory to rename it would be a rude
   /// surprise.

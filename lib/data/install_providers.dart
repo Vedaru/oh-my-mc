@@ -7,6 +7,7 @@ import '../core/install/version_installer.dart';
 import '../core/mc/local_host.dart';
 import '../core/net/cancellation.dart';
 import '../core/net/version_manifest.dart';
+import 'instance_providers.dart';
 import 'launch_factory.dart';
 
 /// Runs one install at a time and exposes its progress.
@@ -157,6 +158,10 @@ class InstallController extends Notifier<InstallState> {
       // The list marks rows from the filesystem, so it must be re-read here:
       // otherwise the row the user just installed still offers "Install".
       await ref.read(installedVersionsProvider.notifier).refresh();
+      // ...and the launch page needs something to point at: a finished download
+      // becomes a launchable instance, exactly as it does in PCL, instead of
+      // waiting for the user to invent a name for files they just downloaded.
+      await ref.read(instanceListProvider.notifier).ensureForVersion(versionId);
     } on CancelledException {
       if (ref.mounted) state = InstallCancelled(versionId: versionId);
     } catch (e) {

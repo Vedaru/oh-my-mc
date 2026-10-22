@@ -157,14 +157,18 @@ class OhMyMcApp extends StatelessWidget {
   /// widget is the page *content*, and rebuilding the pane on every navigation
   /// would restart its selection animation.
   Widget _screenFor(BuildContext context, GoRouterState state) {
+    // `state.uri.path` is the *concrete* path (`/instances/survival`), so it can
+    // never equal the pattern `Routes.instanceDetailPattern` (`/instances/:id`).
+    // Comparing them left the detail route falling through to the launch screen,
+    // which is exactly what "Open settings does nothing" looked like. The route
+    // parameter is the thing that says which screen this is.
+    final detailId = state.pathParameters['id'];
     final child = switch (state.uri.path) {
       Routes.instances => const InstancesScreen(),
-      Routes.instanceDetailPattern => InstanceDetailScreen(
-        id: state.pathParameters['id'] ?? '',
-      ),
       Routes.download => const DownloadScreen(),
       Routes.setup => const SetupScreen(),
       Routes.logs => const LogsScreen(),
+      _ when detailId != null => InstanceDetailScreen(id: detailId),
       _ => const LaunchScreen(),
     };
     return AppShell(location: state.uri.path, child: child);

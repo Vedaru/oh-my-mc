@@ -5,8 +5,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart' as m3;
 import 'package:oh_my_mc/data/instance_store.dart';
 import 'package:oh_my_mc/data/launch_factory.dart';
+import 'package:oh_my_mc/core/instance/instance.dart';
 import 'package:oh_my_mc/data/settings.dart';
 import 'package:oh_my_mc/main.dart';
+import 'package:oh_my_mc/ui/instances/instance_detail_screen.dart';
 import 'package:path/path.dart' as p;
 
 /// The page must live under a `Material` ancestor.
@@ -71,4 +73,49 @@ void main() {
       }
     });
   }
+
+  testWidgets('/instances/:id renders the detail screen, not the launch '
+      'screen', (tester) async {
+    // The route parameter is the only thing that distinguishes this page from
+    // `/launch`; comparing `state.uri.path` to the pattern left every "Open
+    // settings" click rendering the launch screen instead.
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    final data = (await tester.runAsync(
+      () => Directory.systemTemp.createTemp('detail'),
+    ))!;
+    addTearDown(() async {
+      if (await data.exists()) await data.delete(recursive: true);
+    });
+
+    await tester.pumpWidget(
+      OhMyMcApp(
+        store: MemorySettingsStore(AppSettings.defaults),
+        instanceStore: MemoryInstanceStore([
+          Instance(
+            id: 'survival',
+            name: 'Survival',
+            versionId: '1.20.1',
+            createdAt: DateTime(2026, 1, 1),
+          ),
+        ]),
+        paths: LauncherPaths(
+          data: data,
+          game: Directory(p.join(data.path, 'minecraft')),
+        ),
+        initialLocation: '/instances/survival',
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(InstanceDetailScreen), findsOneWidget);
+
+    // Drop the page's cached state before the temp dir goes away.
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+  });
 }

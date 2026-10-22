@@ -182,6 +182,24 @@ abstract class AppLocalizations {
   /// **'New instance'**
   String get instanceCreate;
 
+  /// Label for the read-only version row.
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get instanceVersionLabel;
+
+  /// Dialog title shown when creating an instance but no version is installed.
+  ///
+  /// In en, this message translates to:
+  /// **'No game version is installed yet'**
+  String get instanceNoVersions;
+
+  /// Explains that a version must be installed first, with the download page as the action.
+  ///
+  /// In en, this message translates to:
+  /// **'An instance has to point at an installed version. Install one on the Download page first.'**
+  String get instanceNoVersionsHint;
+
   /// Imports an instance from an archive.
   ///
   /// In en, this message translates to:
@@ -589,12 +607,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Name'**
   String get instanceNameLabel;
-
-  /// Label for the read-only version row.
-  ///
-  /// In en, this message translates to:
-  /// **'Version'**
-  String get instanceVersionLabel;
 
   /// Label for the isolation switch.
   ///

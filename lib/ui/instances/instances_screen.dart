@@ -6,6 +6,7 @@ import 'package:oh_my_mc/ui/components/app_button.dart';
 
 import '../../app/router.dart';
 import '../../core/instance/instance.dart';
+import '../../data/install_providers.dart';
 import '../../data/instance_providers.dart';
 import '../../data/launch_providers.dart';
 import '../../l10n/l10n.dart';
@@ -128,14 +129,47 @@ class InstancesScreen extends ConsumerWidget {
   /// than a wizard: the download screen already owns version choice, so the
   /// common flow is "pick a version there, then name it".
   Future<void> _createInstance(BuildContext context, WidgetRef ref) async {
-    final name = await m3.showDialog<String>(
+    final l10n = context.l10n;
+    final versions = versionsForPicker(ref.read(installedVersionsProvider));
+
+    // PCL's flow cannot start without a version: there is nothing to launch. Say
+    // so and point at the download page instead of creating an instance bound to
+    // a version that is not on disk (which is what a hardcoded `1.20.1` did).
+    if (versions.isEmpty) {
+      await m3.showDialog<void>(
+        context: context,
+        builder: (context) => AppDialog(
+          title: l10n.instanceNoVersions,
+          content: m3.Text(l10n.instanceNoVersionsHint),
+          actions: [
+            AppButton(
+              onPressed: () => m3.Navigator.pop(context),
+              style: AppButtonStyle.text,
+              label: m3.Text(l10n.actionCancel),
+            ),
+            AppButton(
+              key: const m3.ValueKey('instance-create-download'),
+              onPressed: () {
+                m3.Navigator.pop(context);
+                context.go(Routes.download);
+              },
+              style: AppButtonStyle.filled,
+              label: m3.Text(l10n.navDownload),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    final result = await m3.showDialog<NewInstanceRequest>(
       context: context,
-      builder: (context) => const _NewInstanceDialog(),
+      builder: (context) => _NewInstanceDialog(versions: versions),
     );
-    if (name == null || name.trim().isEmpty) return;
+    if (result == null) return;
     await ref
         .read(instanceListProvider.notifier)
-        .create(name: name, versionId: '1.20.1');
+        .create(name: result.name, versionId: result.versionId);
   }
 }
 
@@ -394,8 +428,45 @@ class _Failure extends StatelessWidget {
   }
 }
 
+/// What the create dialog collects.
+typedef NewInstanceRequest = ({String name, String versionId});
+
+/// Installed versions, newest-looking first.
+///
+/// There is no release date on disk without opening every version JSON, so this is
+/// a string sort with the numeric parts compared as numbers: `26.3` before
+/// `1.20.1`, `1.20.1` before `1.20`. The picker only has to be predictable, and the
+/// version the user just installed has to be near the top.
+List<String> versionsForPicker(Set<String> installed) {
+  final sorted = installed.toList()..sort((a, b) => _compareVersions(b, a));
+  return sorted;
+}
+
+/// Compares two Minecraft version ids, numerically where both sides are numbers.
+int _compareVersions(String a, String b) {
+  final left = a.split(RegExp(r'[.-]'));
+  final right = b.split(RegExp(r'[.-]'));
+  for (var i = 0; i < left.length && i < right.length; i++) {
+    final l = int.tryParse(left[i]);
+    final r = int.tryParse(right[i]);
+    final result = (l != null && r != null)
+        ? l.compareTo(r)
+        : left[i].compareTo(right[i]);
+    if (result != 0) return result;
+  }
+  return left.length.compareTo(right.length);
+}
+
+/// Name plus version, which is what PCL asks for when a user adds a version.
+///
+/// The version list is the *installed* versions, not the full manifest: an
+/// instance pointing at a version that is not on disk cannot launch, so the dialog
+/// only offers what exists (and the caller sends the user to /download when the
+/// list is empty).
 class _NewInstanceDialog extends StatefulWidget {
-  const _NewInstanceDialog();
+  const _NewInstanceDialog({required this.versions});
+
+  final List<String> versions;
 
   @override
   State<_NewInstanceDialog> createState() => _NewInstanceDialogState();
@@ -403,6 +474,7 @@ class _NewInstanceDialog extends StatefulWidget {
 
 class _NewInstanceDialogState extends State<_NewInstanceDialog> {
   final _controller = m3.TextEditingController();
+  late String _version = widget.versions.first;
 
   @override
   void dispose() {
@@ -410,18 +482,47 @@ class _NewInstanceDialogState extends State<_NewInstanceDialog> {
     super.dispose();
   }
 
+  void _submit() {
+    final name = _controller.text.trim();
+    if (name.isEmpty) return;
+    m3.Navigator.of(context).pop((name: name, versionId: _version));
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final canCreate = _controller.text.trim().isNotEmpty;
+
     return AppDialog(
       title: l10n.instanceCreate,
-      content: AppTextField(
-        controller: _controller,
-        autofocus: true,
-        hint: l10n.instanceNameHint,
-        onChanged: (_) => setState(() {}),
-        onSubmitted: (value) => m3.Navigator.of(context).pop(value.trim()),
+      content: m3.Column(
+        crossAxisAlignment: m3.CrossAxisAlignment.stretch,
+        mainAxisSize: m3.MainAxisSize.min,
+        children: [
+          AppTextField(
+            key: const m3.ValueKey('instance-name'),
+            controller: _controller,
+            autofocus: true,
+            hint: l10n.instanceNameHint,
+            onChanged: (_) => setState(() {}),
+            onSubmitted: (_) => _submit(),
+          ),
+          const m3.SizedBox(height: 16),
+          m3.DropdownMenu<String>(
+            key: const m3.ValueKey('instance-version'),
+            initialSelection: _version,
+            expandedInsets: m3.EdgeInsets.zero,
+            label: m3.Text(l10n.instanceVersionLabel),
+            dropdownMenuEntries: [
+              for (final version in widget.versions)
+                m3.DropdownMenuEntry<String>(value: version, label: version),
+            ],
+            onSelected: (value) {
+              if (value == null) return;
+              setState(() => _version = value);
+            },
+          ),
+        ],
       ),
       actions: [
         AppButton(
@@ -433,9 +534,7 @@ class _NewInstanceDialogState extends State<_NewInstanceDialog> {
           key: const m3.ValueKey('instance-create-confirm'),
           // An empty name is not an error worth a message: the create button is
           // simply unavailable until there is something to name.
-          onPressed: canCreate
-              ? () => m3.Navigator.of(context).pop(_controller.text.trim())
-              : null,
+          onPressed: canCreate ? _submit : null,
           style: AppButtonStyle.filled,
           label: m3.Text(l10n.instanceCreate),
         ),

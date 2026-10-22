@@ -6,6 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:oh_my_mc/core/net/progress.dart';
 import 'package:oh_my_mc/core/install/version_installer.dart';
 import 'package:oh_my_mc/data/install_providers.dart';
+import 'package:oh_my_mc/data/instance_providers.dart';
+import 'package:oh_my_mc/data/instance_store.dart';
 import 'package:oh_my_mc/data/launch_factory.dart';
 
 import '../support/mini_world.dart';
@@ -34,6 +36,9 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         launcherPathsProvider.overrideWith((ref) => paths),
+        // The install now registers an instance for the finished version (PCL's
+        // post-download behaviour), so the store has to exist here.
+        instanceStoreProvider.overrideWith((ref) => MemoryInstanceStore()),
         installerFactoryProvider.overrideWith(
           (ref) =>
               () => world.installer(
@@ -98,42 +103,50 @@ void main() {
   });
 
   group('install controller', () {
-    test(
-      'a successful install reaches InstallDone and flips the row',
-      () async {
-        await world.publishVersion('1.20.1');
-        final c = container();
-        final notifier = c.read(installControllerProvider.notifier);
+    test('a successful install reaches InstallDone and flips the row', () async {
+      await world.publishVersion('1.20.1');
+      final c = container();
+      final notifier = c.read(installControllerProvider.notifier);
 
-        // Reading first also proves the installed set can be read before any
-        // install happened, which is the state on a fresh profile.
-        c.read(installedVersionsProvider);
-        await pumpEventQueue();
-        expect(c.read(installedVersionsProvider), isEmpty);
+      // Reading first also proves the installed set can be read before any
+      // install happened, which is the state on a fresh profile.
+      c.read(installedVersionsProvider);
+      await pumpEventQueue();
+      expect(c.read(installedVersionsProvider), isEmpty);
 
-        await notifier.install('1.20.1', includeAssets: false);
+      await notifier.install('1.20.1', includeAssets: false);
 
-        final state = c.read(installControllerProvider);
-        expect(state, isA<InstallDone>());
-        final done = state as InstallDone;
-        expect(done.versionId, '1.20.1');
-        expect(
-          done.isClean,
-          isTrue,
-          reason: 'the plan was satisfied, so nothing should need repair',
-        );
-        expect(done.fileCount, greaterThan(0));
+      final state = c.read(installControllerProvider);
+      expect(state, isA<InstallDone>());
+      final done = state as InstallDone;
+      expect(done.versionId, '1.20.1');
+      expect(
+        done.isClean,
+        isTrue,
+        reason: 'the plan was satisfied, so nothing should need repair',
+      );
+      expect(done.fileCount, greaterThan(0));
 
-        await pumpEventQueue();
-        expect(
-          c.read(installedVersionsProvider),
-          {'1.20.1'},
-          reason:
-              'the version list marks rows from disk; without a refresh the '
-              'row the user just installed still offers Install',
-        );
-      },
-    );
+      await pumpEventQueue();
+      expect(
+        c.read(installedVersionsProvider),
+        {'1.20.1'},
+        reason:
+            'the version list marks rows from disk; without a refresh the '
+            'row the user just installed still offers Install',
+      );
+
+      // A finished download is launchable: PCL shows the new version on the
+      // launch page immediately, so an instance is registered and selected for
+      // it instead of making the user create one by hand.
+      final list = c.read(instanceListProvider);
+      expect(list, isA<InstanceListReady>());
+      final ready = list as InstanceListReady;
+      expect(ready.instances, hasLength(1));
+      expect(ready.instances.single.versionId, '1.20.1');
+      expect(ready.instances.single.name, '1.20.1');
+      expect(ready.selectedId, ready.instances.single.id);
+    });
 
     test('progress is reported while the install runs', () async {
       await world.publishVersion('1.20.1');

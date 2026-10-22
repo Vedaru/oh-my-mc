@@ -53,6 +53,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get instanceCreate => 'New instance';
 
   @override
+  String get instanceVersionLabel => 'Version';
+
+  @override
+  String get instanceNoVersions => 'No game version is installed yet';
+
+  @override
+  String get instanceNoVersionsHint =>
+      'An instance has to point at an installed version. Install one on the Download page first.';
+
+  @override
   String get instanceImport => 'Import';
 
   @override
@@ -285,9 +295,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get instanceNameLabel => 'Name';
-
-  @override
-  String get instanceVersionLabel => 'Version';
 
   @override
   String get instanceIsolationLabel => 'Separate game folder';

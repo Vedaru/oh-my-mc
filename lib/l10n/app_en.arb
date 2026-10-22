@@ -53,6 +53,18 @@
     "description": "Shown on the launch screen while no instance is selected, under the title."
   },
   "instanceCreate": "New instance",
+  "instanceVersionLabel": "Version",
+  "@instanceVersionLabel": {
+    "description": "Label for the read-only version row."
+  },
+  "instanceNoVersions": "No game version is installed yet",
+  "@instanceNoVersions": {
+    "description": "Dialog title shown when creating an instance but no version is installed."
+  },
+  "instanceNoVersionsHint": "An instance has to point at an installed version. Install one on the Download page first.",
+  "@instanceNoVersionsHint": {
+    "description": "Explains that a version must be installed first, with the download page as the action."
+  },
   "@instanceCreate": {
     "description": "Creates a new instance."
   },
@@ -363,10 +375,6 @@
   "instanceNameLabel": "Name",
   "@instanceNameLabel": {
     "description": "Label for the instance name field."
-  },
-  "instanceVersionLabel": "Version",
-  "@instanceVersionLabel": {
-    "description": "Label for the read-only version row."
   },
   "instanceIsolationLabel": "Separate game folder",
   "@instanceIsolationLabel": {
