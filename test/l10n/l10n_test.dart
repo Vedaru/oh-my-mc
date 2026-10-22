@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart' as m3;
 import 'package:oh_my_mc/l10n/l10n.dart';
 
 /// Reads an ARB file as a map of message key -> value, skipping `@@` metadata and
@@ -106,32 +107,38 @@ void main() {
   group('delegate tree', () {
     // The generated file names the SDK Material/Cupertino delegates in its
     // `localizationsDelegates` list. We use our own list instead, and this guards
-    // the reason: those types come from the in-SDK Material copy, a second type
-    // system from the `material_ui` package the rest of the app uses.
-    test(
-      'our own code never references the SDK Material localization types',
-      () {
-        final offenders = <String>[];
-        for (final entity in Directory('lib').listSync(recursive: true)) {
-          if (entity is! File || !entity.path.endsWith('.dart')) continue;
-          if (entity.path.contains('lib/l10n/generated/')) continue;
-          final source = _stripComments(entity.readAsStringSync());
-          for (final banned in const [
-            'GlobalMaterialLocalizations',
-            'GlobalCupertinoLocalizations',
-            'AppLocalizations.localizationsDelegates',
-          ]) {
-            if (source.contains(banned)) {
-              offenders.add('${entity.path}: $banned');
-            }
+    // the reason: an unprefixed reference resolves to the in-SDK Material copy,
+    // a second type system from the `material_ui` package the app actually uses.
+    // A qualified `m3.` reference is the correct one and is allowed.
+    test('our own code never references the SDK Material localization types', () {
+      final offenders = <String>[];
+      for (final entity in Directory('lib').listSync(recursive: true)) {
+        if (entity is! File || !entity.path.endsWith('.dart')) continue;
+        if (entity.path.contains('lib/l10n/generated/')) continue;
+        final source = _stripComments(entity.readAsStringSync());
+        for (final banned in [
+          RegExp(r'(?<!\.)GlobalMaterialLocalizations'),
+          RegExp(r'(?<!\.)GlobalCupertinoLocalizations'),
+        ]) {
+          if (banned.hasMatch(source)) {
+            offenders.add('${entity.path}: ${banned.pattern}');
           }
         }
-        expect(offenders, isEmpty);
-      },
-    );
+        if (source.contains('AppLocalizations.localizationsDelegates')) {
+          offenders.add('${entity.path}: AppLocalizations.localizationsDelegates');
+        }
+      }
+      expect(offenders, isEmpty);
+    });
 
     test('the shipped delegate list has one entry per tree', () {
-      expect(appLocalizationsDelegates, hasLength(3));
+      // Our own delegate plus every delegate `material_ui` needs. Counting them
+      // instead of hardcoding 3 means an upstream change to the plural list is
+      // not mistaken for a wiring bug here.
+      expect(
+        appLocalizationsDelegates,
+        hasLength(1 + m3.GlobalMaterialLocalizations.delegates.length),
+      );
       expect(appLocalizationsDelegates, contains(AppLocalizations.delegate));
     });
   });

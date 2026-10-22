@@ -134,6 +134,18 @@ abstract class AppLocalizations {
   /// **'Logs'**
   String get navLogs;
 
+  /// Tooltip on the navigation rail's expand control.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand navigation'**
+  String get navExpand;
+
+  /// Tooltip on the navigation rail's collapse control.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse navigation'**
+  String get navCollapse;
+
   /// Starts the selected instance.
   ///
   /// In en, this message translates to:

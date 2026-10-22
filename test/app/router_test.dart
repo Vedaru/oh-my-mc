@@ -1,5 +1,6 @@
 import 'package:animations/animations.dart';
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/widgets.dart';
+import 'package:material_ui/material_ui.dart' as m3;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -55,14 +56,14 @@ Future<ProviderContainer> pumpApp(
 /// local one, which would let a bug where AppRoot ignores [initialLocation] pass.
 /// A context *inside* the localized subtree.
 ///
-/// `find.byType(FluentApp)` resolves to FluentApp's own element, which sits above
+/// `find.byType(MaterialApp)` resolves to the app's own element, which sits above
 /// the `Localizations` widget it installs - reading `l10n` there throws, which is
 /// exactly the wiring bug the extension is designed to make loud.
 BuildContext localizedContext(WidgetTester tester) =>
     tester.element(find.text('route:${Routes.launch}'));
 
 GoRouter liveRouter(WidgetTester tester) {
-  final app = tester.widget<FluentApp>(find.byType(FluentApp));
+  final app = tester.widget<m3.MaterialApp>(find.byType(m3.MaterialApp));
   return app.routerConfig! as GoRouter;
 }
 

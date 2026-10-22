@@ -1,6 +1,7 @@
 import 'dart:io';
 
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/widgets.dart';
+import 'package:material_ui/material_ui.dart' as m3;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oh_my_mc/core/mc/host.dart';
@@ -10,9 +11,9 @@ import 'package:oh_my_mc/core/mc/java_provisioner.dart';
 import 'package:oh_my_mc/core/net/progress.dart';
 import 'package:oh_my_mc/data/java_providers.dart';
 import 'package:oh_my_mc/data/launch_factory.dart';
-import 'package:oh_my_mc/l10n/l10n.dart';
 import 'package:oh_my_mc/ui/motion/motion.dart';
 import 'package:oh_my_mc/ui/setup/java_panel.dart';
+import '../support/harness.dart';
 import 'package:path/path.dart' as p;
 
 /// Holds the panel at whichever install state a test needs, so no test opens a
@@ -89,20 +90,13 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: FluentApp(
-          home: MotionScope(
-            motion: Motion.none,
-            child: ScaffoldPage(content: JavaPanel(requirement: requirement)),
-          ),
-          localizationsDelegates: appLocalizationsDelegates,
-          supportedLocales: appSupportedLocales,
-        ),
-      ),
+    await pumpScreen(
+      tester,
+      container,
+      JavaPanel(requirement: requirement),
+      motion: Motion.none,
+      settle: false,
     );
-    await tester.pump();
     return install;
   }
 
@@ -190,7 +184,7 @@ void main() {
       await tester.pump();
 
       expect(find.text('4.0 MB / 40.0 MB'), findsOneWidget);
-      expect(find.byType(ProgressBar), findsOneWidget);
+      expect(find.byType(m3.LinearProgressIndicator), findsOneWidget);
 
       await tester.tap(find.byKey(const ValueKey('java-cancel')));
       await tester.pump(const Duration(milliseconds: 200));

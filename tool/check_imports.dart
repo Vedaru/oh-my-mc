@@ -1,7 +1,7 @@
 // Enforces the import law from docs/PLAN-M1-M4.md §2, which a Dart lint cannot
 // express: content code must never import the in-SDK Material library, because
 // Flutter 3.47 ships a second, type-incompatible `material_ui` package that
-// `fluent_ui`, `go_router` and `animations` already use.
+// `material_3_expressive`, `go_router` and `animations` already use.
 //
 //   dart run tool/check_imports.dart
 //
@@ -43,7 +43,6 @@ const _pureDartLayers = <String>['lib/core/'];
 
 const _flutterPrefixes = <String>[
   'package:flutter/',
-  'package:fluent_ui/',
   'package:material_ui/',
   'package:cupertino_ui/',
 ];

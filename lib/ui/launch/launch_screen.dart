@@ -1,5 +1,8 @@
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_3_expressive/material_3_expressive.dart' as m3e;
+import 'package:material_ui/material_ui.dart' as m3;
+import 'package:oh_my_mc/ui/components/app_button.dart';
 
 import '../../core/instance/instance.dart';
 import '../../core/launch/launch_handle.dart';
@@ -12,6 +15,7 @@ import '../motion/motion.dart';
 import '../instances/instance_card.dart';
 import '../setup/java_panel.dart';
 import '../shell/shell_icons.dart';
+import '../theme/app_theme.dart';
 
 /// The launch screen: which instance is selected, a big play button, and the
 /// tail of the log.
@@ -109,7 +113,7 @@ class _Headline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = FluentTheme.of(context);
+    final scheme = m3.Theme.of(context).colorScheme;
     final motion = MotionScope.of(context);
 
     final title = instance?.displayName ?? l10n.noInstanceSelected;
@@ -120,34 +124,34 @@ class _Headline extends StatelessWidget {
             if (instance!.loader.isModded) instance!.loader.name,
           ].join('  ·  ');
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return m3.Column(
+      crossAxisAlignment: m3.CrossAxisAlignment.start,
       children: [
-        AnimatedSwitcher(
+        m3.AnimatedSwitcher(
           duration: motion.of(Durations.base),
           switchInCurve: MotionCurves.enter,
           switchOutCurve: MotionCurves.exit,
-          transitionBuilder: (child, animation) => FadeTransition(
+          transitionBuilder: (child, animation) => m3.FadeTransition(
             opacity: animation,
-            child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, 0.12),
-                end: Offset.zero,
+            child: m3.SlideTransition(
+              position: m3.Tween<m3.Offset>(
+                begin: const m3.Offset(0, 0.12),
+                end: m3.Offset.zero,
               ).animate(animation),
               child: child,
             ),
           ),
-          child: Text(
+          child: m3.Text(
             title,
-            key: ValueKey(title),
-            style: theme.typography.titleLarge,
+            key: m3.ValueKey(title),
+            style: AppTheme.display(context),
           ),
         ),
         if (subtitle != null)
-          Text(
+          m3.Text(
             subtitle,
-            style: theme.typography.caption?.copyWith(
-              color: theme.inactiveColor,
+            style: AppTheme.caption(context).copyWith(
+              color: scheme.onSurfaceVariant,
             ),
           ),
       ],
@@ -172,58 +176,46 @@ class _PlayRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final motion = MotionScope.of(context);
+    final scheme = m3.Theme.of(context).colorScheme;
 
-    return Row(
+    return m3.Row(
       children: [
-        SizedBox(
-          height: 40,
-          child: FilledButton(
-            onPressed: onPlay,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (session.isBusy)
-                  const Padding(
-                    padding: EdgeInsetsDirectional.only(end: 8),
-                    child: SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: ProgressRing(strokeWidth: 2),
-                    ),
-                  )
-                else
-                  const Padding(
-                    padding: EdgeInsetsDirectional.only(end: 6),
-                    child: Icon(ShellIcons.play, size: 14),
+        AppButton(
+          key: const m3.ValueKey('play'),
+          onPressed: onPlay,
+          style: m3e.M3EButtonStyle.filled,
+          size: m3e.M3EButtonSize.lg,
+          icon: session.isBusy
+              ? m3.SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: m3.CircularProgressIndicator(
+                    value: 0.35,
+                    strokeWidth: 2.5,
+                    color: scheme.onPrimary,
                   ),
-                Text(session.isBusy ? l10n.launching : l10n.playButton),
-              ],
-            ),
-          ),
+                )
+              : const m3.Icon(ShellIcons.play, size: 16),
+          label: m3.Text(session.isBusy ? l10n.launching : l10n.playButton),
         ),
-        const SizedBox(width: 8),
+        const m3.SizedBox(width: 8),
         // The stop button only exists while something can be stopped, and it
         // fades rather than popping so the row does not jump.
-        AnimatedSwitcher(
+        m3.AnimatedSwitcher(
           duration: motion.of(Durations.fast),
           switchInCurve: MotionCurves.enter,
           switchOutCurve: MotionCurves.exit,
           child: session.canStop
-              ? Button(
-                  key: const ValueKey('stop'),
+              ? AppButton(
+                  key: const m3.ValueKey('stop'),
                   onPressed: onStop,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(ShellIcons.stop, size: 12),
-                      const SizedBox(width: 6),
-                      Text(l10n.stopButton),
-                    ],
-                  ),
+                  style: m3e.M3EButtonStyle.outlined,
+                  icon: const m3.Icon(ShellIcons.stop, size: 13),
+                  label: m3.Text(l10n.stopButton),
                 )
-              : const SizedBox.shrink(key: ValueKey('no-stop')),
+              : const m3.SizedBox.shrink(key: m3.ValueKey('no-stop')),
         ),
-        const Spacer(),
+        const m3.Spacer(),
         if (session.state == LaunchState.exited)
           _ExitBadge(
             exitCode: session.exitCode,
@@ -249,7 +241,7 @@ class _ExitBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = FluentTheme.of(context);
+    final scheme = m3e.M3ETheme.of(context).colorScheme;
     final failed = failure != null || (exitCode != null && exitCode != 0);
 
     // A non-zero exit is not necessarily an error the user can fix (the game
@@ -263,25 +255,17 @@ class _ExitBadge extends StatelessWidget {
           }
         : l10n.launchExited(exitCode ?? 0, formatPlaytime(uptime));
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+    final color = failed ? scheme.warning : scheme.onSurfaceVariant;
+    return m3.Row(
+      mainAxisSize: m3.MainAxisSize.min,
       children: [
-        Icon(
+        m3.Icon(
           failed ? ShellIcons.warning : ShellIcons.clock,
-          size: 12,
-          color: failed
-              ? theme.resources.systemFillColorCaution
-              : theme.inactiveColor,
+          size: 13,
+          color: color,
         ),
-        const SizedBox(width: 6),
-        Text(
-          text,
-          style: theme.typography.caption?.copyWith(
-            color: failed
-                ? theme.resources.systemFillColorCaution
-                : theme.inactiveColor,
-          ),
-        ),
+        const m3.SizedBox(width: 6),
+        m3.Text(text, style: AppTheme.caption(context).copyWith(color: color)),
       ],
     );
   }
@@ -341,36 +325,38 @@ class _LogTailState extends State<_LogTail> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = FluentTheme.of(context);
+    final scheme = m3.Theme.of(context).colorScheme;
 
     if (widget.lines.isEmpty) {
-      return Center(
-        child: Text(
+      return m3.Center(
+        child: m3.Text(
           l10n.logsEmpty,
-          style: theme.typography.caption?.copyWith(color: theme.inactiveColor),
+          style: AppTheme.caption(context).copyWith(
+            color: scheme.onSurfaceVariant,
+          ),
         ),
       );
     }
 
-    return Container(
-      margin: const EdgeInsets.only(top: 16),
-      decoration: BoxDecoration(
-        color: theme.resources.cardBackgroundFillColorDefault,
-        borderRadius: BorderRadius.circular(4),
+    return m3.Container(
+      margin: const m3.EdgeInsets.only(top: 16),
+      decoration: m3.BoxDecoration(
+        color: scheme.surfaceContainerLow,
+        borderRadius: m3.BorderRadius.circular(10),
+        border: m3.Border.all(color: scheme.outlineVariant),
       ),
-      child: ListView.builder(
+      child: m3.ListView.builder(
         controller: _controller,
-        padding: const EdgeInsets.all(8),
+        padding: const m3.EdgeInsets.all(10),
         itemCount: widget.lines.length,
         itemBuilder: (context, index) {
           final line = widget.lines[index];
-          return Text(
+          return m3.Text(
             line.text,
-            style: theme.typography.caption?.copyWith(
-              fontFamily: 'Consolas',
+            style: AppTheme.mono(context).copyWith(
               color: line.channel == LogChannel.stderr
-                  ? theme.resources.systemFillColorCritical
-                  : theme.typography.caption?.color,
+                  ? scheme.error
+                  : scheme.onSurface,
             ),
           );
         },

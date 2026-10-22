@@ -1,6 +1,8 @@
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_3_expressive/material_3_expressive.dart' as m3e;
+import 'package:material_ui/material_ui.dart' as m3;
 
 import '../data/settings.dart';
 import '../l10n/l10n.dart';
@@ -20,8 +22,8 @@ typedef ScreenBuilder = Widget Function(
 ///
 /// Everything a user can change on `/setup` is resolved here and nowhere else:
 ///
-///  * [AppSettings.theme] -> `FluentApp.themeMode`
-///  * [AppSettings.language] -> `FluentApp.locale`, `null` meaning "follow the OS"
+///  * [AppSettings.theme] -> `MaterialApp.themeMode`
+///  * [AppSettings.language] -> `MaterialApp.locale`, `null` meaning "follow the OS"
 ///  * [AppSettings.uiAnimations] -> `MotionScope`, which ORs in the OS
 ///    accessibility setting and can therefore only ever turn motion off
 ///
@@ -59,9 +61,9 @@ class AppRoot extends ConsumerWidget {
   }
 }
 
-/// Rebuilds [FluentApp] when the router is replaced. `FluentApp.router` takes a
-/// `RouterConfig`, and the theme change must not recreate it - otherwise every
-/// settings change would reset navigation to the initial location.
+/// Rebuilds [MaterialApp] when the router is replaced. `MaterialApp.router`
+/// takes a `RouterConfig`, and a theme change must not recreate it - otherwise
+/// every settings change would reset navigation to the initial location.
 class _App extends StatefulWidget {
   const _App({
     required this.settings,
@@ -89,7 +91,7 @@ class _AppState extends State<_App> {
   void didUpdateWidget(_App oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Only a changed *screen builder* invalidates the router. Theme, locale and
-    // motion changes flow through FluentApp's own configuration.
+    // motion changes flow through MaterialApp's own configuration.
     if (oldWidget.screens != widget.screens ||
         oldWidget.initialLocation != widget.initialLocation) {
       _router = _buildRouter();
@@ -104,19 +106,19 @@ class _AppState extends State<_App> {
 
   @override
   Widget build(BuildContext context) {
-    return FluentApp.router(
+    return m3.MaterialApp.router(
       routerConfig: _router,
       title: 'oh my mc',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(),
-      darkTheme: AppTheme.dark(),
+      theme: AppTheme.material(Brightness.light),
+      darkTheme: AppTheme.material(Brightness.dark),
       themeMode: switch (widget.settings.theme) {
-        ThemePreference.system => ThemeMode.system,
-        ThemePreference.light => ThemeMode.light,
-        ThemePreference.dark => ThemeMode.dark,
+        ThemePreference.system => m3.ThemeMode.system,
+        ThemePreference.light => m3.ThemeMode.light,
+        ThemePreference.dark => m3.ThemeMode.dark,
       },
       // `null` hands the decision to the platform, which is what "system" means
-      // for language. Fluent then negotiates against `supportedLocales`.
+      // for language.
       locale: switch (widget.settings.language) {
         LanguagePreference.system => null,
         LanguagePreference.english => const Locale('en'),
@@ -124,6 +126,13 @@ class _AppState extends State<_App> {
       },
       supportedLocales: appSupportedLocales,
       localizationsDelegates: appLocalizationsDelegates,
+      // The expressive theme must sit above the router's Navigator so every
+      // routed page - including a deep link pumped directly - sees it.
+      builder: (context, child) => m3e.M3ETheme(
+        data: AppTheme.expressive(m3.Theme.of(context).brightness),
+        autoTheming: false,
+        child: child!,
+      ),
     );
   }
 }

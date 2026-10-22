@@ -1,6 +1,8 @@
 import 'dart:async';
 
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/widgets.dart';
+import 'package:material_3_expressive/material_3_expressive.dart' as m3e;
+import 'package:material_ui/material_ui.dart' as m3;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oh_my_mc/app/providers.dart';
@@ -16,6 +18,8 @@ import 'package:oh_my_mc/l10n/l10n.dart';
 import 'package:oh_my_mc/ui/instances/instances_screen.dart';
 import 'package:oh_my_mc/ui/launch/launch_screen.dart';
 import 'package:oh_my_mc/ui/motion/motion.dart';
+import 'package:oh_my_mc/ui/theme/app_theme.dart';
+import 'package:oh_my_mc/ui/components/app_button.dart';
 
 /// A handle that never spawns a process, so a widget test can drive every launch
 /// state deterministically.
@@ -164,16 +168,26 @@ Future<ProviderContainer> pumpScreen(
   await tester.pumpWidget(
     UncontrolledProviderScope(
       container: container,
-      child: FluentApp(
-        theme: FluentThemeData(),
+      child: m3.MaterialApp(
+        supportedLocales: appSupportedLocales,
+        localizationsDelegates: appLocalizationsDelegates,
+        theme: AppTheme.material(Brightness.light),
+        builder: (context, child) => m3e.M3ETheme(
+          data: AppTheme.expressive(Brightness.light),
+          autoTheming: false,
+          child: child!,
+        ),
         home: MotionScope(
           motion: Motion.full,
-          child: ScaffoldPage(
-            content: Padding(padding: const EdgeInsets.all(16), child: screen),
+          child: m3.Scaffold(
+            body: m3.SafeArea(
+              child: Padding(
+                padding: const m3.EdgeInsets.all(16),
+                child: screen,
+              ),
+            ),
           ),
         ),
-        localizationsDelegates: appLocalizationsDelegates,
-        supportedLocales: appSupportedLocales,
       ),
     ),
   );
@@ -408,7 +422,7 @@ void main() {
       await pumpScreen(tester, const InstancesScreen());
 
       expect(find.text('No instances yet'), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, 'New instance'), findsOneWidget);
+      expect(find.widgetWithText(AppButton, 'New instance'), findsOneWidget);
     });
 
     testWidgets('cards show the name, version and playtime', (tester) async {
@@ -469,7 +483,7 @@ void main() {
         ],
       );
 
-      final playButtons = find.widgetWithText(Button, 'Play');
+      final playButtons = find.widgetWithText(AppButton, 'Play');
       expect(playButtons, findsNWidgets(2));
       await tester.tap(playButtons.at(1));
       await tester.pumpAndSettle();
@@ -511,7 +525,9 @@ void main() {
       await pumpScreen(tester, const LaunchScreen());
 
       expect(find.text('No instance selected'), findsOneWidget);
-      final button = tester.widget<FilledButton>(find.byType(FilledButton));
+      final button = tester.widget<AppButton>(
+        find.byKey(const ValueKey('play')),
+      );
       expect(button.onPressed, isNull);
     });
 
@@ -526,13 +542,15 @@ void main() {
         handle: () => handle,
       );
 
-      await tester.tap(find.widgetWithText(FilledButton, 'Play'));
+      await tester.tap(find.widgetWithText(AppButton, 'Play'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 150));
 
       // `preparing` then `running`; both are "busy" and both must say so.
       expect(find.text('Launching…'), findsOneWidget);
-      final button = tester.widget<FilledButton>(find.byType(FilledButton));
+      final button = tester.widget<AppButton>(
+        find.byKey(const ValueKey('play')),
+      );
       expect(
         button.onPressed,
         isNull,
@@ -552,7 +570,7 @@ void main() {
         handle: () => handle,
       );
 
-      await tester.tap(find.widgetWithText(FilledButton, 'Play'));
+      await tester.tap(find.widgetWithText(AppButton, 'Play'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 150));
       await tester.pump();
@@ -576,12 +594,12 @@ void main() {
 
       expect(find.text('No log output yet'), findsOneWidget);
 
-      await tester.tap(find.widgetWithText(FilledButton, 'Play'));
+      await tester.tap(find.widgetWithText(AppButton, 'Play'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 150));
       handle.log('Setting user: Player');
       handle.log('LWJGL Version: 3.3.1');
-      // `pump`, not `pumpAndSettle`: the running state shows a ProgressRing,
+      // `pump`, not `pumpAndSettle`: the running state spins a progress indicator,
       // which is an endless animation, so settling never happens by design.
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 150));
@@ -603,7 +621,7 @@ void main() {
         handle: () => handle,
       );
 
-      await tester.tap(find.widgetWithText(FilledButton, 'Play'));
+      await tester.tap(find.widgetWithText(AppButton, 'Play'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 150));
       handle.exit(0, uptime: const Duration(minutes: 42));
@@ -612,7 +630,7 @@ void main() {
       expect(find.textContaining('Exited with code 0'), findsOneWidget);
       expect(find.textContaining('42m'), findsOneWidget);
       // Back to Play, not stuck on "Launching…".
-      expect(find.widgetWithText(FilledButton, 'Play'), findsOneWidget);
+      expect(find.widgetWithText(AppButton, 'Play'), findsOneWidget);
       await handle.dispose();
     });
 
@@ -627,7 +645,7 @@ void main() {
         handle: () => handle,
       );
 
-      await tester.tap(find.widgetWithText(FilledButton, 'Play'));
+      await tester.tap(find.widgetWithText(AppButton, 'Play'));
       await tester.pumpAndSettle();
 
       expect(
@@ -651,7 +669,7 @@ void main() {
         handle: () => handle,
       );
 
-      await tester.tap(find.widgetWithText(FilledButton, 'Play'));
+      await tester.tap(find.widgetWithText(AppButton, 'Play'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 150));
       handle.exit(0, uptime: const Duration(minutes: 25));
@@ -690,7 +708,7 @@ void main() {
       // Before any attempt there is nothing to fix.
       expect(find.byKey(const ValueKey('java-panel')), findsNothing);
 
-      await tester.tap(find.widgetWithText(FilledButton, 'Play'));
+      await tester.tap(find.widgetWithText(AppButton, 'Play'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 150));
       await tester.pumpAndSettle();
@@ -722,7 +740,7 @@ void main() {
         handle: () => handle,
       );
 
-      await tester.tap(find.widgetWithText(FilledButton, 'Play'));
+      await tester.tap(find.widgetWithText(AppButton, 'Play'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 150));
       await tester.pumpAndSettle();
@@ -743,7 +761,7 @@ void main() {
         handle: () => handle,
       );
 
-      await tester.tap(find.widgetWithText(FilledButton, 'Play'));
+      await tester.tap(find.widgetWithText(AppButton, 'Play'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 150));
       await tester.pumpAndSettle();
@@ -770,7 +788,7 @@ void main() {
         handle: () => handle,
       );
 
-      await tester.tap(find.widgetWithText(FilledButton, 'Play'));
+      await tester.tap(find.widgetWithText(AppButton, 'Play'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 150));
       for (var i = 0; i < 2100; i++) {

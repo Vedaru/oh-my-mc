@@ -1,15 +1,17 @@
 import 'dart:io';
 
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/widgets.dart';
+import 'package:material_3_expressive/material_3_expressive.dart' as m3e;
+import 'package:material_ui/material_ui.dart' as m3;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oh_my_mc/core/install/version_installer.dart';
 import 'package:oh_my_mc/core/net/progress.dart';
 import 'package:oh_my_mc/core/net/version_manifest.dart';
 import 'package:oh_my_mc/data/install_providers.dart';
-import 'package:oh_my_mc/l10n/l10n.dart';
 import 'package:oh_my_mc/ui/download/download_screen.dart';
 import 'package:oh_my_mc/ui/motion/motion.dart';
+import '../support/harness.dart';
 
 /// A manifest with one release, one snapshot and one ancient beta.
 ///
@@ -156,23 +158,16 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: FluentApp(
-          home: MotionScope(
-            motion: Motion.none,
-            child: const ScaffoldPage(content: DownloadScreen()),
-          ),
-          localizationsDelegates: appLocalizationsDelegates,
-          supportedLocales: appSupportedLocales,
-        ),
-      ),
-    );
     // A fixed pump, not `pumpAndSettle`: the staggered entrance is running and
-    // the loading state animates a `ProgressRing` forever.
-    await tester.pump();
-    await tester.pump(Duration(milliseconds: 400));
+    // an indeterminate progress bar never stops.
+    await pumpScreen(
+      tester,
+      container,
+      const DownloadScreen(),
+      motion: Motion.none,
+      settle: false,
+    );
+    await tester.pump(const Duration(milliseconds: 400));
     return container;
   }
 
@@ -193,7 +188,9 @@ void main() {
   ) async {
     await pump(tester);
 
-    await tester.tap(find.text('Show snapshots'));
+    // The label is a sibling of the switch, not part of it, so tapping the text
+    // would not toggle anything.
+    await tester.tap(find.byType(m3e.M3ESwitch));
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text('24w14a'), findsOneWidget);
@@ -203,7 +200,7 @@ void main() {
   testWidgets('search filters the visible rows', (tester) async {
     await pump(tester);
 
-    await tester.enterText(find.byType(TextBox), '1.20');
+    await tester.enterText(find.byType(m3e.M3ETextField), '1.20');
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text('1.20.1'), findsOneWidget);
@@ -214,10 +211,10 @@ void main() {
   ) async {
     await pump(tester);
 
-    await tester.enterText(find.byType(TextBox), '9.99');
+    await tester.enterText(find.byType(m3e.M3ETextField), '9.99');
     await tester.pump(const Duration(milliseconds: 400));
 
-    // The TextBox holds the query too, so the assertion names the message.
+    // The search field holds the query too, so the assertion names the message.
     final empty = tester.widget<Text>(
       find.byKey(const ValueKey('download-empty')),
     );
@@ -266,7 +263,7 @@ void main() {
     await tester.tap(find.text('1.20.1'));
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.byType(ProgressBar), findsOneWidget);
+    expect(find.byType(m3.LinearProgressIndicator), findsOneWidget);
     expect(find.text('Downloading'), findsOneWidget);
     expect(find.text('Step 6 of 9'), findsOneWidget);
     // Preformatted sizes: the screen must not format bytes itself, because that
@@ -351,21 +348,14 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: FluentApp(
-          locale: const Locale('zh'),
-          home: MotionScope(
-            motion: Motion.none,
-            child: const ScaffoldPage(content: DownloadScreen()),
-          ),
-          localizationsDelegates: appLocalizationsDelegates,
-          supportedLocales: appSupportedLocales,
-        ),
-      ),
+    await pumpScreen(
+      tester,
+      container,
+      const DownloadScreen(),
+      locale: const Locale('zh'),
+      motion: Motion.none,
+      settle: false,
     );
-    await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text('游戏版本'), findsOneWidget);

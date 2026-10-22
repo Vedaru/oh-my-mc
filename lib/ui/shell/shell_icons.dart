@@ -1,34 +1,49 @@
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:material_ui/material_ui.dart' as m3;
 
 /// One icon per destination, resolved in a single place.
 ///
-/// Fluent's `NavigationPane` takes an `IconData` per item, and the router knows
-/// only route paths, so something has to map one to the other. Keeping the map
-/// here means adding a route without an icon is visible in one file rather than
-/// producing a pane item with a blank square.
+/// A navigation rail takes an `IconData`, and the router knows only route paths,
+/// so something has to map one to the other. Keeping the map here means adding a
+/// route without an icon is visible in one file rather than producing a rail
+/// item with a blank square.
+///
+/// The Material glyph set rather than a third-party icon package: `material_ui`
+/// is already the design system, and `uses-material-design: true` ships the font.
+/// The previous Lucide package subclassed `IconData`, which Flutter 3.47 made
+/// `final`, so it no longer compiled at all.
 abstract final class ShellIcons {
-  static IconData forRoute(String location) {
+  static m3.IconData forRoute(String location) {
     final path = Uri.parse(location).path;
-    if (path.startsWith('/instances')) return FluentIcons.list;
-    if (path.startsWith('/download')) return FluentIcons.download;
-    if (path.startsWith('/setup')) return FluentIcons.settings;
-    if (path.startsWith('/logs')) return FluentIcons.text_document;
-    return FluentIcons.play;
+    if (path.startsWith('/instances')) return list;
+    if (path.startsWith('/download')) return download;
+    if (path.startsWith('/setup')) return settings;
+    if (path.startsWith('/logs')) return document;
+    return play;
   }
 
-  static const instance = FluentIcons.cube_shape;
-  static const play = FluentIcons.play;
-  static const stop = FluentIcons.stop;
-  static const add = FluentIcons.add;
-  static const clock = FluentIcons.clock;
-  static const warning = FluentIcons.warning;
-  static const error = FluentIcons.error_badge;
-  static const java = FluentIcons.code;
-  static const folder = FluentIcons.folder_open;
-  static const search = FluentIcons.search;
-  static const download = FluentIcons.download;
-  static const check = FluentIcons.check_mark;
-  static const edit = FluentIcons.edit;
-  static const trash = FluentIcons.delete;
-  static const settings = FluentIcons.settings;
+  static const list = m3.Icons.list_alt;
+  static const download = m3.Icons.download;
+  static const settings = m3.Icons.settings;
+  static const document = m3.Icons.description;
+  static const play = m3.Icons.play_arrow;
+  static const stop = m3.Icons.stop_circle;
+
+  static const instance = m3.Icons.inventory_2;
+  static const add = m3.Icons.add;
+  static const clock = m3.Icons.schedule;
+  static const warning = m3.Icons.warning_amber;
+  static const error = m3.Icons.error_outline;
+  static const java = m3.Icons.terminal;
+  static const folder = m3.Icons.folder_open;
+  static const search = m3.Icons.search;
+  static const check = m3.Icons.check;
+  static const checkCircle = m3.Icons.check_circle;
+  static const checkCircleFilled = m3.Icons.check_circle;
+  static const edit = m3.Icons.edit;
+  static const trash = m3.Icons.delete;
+  static const addon = m3.Icons.extension;
+  static const back = m3.Icons.arrow_back;
+  static const refresh = m3.Icons.refresh;
+  static const close = m3.Icons.close;
+  static const copy = m3.Icons.content_copy;
 }

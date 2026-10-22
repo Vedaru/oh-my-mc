@@ -1,5 +1,5 @@
 name: oh_my_mc
-description: "Oh My MC - a fluent, animation-first Minecraft launcher"
+description: "Oh My MC - an animation-first Minecraft launcher"
 publish_to: 'none'
 version: 0.1.0+1
 
@@ -18,7 +18,6 @@ dependencies:
   animations: ^3.0.0
 
   # --- shell / chrome -----------------------------------------------------
-  fluent_ui: ^4.17.0
   window_manager: ^0.5.2
   flutter_acrylic: ^1.1.4
 
@@ -31,7 +30,6 @@ dependencies:
   json_annotation: ^4.12.0
 
   # --- io / net -----------------------------------------------------------
-  dio: ^5.11.1
   crypto: ^3.0.7
   archive: ^4.5.2
   path: ^1.9.0
@@ -40,13 +38,15 @@ dependencies:
   shared_preferences: ^2.5.6
   flutter_secure_storage: ^11.2.0
   url_launcher: ^6.3.3
-  system_info2: ^4.1.0
   process_run: ^1.4.1
   oauth2: ^2.0.5
 
   # --- ui extras ----------------------------------------------------------
-  lucide_icons: ^0.257.0
-  material_ui: ^1.8.0
+  # Pinned exactly: 1.8.0 moved RoundedPolygon into material_ui, which collides
+  # with material_new_shapes (a material_3_expressive dependency) and fails the
+  # build with "'RoundedPolygon' is imported from both ...". Do not widen this.
+  material_ui: 1.7.0
+  material_3_expressive: ^1.1.7
 
 dev_dependencies:
   flutter_test:

@@ -1,4 +1,5 @@
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/widgets.dart';
+import 'package:material_ui/material_ui.dart' as m3;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -35,9 +36,9 @@ Future<(ProviderContainer, _Probe)> _pump(
       container: container,
       child: AppRoot(
         screens: (context, state) {
-          // `FluentTheme.of` is what a Fluent widget reads; Material content is
-          // bridged to the same brightness by `app_theme.dart`.
-          probe.brightness = FluentTheme.of(context).brightness;
+          // What the content actually sees. Asserting the `ThemeMode` instead
+          // would pass even if the theme failed to resolve.
+          probe.brightness = m3.Theme.of(context).brightness;
           probe.locale = Localizations.localeOf(context);
           probe.motionEnabled = MotionScope.enabledOf(context);
           return const SizedBox.shrink();
@@ -197,7 +198,8 @@ void main() {
       await tester.pumpAndSettle();
 
       final router =
-          tester.widget<FluentApp>(find.byType(FluentApp)).routerConfig!
+          tester.widget<m3.MaterialApp>(find.byType(m3.MaterialApp))
+                  .routerConfig!
               as GoRouter;
       router.go('/setup');
       await tester.pumpAndSettle();

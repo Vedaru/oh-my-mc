@@ -1,12 +1,16 @@
-import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_3_expressive/material_3_expressive.dart' as m3e;
+import 'package:material_ui/material_ui.dart' as m3;
+import 'package:oh_my_mc/ui/components/app_button.dart';
 
 import '../../core/launch/launch_handle.dart';
 import '../../data/launch_providers.dart';
 import '../../l10n/l10n.dart';
 import '../motion/motion.dart';
 import '../shell/shell_icons.dart';
+import '../theme/app_theme.dart';
 
 /// Which log lines are visible.
 enum LogFilter {
@@ -56,7 +60,7 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = FluentTheme.of(context);
+    final scheme = m3.Theme.of(context).colorScheme;
     final session = ref.watch(launchControllerProvider);
 
     final needle = _search.text.trim().toLowerCase();
@@ -69,52 +73,59 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
 
     return MotionEntrance(
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Row(
+        m3.Padding(
+          padding: const m3.EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: m3.Row(
             children: [
-              Expanded(
-                child: Text(l10n.logsTitle, style: theme.typography.title),
+              m3.Expanded(
+                child: m3.Text(l10n.logsTitle, style: AppTheme.title(context)),
               ),
               if (session.log.isNotEmpty)
-                Button(
-                  key: const ValueKey('logs-copy'),
+                AppButton(
+                  key: const m3.ValueKey('logs-copy'),
                   onPressed: () => _copy(context, session.log),
-                  child: Text(l10n.logsCopy),
+                  style: m3e.M3EButtonStyle.outlined,
+                  size: m3e.M3EButtonSize.sm,
+                  icon: const m3.Icon(ShellIcons.copy, size: 14),
+                  label: m3.Text(l10n.logsCopy),
                 ),
             ],
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
+        m3.Padding(
+          padding: const m3.EdgeInsets.symmetric(horizontal: 16),
+          child: m3.Row(
             children: [
-              Expanded(
-                child: TextBox(
-                  key: const ValueKey('logs-search'),
+              m3.Expanded(
+                child: m3e.M3ETextField(
+                  key: const m3.ValueKey('logs-search'),
                   controller: _search,
                   placeholder: l10n.logsSearchHint,
-                  prefix: const Padding(
-                    padding: EdgeInsetsDirectional.only(start: 8),
-                    child: Icon(ShellIcons.search, size: 12),
-                  ),
+                  leading: const m3.Icon(ShellIcons.search, size: 15),
                   onChanged: (_) => setState(() {}),
                 ),
               ),
-              const SizedBox(width: 12),
-              ToggleSwitch(
-                checked: _filter == LogFilter.errors,
+              const m3.SizedBox(width: 12),
+              m3e.M3ESwitch(
+                value: _filter == LogFilter.errors,
                 onChanged: (errors) => setState(() {
                   _filter = errors ? LogFilter.errors : LogFilter.all;
                 }),
-                content: Text(l10n.logsOnlyErrors),
+                semanticLabel: l10n.logsOnlyErrors,
+              ),
+              const m3.SizedBox(width: 8),
+              m3.Text(
+                l10n.logsOnlyErrors,
+                style: AppTheme.body(context).copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
         ),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        m3.Expanded(
+          child: m3.Padding(
+            padding: const m3.EdgeInsets.fromLTRB(16, 8, 16, 16),
             child: _Lines(
               lines: visible,
               // Distinguishes "nothing has run" from "your filter hides
@@ -150,35 +161,37 @@ class _Lines extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = FluentTheme.of(context);
+    final scheme = m3.Theme.of(context).colorScheme;
 
     if (lines.isEmpty) {
-      return Center(
-        child: Text(
+      return m3.Center(
+        child: m3.Text(
           emptyText,
-          key: const ValueKey('logs-empty'),
-          style: theme.typography.caption?.copyWith(color: theme.inactiveColor),
+          key: const m3.ValueKey('logs-empty'),
+          style: AppTheme.caption(context).copyWith(
+            color: scheme.onSurfaceVariant,
+          ),
         ),
       );
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.resources.cardBackgroundFillColorDefault,
-        borderRadius: BorderRadius.circular(4),
+    return m3.Container(
+      decoration: m3.BoxDecoration(
+        color: scheme.surfaceContainerLow,
+        borderRadius: m3.BorderRadius.circular(10),
+        border: m3.Border.all(color: scheme.outlineVariant),
       ),
-      child: ListView.builder(
-        padding: const EdgeInsets.all(8),
+      child: m3.ListView.builder(
+        padding: const m3.EdgeInsets.all(10),
         itemCount: lines.length,
         itemBuilder: (context, index) {
           final line = lines[index];
-          return Text(
+          return m3.Text(
             line.text,
-            style: theme.typography.caption?.copyWith(
-              fontFamily: 'Consolas',
+            style: AppTheme.mono(context).copyWith(
               color: line.channel == LogChannel.stderr
-                  ? theme.resources.systemFillColorCritical
-                  : theme.typography.caption?.color,
+                  ? scheme.error
+                  : scheme.onSurface,
             ),
           );
         },

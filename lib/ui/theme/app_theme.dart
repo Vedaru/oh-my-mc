@@ -1,61 +1,81 @@
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/widgets.dart';
+import 'package:material_3_expressive/material_3_expressive.dart' as m3e;
 import 'package:material_ui/material_ui.dart' as m3;
 
-import '../motion/motion.dart';
-
-/// The accent seed and the two Fluent themes derived from it.
+/// The accent seed and every theme derived from it.
 ///
-/// There is exactly one place where a colour is chosen. Everything else - the
-/// Fluent theme, the Material theme handed to content widgets, the accent used
-/// by custom-painted chrome - derives from [accentSeed], so the user's choice of
-/// accent cannot end up applied to only half the UI.
+/// There is exactly one place where a colour is chosen. The Material scheme the
+/// widgets use and the expressive scheme the `M3E*` components use both come
+/// from [accentSeed], so a user's accent choice cannot end up applied to only
+/// half the UI.
 abstract final class AppTheme {
   /// Seed for both colour systems. A launcher's accent is a user preference,
   /// not a brand statement, so this is the default rather than a constant.
   static const m3.Color accentSeed = m3.Color(0xFF0078D4);
 
-  /// Fluent accent, derived from [accentSeed] so the two stay in step.
-  static AccentColor get accent => AccentColor.swatch(<String, m3.Color>{
-    'darkest': const m3.Color(0xFF003A66),
-    'darker': const m3.Color(0xFF004E8C),
-    'dark': const m3.Color(0xFF106EBE),
-    'normal': accentSeed,
-    'lighter': const m3.Color(0xFF2899F5),
-    'lightest': const m3.Color(0xFF70C0FF),
-  });
-
-  static FluentThemeData light() => _fluent(Brightness.light);
-  static FluentThemeData dark() => _fluent(Brightness.dark);
-
-  /// Builds a Fluent theme with **both** colour systems pinned to [brightness].
-  ///
-  /// `FluentThemeData` defaults `brightness` to light and does not read the
-  /// `ThemeMode` it is chosen under, so `darkTheme: FluentThemeData()` silently
-  /// produces a light-on-light UI - including a translucent `surface` that then
-  /// gets painted over an opaque background. Passing brightness explicitly, and
-  /// deriving the Material theme from the same value, is the only way this stays
-  /// correct; a golden test would happily record the broken result as expected.
-  static FluentThemeData _fluent(Brightness brightness) {
-    final isDark = brightness == Brightness.dark;
-    return FluentThemeData(
-      brightness: brightness,
-      accentColor: accent,
-      // Keep Fluent's own page transitions aligned with the motion tokens, so
-      // there is one definition of "slow" in the app rather than two.
-      mediumAnimationDuration: Durations.base,
-      slowAnimationDuration: Durations.slow,
-      scaffoldBackgroundColor: isDark ? const m3.Color(0xFF111318) : null,
-    );
-  }
-
-  /// The Material theme for content widgets (`material_ui`), derived from the
-  /// same seed. `FluentApp` derives one internally, but doing it here keeps the
-  /// mapping explicit and testable rather than implied by the framework.
+  /// The Material `ThemeData` handed to `MaterialApp`. `M3ETheme` projects its
+  /// own scheme on top of this, so this exists for the widgets that read plain
+  /// `Theme.of` (scrollbars, focus highlights, the selection toolbar).
   static m3.ThemeData material(Brightness brightness) => m3.ThemeData(
     useMaterial3: true,
+    brightness: brightness,
     colorScheme: m3.ColorScheme.fromSeed(
       seedColor: accentSeed,
       brightness: brightness,
     ),
   );
+
+  /// The expressive theme for `M3E*` components.
+  ///
+  /// `autoTheming` is false on purpose: brightness is decided by the settings
+  /// value passed in, not by the platform. Leaving it on would let the OS
+  /// override an explicit "always light" choice.
+  static m3e.M3EThemeData expressive(Brightness brightness) =>
+      m3e.M3EThemeData(
+        colorScheme: m3e.M3EColorScheme.fromSeed(
+          accentSeed,
+          brightness: brightness,
+        ),
+      );
+
+  /// Semantic type roles.
+  ///
+  /// Screens ask for a *role*, never a package's type scale, so replacing the
+  /// design system again does not mean rewriting every `TextStyle` call site.
+  /// Fluent's `caption` was 12 px, which is `labelMedium` here.
+  static TextStyle title(BuildContext context) =>
+      _text(context).titleMedium ?? const TextStyle();
+
+  static TextStyle subtitle(BuildContext context) =>
+      _text(context).titleSmall ?? const TextStyle();
+
+  static TextStyle body(BuildContext context) =>
+      _text(context).bodyMedium ?? const TextStyle();
+
+  /// Metadata under a card title, timestamps, the window-chrome subtitle.
+  static TextStyle caption(BuildContext context) =>
+      _text(context).labelMedium ?? const TextStyle();
+
+  /// Button and chip labels.
+  static TextStyle label(BuildContext context) =>
+      _text(context).labelLarge ?? const TextStyle();
+
+  /// Headline on an empty state or a splash.
+  static TextStyle display(BuildContext context) =>
+      _text(context).headlineMedium ?? const TextStyle();
+
+  /// Monospaced log output.
+  ///
+  /// Named families first, then `monospace`: a launcher has to run on whatever
+  /// fontconfig resolves, and a single hardcoded family (the previous code used
+  /// `Consolas`) renders as the default sans on any Linux box that lacks it.
+  static TextStyle mono(BuildContext context) =>
+      caption(context).copyWith(
+        fontFamily: 'JetBrains Mono',
+        fontFamilyFallback: const ['Consolas', 'DejaVu Sans Mono', 'monospace'],
+        height: 1.45,
+      );
+
+  static m3.TextTheme _text(BuildContext context) =>
+      m3.Theme.of(context).textTheme;
 }

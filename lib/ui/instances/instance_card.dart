@@ -1,16 +1,20 @@
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/widgets.dart';
+import 'package:material_3_expressive/material_3_expressive.dart' as m3e;
+import 'package:material_ui/material_ui.dart' as m3;
+import 'package:oh_my_mc/ui/components/app_button.dart';
 
 import '../../core/instance/instance.dart';
 import '../../l10n/l10n.dart';
 import '../motion/motion.dart';
 import '../shell/shell_icons.dart';
+import '../theme/app_theme.dart';
 
 /// One instance, as a card in the grid.
 ///
 /// The card owns no state and performs no navigation: it reports the two things
 /// a user can do (select, launch) and lets the screen decide what those mean.
 /// That is what lets it be tested with no router and no providers.
-class InstanceCard extends StatelessWidget {
+class InstanceCard extends StatefulWidget {
   const InstanceCard({
     required this.instance,
     required this.selected,
@@ -37,136 +41,153 @@ class InstanceCard extends StatelessWidget {
   final VoidCallback? onMenu;
 
   @override
+  State<InstanceCard> createState() => _InstanceCardState();
+}
+
+class _InstanceCardState extends State<InstanceCard> {
+  var _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = FluentTheme.of(context);
+    final scheme = m3e.M3ETheme.of(context).colorScheme;
     final motion = MotionScope.of(context);
 
-    // Selection is a border, not a filled background: the cards carry version art
-    // later, and a tint over it would fight the art.
-    const radius = BorderRadius.all(Radius.circular(6));
-    final borderColor = selected
-        ? theme.accentColor.defaultBrushFor(theme.brightness)
-        : theme.resources.controlStrokeColorDefault;
+    // Selection is an outline, not a fill: the cards carry version art later, and
+    // a tint over it would fight the art.
+    final radius = m3.BorderRadius.circular(14);
+    final borderColor = widget.selected ? scheme.primary : scheme.outlineVariant;
 
-    final card = HoverButton(
-      onPressed: onTap,
-      focusEnabled: true,
-      builder: (context, states) => AnimatedContainer(
-        duration: motion.of(Durations.fast),
-        curve: states.isHovered ? MotionCurves.enter : MotionCurves.exit,
-        decoration: BoxDecoration(
-          borderRadius: radius,
-          color: theme.resources.cardBackgroundFillColorDefault,
-          border: Border.all(color: borderColor, width: selected ? 2 : 1),
-          boxShadow: states.isHovered
-              ? [
-                  BoxShadow(
-                    color: theme.shadowColor.withValues(alpha: 0.12),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
-        ),
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  instance.loader.isModded
-                      ? FluentIcons.puzzle
-                      : ShellIcons.instance,
-                  size: 20,
-                  color: theme.accentColor.defaultBrushFor(theme.brightness),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    instance.displayName,
-                    style: theme.typography.subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
+    final card = m3.MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: m3.GestureDetector(
+        onTap: widget.onTap,
+        // Only the secondary button: a primary tap is already the card's action,
+        // and long-press is not a menu gesture on desktop.
+        onSecondaryTap: widget.onMenu,
+        child: m3.AnimatedContainer(
+          duration: motion.of(Durations.fast),
+          curve: _hovered ? MotionCurves.enter : MotionCurves.exit,
+          decoration: m3.BoxDecoration(
+            borderRadius: radius,
+            color: _hovered
+                ? scheme.surfaceContainerHigh
+                : scheme.surfaceContainer,
+            border: m3.Border.all(
+              color: borderColor,
+              width: widget.selected ? 2 : 1,
             ),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                Text(instance.versionId, style: theme.typography.caption),
-                if (instance.loader.isModded) ...[
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(
-                      '${instance.loader.name} ${instance.loaderVersion ?? ''}'
-                          .trim(),
-                      style: theme.typography.caption?.copyWith(
-                        color: theme.inactiveColor,
-                      ),
+          ),
+          padding: const m3.EdgeInsets.all(14),
+          child: m3.Column(
+            crossAxisAlignment: m3.CrossAxisAlignment.start,
+            mainAxisSize: m3.MainAxisSize.min,
+            children: [
+              m3.Row(
+                children: [
+                  // The tag is what makes the icon fly into the detail header.
+                  m3.Hero(
+                    tag: instanceHeroTag(widget.instance.id),
+                    child: m3.Icon(
+                      widget.instance.loader.isModded
+                          ? ShellIcons.addon
+                          : ShellIcons.instance,
+                      size: 22,
+                      color: scheme.primary,
+                    ),
+                  ),
+                  const m3.SizedBox(width: 10),
+                  m3.Expanded(
+                    child: m3.Text(
+                      widget.instance.displayName,
+                      style: AppTheme.subtitle(context),
                       maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      overflow: m3.TextOverflow.ellipsis,
                     ),
                   ),
                 ],
-              ],
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Icon(ShellIcons.clock, size: 12, color: theme.inactiveColor),
-                const SizedBox(width: 4),
-                Flexible(
-                  child: Text(
-                    instance.lastPlayedAt == null
-                        ? l10n.instanceNeverPlayed
-                        : formatPlaytime(instance.totalPlaytime),
-                    style: theme.typography.caption?.copyWith(
-                      color: theme.inactiveColor,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+              ),
+              const m3.SizedBox(height: 8),
+              m3.Row(
+                children: [
+                  m3.Text(
+                    widget.instance.versionId,
+                    style: AppTheme.caption(context),
                   ),
-                ),
-                const Spacer(),
-                if (busy)
-                  const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: ProgressRing(strokeWidth: 2),
-                  )
-                else
-                  Button(
-                    onPressed: onPlay,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(ShellIcons.play, size: 12),
-                        const SizedBox(width: 4),
-                        Text(l10n.playButton),
-                      ],
+                  if (widget.instance.loader.isModded) ...[
+                    const m3.SizedBox(width: 6),
+                    m3.Flexible(
+                      child: m3.Text(
+                        '${widget.instance.loader.name} '
+                                '${widget.instance.loaderVersion ?? ''}'
+                            .trim(),
+                        style: AppTheme.caption(context).copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                        maxLines: 1,
+                        overflow: m3.TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              const m3.SizedBox(height: 12),
+              m3.Row(
+                children: [
+                  m3.Icon(
+                    ShellIcons.clock,
+                    size: 13,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                  const m3.SizedBox(width: 5),
+                  m3.Flexible(
+                    child: m3.Text(
+                      widget.instance.lastPlayedAt == null
+                          ? l10n.instanceNeverPlayed
+                          : formatPlaytime(widget.instance.totalPlaytime),
+                      style: AppTheme.caption(context).copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                      maxLines: 1,
+                      overflow: m3.TextOverflow.ellipsis,
                     ),
                   ),
-              ],
-            ),
-          ],
+                  const m3.Spacer(),
+                  if (widget.busy)
+                    // Determinate-looking and still: an indeterminate spinner is
+                    // the one widget that keeps a ticker alive with motion off,
+                    // and the card is not the place to spend that.
+                    m3.SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: m3.CircularProgressIndicator(
+                        value: 0.35,
+                        strokeWidth: 2.5,
+                        color: scheme.primary,
+                      ),
+                    )
+                  else
+                    AppButton(
+                      onPressed: widget.onPlay,
+                      style: m3e.M3EButtonStyle.filled,
+                      size: m3e.M3EButtonSize.sm,
+                      icon: const m3.Icon(ShellIcons.play, size: 13),
+                      label: m3.Text(l10n.playButton),
+                    ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
-
-    final onMenu = this.onMenu;
-    if (onMenu == null) return card;
-    return GestureDetector(
-      // Only the secondary button: a primary tap is already the card's action,
-      // and long-press is not a menu gesture on desktop.
-      onSecondaryTap: onMenu,
-      child: card,
-    );
+    return card;
   }
 }
+
+/// The `Hero` tag shared by a card's icon and the detail screen's header.
+String instanceHeroTag(String instanceId) => 'instance-icon-$instanceId';
 
 /// `3h 12m`, `12m`, `48s`.
 ///

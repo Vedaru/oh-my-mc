@@ -6,6 +6,8 @@
   "navDownload": "下载",
   "navSetup": "设置",
   "navLogs": "日志",
+  "navExpand": "展开导航栏",
+  "navCollapse": "收起导航栏",
   "playButton": "启动游戏",
   "stopButton": "停止",
   "launching": "正在启动…",

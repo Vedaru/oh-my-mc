@@ -28,6 +28,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navLogs => 'Logs';
 
   @override
+  String get navExpand => 'Expand navigation';
+
+  @override
+  String get navCollapse => 'Collapse navigation';
+
+  @override
   String get playButton => 'Play';
 
   @override

@@ -24,6 +24,14 @@
   "@navLogs": {
     "description": "Navigation item for the log console."
   },
+  "navExpand": "Expand navigation",
+  "@navExpand": {
+    "description": "Tooltip on the navigation rail's expand control."
+  },
+  "navCollapse": "Collapse navigation",
+  "@navCollapse": {
+    "description": "Tooltip on the navigation rail's collapse control."
+  },
   "playButton": "Play",
   "@playButton": {
     "description": "Starts the selected instance."

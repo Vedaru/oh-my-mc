@@ -3,7 +3,7 @@ library;
 
 import 'dart:io';
 
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:material_ui/material_ui.dart' as m3;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oh_my_mc/core/instance/instance.dart';
@@ -72,7 +72,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 600));
 
     await expectLater(
-      find.byType(FluentApp),
+      find.byType(m3.MaterialApp),
       matchesGoldenFile('shots/$file.png'),
     );
   }

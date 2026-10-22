@@ -1,14 +1,19 @@
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_3_expressive/material_3_expressive.dart' as m3e;
+import 'package:material_ui/material_ui.dart' as m3;
+import 'package:oh_my_mc/ui/components/app_button.dart';
 
 import '../../app/router.dart';
 import '../../core/instance/instance.dart';
 import '../../data/instance_providers.dart';
 import '../../data/launch_providers.dart';
 import '../../l10n/l10n.dart';
+import '../components/app_banner.dart';
 import '../motion/motion.dart';
 import '../shell/shell_icons.dart';
+import '../theme/app_theme.dart';
 import 'instance_card.dart';
 
 /// The instance grid.
@@ -34,7 +39,9 @@ class InstancesScreen extends ConsumerWidget {
     final session = ref.watch(launchControllerProvider);
 
     return switch (state) {
-      InstanceListLoading() => const Center(child: ProgressRing()),
+      InstanceListLoading() => const m3.Center(
+        child: m3.CircularProgressIndicator(),
+      ),
       InstanceListFailed(:final message) => _Failure(message: message),
       InstanceListReady(:final instances, :final selectedId, :final skipped) =>
         _Grid(
@@ -79,20 +86,23 @@ class InstancesScreen extends ConsumerWidget {
     Instance instance,
   ) async {
     final l10n = context.l10n;
-    final confirmed = await showDialog<bool>(
+    final confirmed = await m3.showDialog<bool>(
       context: context,
-      builder: (context) => ContentDialog(
-        title: Text(l10n.instanceDelete),
-        content: Text(l10n.instanceDeleteConfirmFiles(instance.displayName)),
+      builder: (context) => m3e.M3EDialog(
+        title: l10n.instanceDelete,
+        semanticLabel: l10n.instanceDelete,
+        content: m3.Text(l10n.instanceDeleteConfirmFiles(instance.displayName)),
         actions: [
-          Button(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.actionCancel),
+          AppButton(
+            onPressed: () => m3.Navigator.pop(context, false),
+            style: m3e.M3EButtonStyle.text,
+            label: m3.Text(l10n.actionCancel),
           ),
-          FilledButton(
-            key: const ValueKey('instance-delete-confirm'),
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.instanceDelete),
+          AppButton(
+            key: const m3.ValueKey('instance-delete-confirm'),
+            onPressed: () => m3.Navigator.pop(context, true),
+            style: m3e.M3EButtonStyle.filled,
+            label: m3.Text(l10n.instanceDelete),
           ),
         ],
       ),
@@ -107,7 +117,7 @@ class InstancesScreen extends ConsumerWidget {
   /// than a wizard: the download screen already owns version choice, so the
   /// common flow is "pick a version there, then name it".
   Future<void> _createInstance(BuildContext context, WidgetRef ref) async {
-    final name = await showDialog<String>(
+    final name = await m3.showDialog<String>(
       context: context,
       builder: (context) => const _NewInstanceDialog(),
     );
@@ -144,45 +154,40 @@ class _Grid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = FluentTheme.of(context);
+    final scheme = m3.Theme.of(context).colorScheme;
 
     if (instances.isEmpty) {
       return _Empty(onCreate: onCreate);
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return m3.Column(
+      crossAxisAlignment: m3.CrossAxisAlignment.stretch,
       children: [
         if (skipped > 0) _SkippedBanner(count: skipped),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Row(
+        m3.Padding(
+          padding: const m3.EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: m3.Row(
             children: [
-              Text(l10n.navInstances, style: theme.typography.title),
-              const SizedBox(width: 8),
-              Text(
+              m3.Text(l10n.navInstances, style: AppTheme.title(context)),
+              const m3.SizedBox(width: 8),
+              m3.Text(
                 l10n.instanceCount(instances.length),
-                style: theme.typography.caption?.copyWith(
-                  color: theme.inactiveColor,
+                style: AppTheme.caption(context).copyWith(
+                  color: scheme.onSurfaceVariant,
                 ),
               ),
-              const Spacer(),
-              FilledButton(
+              const m3.Spacer(),
+              AppButton(
                 onPressed: onCreate,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(ShellIcons.add, size: 14),
-                    const SizedBox(width: 6),
-                    Text(l10n.instanceCreate),
-                  ],
-                ),
+                style: m3e.M3EButtonStyle.filled,
+                icon: const m3.Icon(ShellIcons.add, size: 15),
+                label: m3.Text(l10n.instanceCreate),
               ),
             ],
           ),
         ),
-        Expanded(
-          child: LayoutBuilder(
+        m3.Expanded(
+          child: m3.LayoutBuilder(
             builder: (context, constraints) {
               // A fixed column count would waste space on a wide window and
               // squash cards on a narrow one. 280 logical pixels is the width at
@@ -193,13 +198,15 @@ class _Grid extends StatelessWidget {
                   .floor()
                   .clamp(1, 6);
 
-              return GridView.builder(
-                padding: const EdgeInsets.all(16),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              return m3.GridView.builder(
+                padding: const m3.EdgeInsets.all(16),
+                gridDelegate: m3.SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: columns,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
-                  mainAxisExtent: 128,
+                  // Tall enough for the card's tallest content at larger text
+                  // scales; a tighter box clips the playtime row.
+                  mainAxisExtent: 148,
                 ),
                 itemCount: instances.length,
                 itemBuilder: (context, index) {
@@ -223,7 +230,7 @@ class _Grid extends StatelessWidget {
                       // card: a destructive action next to a play button gets
                       // clicked by accident.
                       onMenu: () => _showMenu(context, instance),
-                      key: ValueKey(instance.id),
+                      key: m3.ValueKey(instance.id),
                     ),
                   );
                 },
@@ -243,41 +250,64 @@ extension on _Grid {
   /// the menu is the only thing that says *which* one is about to be deleted.
   Future<void> _showMenu(BuildContext context, Instance instance) async {
     final l10n = context.l10n;
-    final box = context.findRenderObject() as RenderBox?;
-    final overlay =
-        Overlay.of(context).context.findRenderObject()! as RenderBox;
+    final box = context.findRenderObject() as m3.RenderBox?;
+    final overlay = m3.Overlay.of(context).context.findRenderObject()! as m3.RenderBox;
     final origin = box == null
-        ? Offset.zero
-        : box.localToGlobal(Offset.zero, ancestor: overlay);
+        ? m3.Offset.zero
+        : box.localToGlobal(m3.Offset.zero, ancestor: overlay);
 
-    // A fresh controller per opening: one kept in the state would stay attached
-    // to a card that the grid may have already disposed.
-    final controller = FlyoutController();
-    await controller.showFlyout<void>(
-      position: origin,
-      placementMode: FlyoutPlacementMode.bottomLeft,
-      builder: (context) => MenuFlyout(
-        items: [
-          MenuFlyoutItem(
-            text: Text(l10n.instanceOpen),
-            leading: const Icon(ShellIcons.edit, size: 14),
-            onPressed: () => onOpen(instance),
-          ),
-          MenuFlyoutItem(
-            text: Text(l10n.playButton),
-            leading: const Icon(ShellIcons.play, size: 14),
-            onPressed: session.isBusy ? null : () => onLaunch(instance),
-          ),
-          const MenuFlyoutSeparator(),
-          MenuFlyoutItem(
-            text: Text(l10n.instanceDelete),
-            leading: const Icon(ShellIcons.trash, size: 14),
-            onPressed: () => onDelete(instance),
-          ),
-        ],
+    final selected = await m3.showMenu<int>(
+      context: context,
+      // `showMenu` wants the anchor in the overlay's coordinate space, which is
+      // what `fromRect` expresses: a zero-size rect at the card's origin.
+      position: m3.RelativeRect.fromRect(
+        origin & m3.Size.zero,
+        overlay.paintBounds,
       ),
+      items: [
+        m3.PopupMenuItem(
+          value: 0,
+          child: m3.Row(
+            children: [
+              const m3.Icon(ShellIcons.edit, size: 14),
+              const m3.SizedBox(width: 10),
+              m3.Text(l10n.instanceOpen),
+            ],
+          ),
+        ),
+        m3.PopupMenuItem(
+          value: 1,
+          enabled: !session.isBusy,
+          child: m3.Row(
+            children: [
+              const m3.Icon(ShellIcons.play, size: 14),
+              const m3.SizedBox(width: 10),
+              m3.Text(l10n.playButton),
+            ],
+          ),
+        ),
+        const m3.PopupMenuDivider(),
+        m3.PopupMenuItem(
+          value: 2,
+          child: m3.Row(
+            children: [
+              const m3.Icon(ShellIcons.trash, size: 14),
+              const m3.SizedBox(width: 10),
+              m3.Text(l10n.instanceDelete),
+            ],
+          ),
+        ),
+      ],
     );
-    controller.dispose();
+
+    switch (selected) {
+      case 0:
+        onOpen(instance);
+      case 1:
+        onLaunch(instance);
+      case 2:
+        await onDelete(instance);
+    }
   }
 }
 
@@ -289,24 +319,11 @@ class _SkippedBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = FluentTheme.of(context);
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: theme.resources.systemFillColorCautionBackground,
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            ShellIcons.warning,
-            size: 16,
-            color: theme.resources.systemFillColorCaution,
-          ),
-          const SizedBox(width: 8),
-          Expanded(child: Text(l10n.instancesSkipped(count))),
-        ],
+    return m3.Padding(
+      padding: const m3.EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: AppBanner(
+        severity: BannerSeverity.warning,
+        message: l10n.instancesSkipped(count),
       ),
     );
   }
@@ -320,16 +337,24 @@ class _Empty extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = FluentTheme.of(context);
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+    final scheme = m3.Theme.of(context).colorScheme;
+    return m3.Center(
+      child: m3.Column(
+        mainAxisSize: m3.MainAxisSize.min,
         children: [
-          Icon(ShellIcons.instance, size: 48, color: theme.inactiveColor),
-          const SizedBox(height: 12),
-          Text(l10n.instancesEmpty, style: theme.typography.body),
-          const SizedBox(height: 16),
-          FilledButton(onPressed: onCreate, child: Text(l10n.instanceCreate)),
+          m3.Icon(
+            ShellIcons.instance,
+            size: 48,
+            color: scheme.onSurfaceVariant,
+          ),
+          const m3.SizedBox(height: 12),
+          m3.Text(l10n.instancesEmpty, style: AppTheme.body(context)),
+          const m3.SizedBox(height: 16),
+          AppButton(
+            onPressed: onCreate,
+            style: m3e.M3EButtonStyle.filled,
+            label: m3.Text(l10n.instanceCreate),
+          ),
         ],
       ),
     );
@@ -343,20 +368,16 @@ class _Failure extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = FluentTheme.of(context);
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+    final scheme = m3.Theme.of(context).colorScheme;
+    return m3.Center(
+      child: m3.Column(
+        mainAxisSize: m3.MainAxisSize.min,
         children: [
-          Icon(
-            ShellIcons.error,
-            size: 32,
-            color: theme.resources.systemFillColorCritical,
-          ),
-          const SizedBox(height: 8),
+          m3.Icon(ShellIcons.error, size: 32, color: scheme.error),
+          const m3.SizedBox(height: 8),
           // The raw error, not a localized "something went wrong": this is a bug
           // report, and a generic message would make it unactionable.
-          SelectableText(message, style: theme.typography.caption),
+          m3.SelectableText(message, style: AppTheme.caption(context)),
         ],
       ),
     );
@@ -371,7 +392,7 @@ class _NewInstanceDialog extends StatefulWidget {
 }
 
 class _NewInstanceDialogState extends State<_NewInstanceDialog> {
-  final _controller = TextEditingController();
+  final _controller = m3.TextEditingController();
 
   @override
   void dispose() {
@@ -382,26 +403,32 @@ class _NewInstanceDialogState extends State<_NewInstanceDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return ContentDialog(
-      title: Text(l10n.instanceCreate),
-      content: TextBox(
+    final canCreate = _controller.text.trim().isNotEmpty;
+    return m3e.M3EDialog(
+      title: l10n.instanceCreate,
+      semanticLabel: l10n.instanceCreate,
+      content: m3e.M3ETextField(
         controller: _controller,
         autofocus: true,
-        placeholder: l10n.instanceNameHint,
-        onSubmitted: (value) => Navigator.of(context).pop(value),
+        label: l10n.instanceNameHint,
+        onChanged: (_) => setState(() {}),
+        onSubmitted: (value) => m3.Navigator.of(context).pop(value.trim()),
       ),
       actions: [
-        Button(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l10n.actionCancel),
+        AppButton(
+          onPressed: () => m3.Navigator.of(context).pop(),
+          style: m3e.M3EButtonStyle.text,
+          label: m3.Text(l10n.actionCancel),
         ),
-        FilledButton(
+        AppButton(
+          key: const m3.ValueKey('instance-create-confirm'),
           // An empty name is not an error worth a message: the create button is
           // simply unavailable until there is something to name.
-          onPressed: _controller.text.trim().isEmpty
-              ? null
-              : () => Navigator.of(context).pop(_controller.text.trim()),
-          child: Text(l10n.instanceCreate),
+          onPressed: canCreate
+              ? () => m3.Navigator.of(context).pop(_controller.text.trim())
+              : null,
+          style: m3e.M3EButtonStyle.filled,
+          label: m3.Text(l10n.instanceCreate),
         ),
       ],
     );

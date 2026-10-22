@@ -1,6 +1,7 @@
 import 'dart:io';
 
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/widgets.dart';
+import 'package:material_3_expressive/material_3_expressive.dart' as m3e;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oh_my_mc/app/providers.dart';
@@ -9,9 +10,9 @@ import 'package:oh_my_mc/data/instance_store.dart';
 import 'package:oh_my_mc/data/java_providers.dart';
 import 'package:oh_my_mc/data/settings.dart';
 import 'package:oh_my_mc/data/launch_factory.dart';
-import 'package:oh_my_mc/l10n/l10n.dart';
 import 'package:oh_my_mc/ui/motion/motion.dart';
 import 'package:oh_my_mc/ui/setup/setup_screen.dart';
+import '../support/harness.dart';
 import 'package:path/path.dart' as p;
 
 /// The setup screen, asserted against the stores rather than the pixels.
@@ -62,20 +63,13 @@ void main() {
     // so the list is resolved first and the widget then reads a ready value.
     await tester.runAsync(() => container.read(javaRuntimesProvider.future));
 
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: FluentApp(
-          home: MotionScope(
-            motion: Motion.none,
-            child: const ScaffoldPage(content: SetupScreen()),
-          ),
-          localizationsDelegates: appLocalizationsDelegates,
-          supportedLocales: appSupportedLocales,
-        ),
-      ),
+    await pumpScreen(
+      tester,
+      container,
+      const SetupScreen(),
+      motion: Motion.none,
+      settle: false,
     );
-    await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     return container;
   }
@@ -171,7 +165,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(container.read(appSettingsProvider).playerName, 'Player');
-    final field = tester.widget<TextBox>(
+    final field = tester.widget<m3e.M3ETextField>(
       find.byKey(const ValueKey('setup-player-name')),
     );
     expect(field.controller!.text, 'Player');
@@ -205,7 +199,7 @@ void main() {
     );
 
     expect(find.text('Animations off'), findsOneWidget);
-    final field = tester.widget<TextBox>(
+    final field = tester.widget<m3e.M3ETextField>(
       find.byKey(const ValueKey('setup-player-name')),
     );
     expect(field.controller!.text, 'Alex');

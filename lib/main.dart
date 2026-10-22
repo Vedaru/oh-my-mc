@@ -1,10 +1,13 @@
 import 'dart:io';
 
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart' as m3;
 import 'package:go_router/go_router.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:window_manager/window_manager.dart';
 
 import 'app/app_root.dart';
 import 'app/providers.dart';
@@ -28,6 +31,7 @@ import 'ui/shell/app_shell.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await _initWindow();
 
   final store = PrefsSettingsStore();
   // Awaited before the first frame so the app never paints in the wrong language
@@ -44,6 +48,34 @@ Future<void> main() async {
     ),
   );
 }
+
+/// Window setup, before the first frame.
+///
+/// A no-op off the desktop, and it deliberately does **not** hide the native
+/// decorations. On Wayland there is no portable way to drag a frameless window
+/// (the protocol needs an input serial that a synthetic drag call cannot
+/// supply), so the compositor's own decoration is what makes dragging, snapping
+/// and double-click-maximise work natively. `window_manager` is used here only
+/// for sizing, which is the one thing Flutter cannot do for a desktop window.
+Future<void> _initWindow() async {
+  if (!_isDesktop) return;
+  await windowManager.ensureInitialized();
+  const options = WindowOptions(
+    // Below roughly this width the rail plus a three-column instance grid stops
+    // fitting, so the limit is a layout fact rather than a preference.
+    minimumSize: Size(940, 620),
+    size: Size(1200, 780),
+    center: true,
+    title: 'oh my mc',
+  );
+  await windowManager.waitUntilReadyToShow(options, () async {
+    await windowManager.show();
+    await windowManager.focus();
+  });
+}
+
+bool get _isDesktop =>
+    !kIsWeb && (Platform.isLinux || Platform.isWindows || Platform.isMacOS);
 
 /// The launcher's data and game roots.
 ///
@@ -85,7 +117,7 @@ class OhMyMcApp extends StatelessWidget {
   final LaunchHandleFactory? launchHandleFactory;
 
   final Locale? locale;
-  final ThemeMode? themeMode;
+  final m3.ThemeMode? themeMode;
   final String initialLocation;
 
   @override
@@ -150,8 +182,8 @@ class OhMyMcApp extends StatelessWidget {
     return MemorySettingsStore(
       AppSettings(
         theme: switch (themeMode) {
-          ThemeMode.light => ThemePreference.light,
-          ThemeMode.dark => ThemePreference.dark,
+          m3.ThemeMode.light => ThemePreference.light,
+          m3.ThemeMode.dark => ThemePreference.dark,
           _ => ThemePreference.system,
         },
         language: switch (locale?.languageCode) {

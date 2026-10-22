@@ -1,7 +1,10 @@
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/widgets.dart';
+import 'package:material_ui/material_ui.dart' as m3;
 
 import '../../l10n/l10n.dart';
+import '../components/hover_row.dart';
 import '../motion/motion.dart';
+import '../theme/app_theme.dart';
 import 'shell_icons.dart';
 
 /// The first screen the app paints, before the shell exists.
@@ -31,39 +34,44 @@ class SplashOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = FluentTheme.of(context);
+    final scheme = m3.Theme.of(context).colorScheme;
     final motion = MotionScope.of(context);
 
-    return IgnorePointer(
+    return m3.IgnorePointer(
       ignoring: !visible,
-      child: AnimatedOpacity(
+      child: m3.AnimatedOpacity(
         opacity: visible ? 1 : 0,
         duration: motion.of(Durations.slow),
         curve: visible ? MotionCurves.enter : MotionCurves.exit,
-        child: ColoredBox(
-          color: theme.scaffoldBackgroundColor,
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+        child: m3.ColoredBox(
+          color: scheme.surface,
+          child: m3.Center(
+            child: m3.Column(
+              mainAxisSize: m3.MainAxisSize.min,
               children: [
                 AmbientLoop(
-                  tween: Tween(begin: 0.92, end: 1.0),
+                  tween: m3.Tween<double>(begin: 0.92, end: 1.0),
                   builder: (context, scale, child) =>
-                      Transform.scale(scale: scale, child: child),
-                  child: Icon(
+                      m3.Transform.scale(scale: scale, child: child),
+                  child: m3.Icon(
                     ShellIcons.instance,
                     size: 64,
-                    color: theme.accentColor.defaultBrushFor(theme.brightness),
+                    color: scheme.primary,
                   ),
                 ),
-                const SizedBox(height: 16),
-                Text(l10n.appTitle, style: theme.typography.titleLarge),
-                const SizedBox(height: 24),
-                SizedBox(
+                const m3.SizedBox(height: 16),
+                m3.Text(l10n.appTitle, style: AppTheme.display(context)),
+                const m3.SizedBox(height: 24),
+                m3.SizedBox(
                   width: 120,
+                  // An indeterminate indicator is the one place the expressive
+                  // progress widget cannot be trusted with reduced motion: it
+                  // animates on its own schedule regardless of the setting. With
+                  // motion off, a determinate bar at the last known value is a
+                  // still frame that still tells the truth.
                   child: progress == null
-                      ? const ProgressBar()
-                      : ProgressBar(value: progress!.clamp(0, 1) * 100),
+                      ? const MotionRespectingProgressBar()
+                      : m3.LinearProgressIndicator(value: progress!.clamp(0, 1)),
                 ),
               ],
             ),

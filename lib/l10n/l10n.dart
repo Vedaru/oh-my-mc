@@ -1,5 +1,5 @@
-import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/widgets.dart';
+import 'package:material_ui/material_ui.dart' as m3;
 
 import 'generated/app_localizations.dart';
 
@@ -7,24 +7,27 @@ export 'generated/app_localizations.dart';
 
 /// The app's supported locales, in the order the language picker lists them.
 ///
-/// Only `zh` (Simplified) is shipped. Fluent falls back to its own `zh` bundle
-/// for `zh_Hans`, which is what we want; a `zh_Hant` user is therefore served
-/// Simplified Chinese rather than English, which is the more useful failure.
+/// Only `zh` (Simplified) is shipped. `MaterialApp` negotiates `zh_Hant` down to
+/// `zh`, so a Traditional Chinese user is served Simplified rather than English,
+/// which is the more useful failure.
 const appSupportedLocales = <Locale>[Locale('en'), Locale('zh')];
 
-/// Localization delegates for the app shell.
+/// Localization delegates for the whole app.
 ///
-/// Deliberately not `AppLocalizations.localizationsDelegates`: that list also
-/// installs `GlobalMaterialLocalizations` and `GlobalCupertinoLocalizations`,
-/// whose types come from the in-SDK Material copy. This app's Material widgets
-/// come from `material_ui` (a separate package with its own, incompatible
-/// `MaterialLocalizations`), and `FluentApp` installs `FluentLocalizations`
-/// itself. Registering the SDK delegates would add a third localization tree
-/// that nothing reads.
+/// Deliberately not `AppLocalizations.localizationsDelegates`: that list is
+/// generated against the in-SDK Material localizations, whose types are
+/// incompatible with `material_ui`'s. Registering it would add a second
+/// localization tree that nothing reads.
+///
+/// The Material half comes from `material_ui`'s own
+/// [m3.GlobalMaterialLocalizations], and it must be the **plural** `delegates`
+/// list. `MaterialApp` asserts that every delegate covers the active locale, so
+/// registering `GlobalMaterialLocalizations.delegate` alone throws
+/// "locale zh is not supported by all localization delegates" as soon as a
+/// Chinese user opens the app - the Cupertino delegate is what is missing.
 const appLocalizationsDelegates = <LocalizationsDelegate<dynamic>>[
   AppLocalizations.delegate,
-  GlobalWidgetsLocalizations.delegate,
-  FluentLocalizations.delegate,
+  ...m3.GlobalMaterialLocalizations.delegates,
 ];
 
 /// Shorthand for `AppLocalizations.of(context)`.

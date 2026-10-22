@@ -1,7 +1,10 @@
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/widgets.dart';
+import 'package:material_3_expressive/material_3_expressive.dart' as m3e;
+import 'package:material_ui/material_ui.dart' as m3;
 
 import '../../core/instance/args.dart';
 import '../../l10n/l10n.dart';
+import '../theme/app_theme.dart';
 
 /// The JVM/game argument editors.
 ///
@@ -93,14 +96,14 @@ class _ArgsFieldState extends State<ArgsField> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = FluentTheme.of(context);
+    final scheme = m3.Theme.of(context).colorScheme;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return m3.Column(
+      crossAxisAlignment: m3.CrossAxisAlignment.stretch,
       children: [
-        Text(widget.label, style: theme.typography.bodyStrong),
-        const SizedBox(height: 4),
-        TextBox(
+        m3.Text(widget.label, style: AppTheme.label(context)),
+        const m3.SizedBox(height: 4),
+        m3e.M3ETextField(
           key: widget.fieldKey,
           controller: _controller,
           focusNode: _focus,
@@ -111,19 +114,20 @@ class _ArgsFieldState extends State<ArgsField> {
           onChanged: (_) => _reparse(),
           onSubmitted: (_) => _commit(),
         ),
-        const SizedBox(height: 4),
-        Text(
+        const m3.SizedBox(height: 4),
+        m3.Text(
           _parsed.isEmpty
               ? l10n.instanceArgsPreview(0)
               : l10n.instanceArgsPreview(_parsed.length),
-          style: theme.typography.caption?.copyWith(color: theme.inactiveColor),
+          style: AppTheme.caption(context).copyWith(
+            color: scheme.onSurfaceVariant,
+          ),
         ),
         if (_parsed.isNotEmpty)
-          SelectableText(
+          m3.SelectableText(
             l10n.instanceArgsPreviewList(_parsed.join(' · ')),
-            style: theme.typography.caption?.copyWith(
-              fontFamily: 'monospace',
-              color: theme.inactiveColor,
+            style: AppTheme.mono(context).copyWith(
+              color: scheme.onSurfaceVariant,
             ),
           ),
       ],

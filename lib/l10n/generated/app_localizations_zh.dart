@@ -28,6 +28,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get navLogs => '日志';
 
   @override
+  String get navExpand => '展开导航栏';
+
+  @override
+  String get navCollapse => '收起导航栏';
+
+  @override
   String get playButton => '启动游戏';
 
   @override

@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oh_my_mc/app/providers.dart';
@@ -12,9 +12,9 @@ import 'package:oh_my_mc/data/instance_store.dart';
 import 'package:oh_my_mc/data/java_providers.dart';
 import 'package:oh_my_mc/data/launch_factory.dart';
 import 'package:oh_my_mc/data/settings.dart';
-import 'package:oh_my_mc/l10n/l10n.dart';
 import 'package:oh_my_mc/ui/instances/instance_detail_screen.dart';
-import 'package:oh_my_mc/ui/motion/motion.dart';
+import 'package:oh_my_mc/ui/components/app_button.dart';
+import '../support/harness.dart';
 import 'package:path/path.dart' as p;
 
 /// The detail page, asserted through the store rather than through the widgets.
@@ -83,26 +83,11 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: FluentApp(
-          theme: FluentThemeData(),
-          home: MotionScope(
-            motion: Motion.full,
-            child: ScaffoldPage(
-              content: Padding(
-                padding: const EdgeInsets.all(16),
-                child: InstanceDetailScreen(id: id, onClose: onClose),
-              ),
-            ),
-          ),
-          localizationsDelegates: appLocalizationsDelegates,
-          supportedLocales: appSupportedLocales,
-        ),
-      ),
+    await pumpScreen(
+      tester,
+      container,
+      InstanceDetailScreen(id: id, onClose: onClose),
     );
-    await tester.pumpAndSettle();
     return container;
   }
 
@@ -341,11 +326,11 @@ void main() {
     ) async {
       final container = await pump(tester, instances: [sample()]);
 
-      await tester.tap(find.widgetWithText(Button, 'Delete'));
+      await tester.tap(find.widgetWithText(AppButton, 'Delete'));
       await tester.pumpAndSettle();
       expect(find.textContaining('This cannot be undone'), findsOneWidget);
 
-      await tester.tap(find.widgetWithText(Button, 'Cancel'));
+      await tester.tap(find.widgetWithText(AppButton, 'Cancel'));
       await tester.pumpAndSettle();
 
       expect(
@@ -364,7 +349,7 @@ void main() {
         onClose: () => closed++,
       );
 
-      await tester.tap(find.widgetWithText(Button, 'Delete'));
+      await tester.tap(find.widgetWithText(AppButton, 'Delete'));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('instance-delete-confirm')));
       // The confirmed delete touches the real filesystem, and `Directory.exists`

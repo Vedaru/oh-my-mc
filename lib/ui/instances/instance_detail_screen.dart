@@ -1,8 +1,11 @@
 import 'dart:io';
 
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_3_expressive/material_3_expressive.dart' as m3e;
+import 'package:material_ui/material_ui.dart' as m3;
+import 'package:oh_my_mc/ui/components/app_button.dart';
 
 import '../../app/providers.dart';
 import '../../app/router.dart';
@@ -12,8 +15,10 @@ import '../../data/instance_providers.dart';
 import '../../data/java_providers.dart';
 import '../../data/launch_factory.dart';
 import '../../l10n/l10n.dart';
+import '../components/app_banner.dart';
 import '../motion/motion.dart';
 import '../shell/shell_icons.dart';
+import '../theme/app_theme.dart';
 import 'args_field.dart';
 import 'instance_card.dart';
 
@@ -40,9 +45,11 @@ class InstanceDetailScreen extends ConsumerWidget {
     final state = ref.watch(instanceListProvider);
 
     return switch (state) {
-      InstanceListLoading() => const Center(child: ProgressRing()),
-      InstanceListFailed(:final message) => Center(
-        child: SelectableText(message),
+      InstanceListLoading() => const m3.Center(
+        child: m3.CircularProgressIndicator(),
+      ),
+      InstanceListFailed(:final message) => m3.Center(
+        child: m3.SelectableText(message),
       ),
       InstanceListReady(:final instances) => _body(context, ref, instances),
     };
@@ -50,7 +57,7 @@ class InstanceDetailScreen extends ConsumerWidget {
 
   Widget _body(BuildContext context, WidgetRef ref, List<Instance> instances) {
     final l10n = context.l10n;
-    final theme = FluentTheme.of(context);
+    final scheme = m3.Theme.of(context).colorScheme;
 
     Instance? instance;
     for (final candidate in instances) {
@@ -60,17 +67,22 @@ class InstanceDetailScreen extends ConsumerWidget {
     // A stale link (the instance was deleted in another window) is not a crash:
     // say so and offer the way back.
     if (instance == null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+      return m3.Center(
+        child: m3.Column(
+          mainAxisSize: m3.MainAxisSize.min,
           children: [
-            Icon(ShellIcons.warning, size: 28, color: theme.inactiveColor),
-            const SizedBox(height: 8),
-            Text(l10n.instanceMissing, style: theme.typography.body),
-            const SizedBox(height: 12),
-            FilledButton(
+            m3.Icon(
+              ShellIcons.warning,
+              size: 28,
+              color: scheme.onSurfaceVariant,
+            ),
+            const m3.SizedBox(height: 8),
+            m3.Text(l10n.instanceMissing, style: AppTheme.body(context)),
+            const m3.SizedBox(height: 12),
+            AppButton(
               onPressed: () => _close(context),
-              child: Text(l10n.actionBack),
+              style: m3e.M3EButtonStyle.filled,
+              label: m3.Text(l10n.actionBack),
             ),
           ],
         ),
@@ -81,32 +93,45 @@ class InstanceDetailScreen extends ConsumerWidget {
 
     return MotionEntrance(
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(8, 12, 16, 8),
-          child: Row(
+        m3.Padding(
+          padding: const m3.EdgeInsets.fromLTRB(8, 12, 16, 8),
+          child: m3.Row(
             children: [
-              IconButton(
+              m3.IconButton(
                 onPressed: () => _close(context),
-                icon: const Icon(FluentIcons.back),
+                icon: const m3.Icon(ShellIcons.back),
+                tooltip: l10n.actionBack,
               ),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  instance.displayName,
-                  style: theme.typography.title,
-                  overflow: TextOverflow.ellipsis,
+              const m3.SizedBox(width: 4),
+              m3.Hero(
+                tag: instanceHeroTag(instance.id),
+                child: m3.Icon(
+                  instance.loader.isModded
+                      ? ShellIcons.addon
+                      : ShellIcons.instance,
+                  size: 22,
+                  color: scheme.primary,
                 ),
               ),
-              Button(
+              const m3.SizedBox(width: 10),
+              m3.Expanded(
+                child: m3.Text(
+                  instance.displayName,
+                  style: AppTheme.title(context),
+                  overflow: m3.TextOverflow.ellipsis,
+                ),
+              ),
+              AppButton(
                 onPressed: () => _delete(context, ref, instance!),
-                child: Text(l10n.instanceDelete),
+                style: m3e.M3EButtonStyle.text,
+                label: m3.Text(l10n.instanceDelete),
               ),
             ],
           ),
         ),
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        m3.Expanded(
+          child: m3.ListView(
+            padding: const m3.EdgeInsets.fromLTRB(16, 0, 16, 16),
             children: [
               _Section(
                 title: l10n.instanceSectionGeneral,
@@ -193,19 +218,15 @@ class InstanceDetailScreen extends ConsumerWidget {
                     monospace: true,
                   ),
                   _PlaytimeRow(instance: instance),
-                  Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: Button(
-                      key: const ValueKey('instance-open-folder'),
+                  m3.Align(
+                    alignment: m3.AlignmentDirectional.centerStart,
+                    child: AppButton(
+                      key: const m3.ValueKey('instance-open-folder'),
                       onPressed: () => _openFolder(context, ref, instance!),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(ShellIcons.folder, size: 14),
-                          const SizedBox(width: 6),
-                          Text(l10n.instanceOpenFolder),
-                        ],
-                      ),
+                      style: m3e.M3EButtonStyle.outlined,
+                      size: m3e.M3EButtonSize.sm,
+                      icon: const m3.Icon(ShellIcons.folder, size: 14),
+                      label: m3.Text(l10n.instanceOpenFolder),
                     ),
                   ),
                 ],
@@ -239,15 +260,17 @@ class InstanceDetailScreen extends ConsumerWidget {
       await Process.start(exe, args, mode: ProcessStartMode.detached);
     } on ProcessException {
       if (!context.mounted) return;
-      await showDialog<void>(
+      await m3.showDialog<void>(
         context: context,
-        builder: (context) => ContentDialog(
-          title: Text(context.l10n.instanceOpenFolderFailed),
-          content: SelectableText(root),
+        builder: (context) => m3e.M3EDialog(
+          title: context.l10n.instanceOpenFolderFailed,
+          semanticLabel: context.l10n.instanceOpenFolderFailed,
+          content: m3.SelectableText(root),
           actions: [
-            FilledButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(context.l10n.actionClose),
+            AppButton(
+              onPressed: () => m3.Navigator.pop(context),
+              style: m3e.M3EButtonStyle.filled,
+              label: m3.Text(context.l10n.actionClose),
             ),
           ],
         ),
@@ -261,23 +284,26 @@ class InstanceDetailScreen extends ConsumerWidget {
     Instance instance,
   ) async {
     final l10n = context.l10n;
-    final confirmed = await showDialog<bool>(
+    final confirmed = await m3.showDialog<bool>(
       context: context,
-      builder: (context) => ContentDialog(
-        title: Text(l10n.instanceDelete),
+      builder: (context) => m3e.M3EDialog(
+        title: l10n.instanceDelete,
+        semanticLabel: l10n.instanceDelete,
         // The prompt promises the folder goes, because it does: this is the one
         // destructive action in the app, and "delete" that leaves half a gigabyte
         // behind is how users end up with an unreadable data directory.
-        content: Text(l10n.instanceDeleteConfirmFiles(instance.displayName)),
+        content: m3.Text(l10n.instanceDeleteConfirmFiles(instance.displayName)),
         actions: [
-          Button(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.actionCancel),
+          AppButton(
+            onPressed: () => m3.Navigator.pop(context, false),
+            style: m3e.M3EButtonStyle.text,
+            label: m3.Text(l10n.actionCancel),
           ),
-          FilledButton(
-            key: const ValueKey('instance-delete-confirm'),
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.instanceDelete),
+          AppButton(
+            key: const m3.ValueKey('instance-delete-confirm'),
+            onPressed: () => m3.Navigator.pop(context, true),
+            style: m3e.M3EButtonStyle.filled,
+            label: m3.Text(l10n.instanceDelete),
           ),
         ],
       ),
@@ -293,15 +319,17 @@ class InstanceDetailScreen extends ConsumerWidget {
 
     // The list entry is already gone, so this is not a failed delete - it is a
     // leftover folder. Say where it is, so the user can finish the job.
-    await showDialog<void>(
+    await m3.showDialog<void>(
       context: context,
-      builder: (context) => ContentDialog(
-        title: Text(l10n.instanceDelete),
-        content: SelectableText(l10n.instanceDeleteFilesFailed(path)),
+      builder: (context) => m3e.M3EDialog(
+        title: l10n.instanceDelete,
+        semanticLabel: l10n.instanceDelete,
+        content: m3.SelectableText(l10n.instanceDeleteFilesFailed(path)),
         actions: [
-          FilledButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.actionClose),
+          AppButton(
+            onPressed: () => m3.Navigator.pop(context),
+            style: m3e.M3EButtonStyle.filled,
+            label: m3.Text(l10n.actionClose),
           ),
         ],
       ),
@@ -317,20 +345,20 @@ class _Section extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = FluentTheme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.resources.cardBackgroundFillColorSecondary,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: theme.resources.dividerStrokeColorDefault),
+    final scheme = m3.Theme.of(context).colorScheme;
+    return m3.Container(
+      padding: const m3.EdgeInsets.all(14),
+      decoration: m3.BoxDecoration(
+        color: scheme.surfaceContainerLow,
+        borderRadius: m3.BorderRadius.circular(14),
+        border: m3.Border.all(color: scheme.outlineVariant),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: m3.Column(
+        crossAxisAlignment: m3.CrossAxisAlignment.stretch,
         children: [
-          Text(title, style: theme.typography.bodyStrong),
-          const SizedBox(height: 10),
-          for (final child in children) ...[child, const SizedBox(height: 8)],
+          m3.Text(title, style: AppTheme.label(context)),
+          const m3.SizedBox(height: 10),
+          for (final child in children) ...[child, const m3.SizedBox(height: 8)],
         ],
       ),
     );
@@ -347,34 +375,34 @@ class _Row extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = FluentTheme.of(context);
+    final scheme = m3.Theme.of(context).colorScheme;
     final hint = this.hint;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return m3.Row(
+      crossAxisAlignment: m3.CrossAxisAlignment.start,
       children: [
-        SizedBox(
+        m3.SizedBox(
           width: 180,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: m3.Column(
+            crossAxisAlignment: m3.CrossAxisAlignment.start,
             children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Text(label, style: theme.typography.body),
+              m3.Padding(
+                padding: const m3.EdgeInsets.only(top: 6),
+                child: m3.Text(label, style: AppTheme.body(context)),
               ),
               if (hint != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Text(
+                m3.Padding(
+                  padding: const m3.EdgeInsets.only(top: 2),
+                  child: m3.Text(
                     hint,
-                    style: theme.typography.caption?.copyWith(
-                      color: theme.inactiveColor,
+                    style: AppTheme.caption(context).copyWith(
+                      color: scheme.onSurfaceVariant,
                     ),
                   ),
                 ),
             ],
           ),
         ),
-        Expanded(child: child),
+        m3.Expanded(child: child),
       ],
     );
   }
@@ -393,17 +421,17 @@ class _ReadOnlyRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = FluentTheme.of(context);
+    final scheme = m3.Theme.of(context).colorScheme;
     return _Row(
       label: label,
-      child: Padding(
-        padding: const EdgeInsets.only(top: 6),
-        child: SelectableText(
+      child: m3.Padding(
+        padding: const m3.EdgeInsets.only(top: 6),
+        child: m3.SelectableText(
           value,
-          style: theme.typography.body?.copyWith(
-            fontFamily: monospace ? 'Consolas' : null,
-            color: theme.inactiveColor,
-          ),
+          style: (monospace
+                  ? AppTheme.mono(context)
+                  : AppTheme.body(context))
+              .copyWith(color: scheme.onSurfaceVariant),
         ),
       ),
     );
@@ -456,10 +484,11 @@ class _NameRowState extends State<_NameRow> {
   Widget build(BuildContext context) {
     return _Row(
       label: context.l10n.instanceNameLabel,
-      child: TextBox(
-        key: const ValueKey('instance-name'),
+      child: m3e.M3ETextField(
+        key: const m3.ValueKey('instance-name'),
         controller: _controller,
         focusNode: _focus,
+        label: context.l10n.instanceNameLabel,
         placeholder: context.l10n.instanceNameHint,
         onSubmitted: (_) => _commit(),
       ),
@@ -480,31 +509,42 @@ class _IsolationRow extends StatelessWidget {
     return _Row(
       label: l10n.instanceIsolationLabel,
       hint: l10n.instanceIsolationHint,
-      child: Align(
-        alignment: AlignmentDirectional.centerStart,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      child: m3.Align(
+        alignment: m3.AlignmentDirectional.centerStart,
+        child: m3.Column(
+          crossAxisAlignment: m3.CrossAxisAlignment.start,
           children: [
-            ToggleSwitch(
-              key: const ValueKey('instance-isolation'),
-              checked: isolated,
-              onChanged: (value) => onChanged(
-                value ? IsolationKind.isolated : IsolationKind.shareLibraries,
-              ),
-              content: Text(
-                isolated ? l10n.instanceIsolationOn : l10n.instanceIsolationOff,
-              ),
+            m3.Row(
+              children: [
+                m3e.M3ESwitch(
+                  key: const m3.ValueKey('instance-isolation'),
+                  value: isolated,
+                  onChanged: (value) => onChanged(
+                    value
+                        ? IsolationKind.isolated
+                        : IsolationKind.shareLibraries,
+                  ),
+                  semanticLabel: l10n.instanceIsolationLabel,
+                ),
+                const m3.SizedBox(width: 10),
+                m3.Text(
+                  isolated
+                      ? l10n.instanceIsolationOn
+                      : l10n.instanceIsolationOff,
+                  style: AppTheme.body(context),
+                ),
+              ],
             ),
             // Turning this on does not migrate anything: the instance simply
             // starts reading an empty directory. Saying so is the difference
             // between "where did my world go" and an informed choice.
             if (isolated)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: InfoBar(
-                  key: const ValueKey('instance-isolation-empty'),
-                  title: Text(l10n.instanceIsolationEmpty),
-                  severity: InfoBarSeverity.warning,
+              m3.Padding(
+                padding: const m3.EdgeInsets.only(top: 8),
+                child: AppBanner(
+                  key: const m3.ValueKey('instance-isolation-empty'),
+                  severity: BannerSeverity.warning,
+                  message: l10n.instanceIsolationEmpty,
                 ),
               ),
           ],
@@ -525,29 +565,36 @@ class _MemoryRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
-    final theme = FluentTheme.of(context);
+    final scheme = m3.Theme.of(context).colorScheme;
     final global = ref.watch(appSettingsMemoryProvider);
     final value = instance.memoryMb;
 
     return _Row(
       label: l10n.instanceMemoryLabel,
       hint: l10n.instanceMemoryHint,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: m3.Column(
+        crossAxisAlignment: m3.CrossAxisAlignment.stretch,
         children: [
-          ToggleSwitch(
-            key: const ValueKey('instance-memory-override'),
-            checked: value != null,
-            onChanged: (on) => onChanged(on ? global : null),
-            content: Text(
-              value == null
-                  ? l10n.instanceMemoryUsingDefault(global)
-                  : l10n.instanceMemoryMb(value),
-            ),
+          m3.Row(
+            children: [
+              m3e.M3ESwitch(
+                key: const m3.ValueKey('instance-memory-override'),
+                value: value != null,
+                onChanged: (on) => onChanged(on ? global : null),
+                semanticLabel: l10n.instanceMemoryLabel,
+              ),
+              const m3.SizedBox(width: 10),
+              m3.Text(
+                value == null
+                    ? l10n.instanceMemoryUsingDefault(global)
+                    : l10n.instanceMemoryMb(value),
+                style: AppTheme.body(context),
+              ),
+            ],
           ),
           if (value != null) ...[
-            const SizedBox(height: 6),
-            Slider(
+            const m3.SizedBox(height: 6),
+            m3e.M3ESlider(
               value: clampMemoryMb(value).toDouble(),
               min: kMinMemoryMb.toDouble(),
               max: kMaxMemoryMb.toDouble(),
@@ -555,12 +602,13 @@ class _MemoryRow extends ConsumerWidget {
               // continuous slider invites pointless precision.
               divisions: (kMaxMemoryMb - kMinMemoryMb) ~/ 1024,
               label: l10n.instanceMemoryMb(value),
+              semanticLabel: l10n.instanceMemoryLabel,
               onChanged: (v) => onChanged((v / 1024).round() * 1024),
             ),
-            Text(
+            m3.Text(
               l10n.instanceMemoryBigger,
-              style: theme.typography.caption?.copyWith(
-                color: theme.inactiveColor,
+              style: AppTheme.caption(context).copyWith(
+                color: scheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -633,29 +681,42 @@ class _JavaRowState extends ConsumerState<_JavaRow> {
     final instance = widget.instance;
     final onChanged = widget.onChanged;
     final l10n = context.l10n;
-    final theme = FluentTheme.of(context);
+    final scheme = m3.Theme.of(context).colorScheme;
+    final expressiveScheme = m3e.M3ETheme.of(context).colorScheme;
     final runtimes = ref.watch(javaRuntimesProvider).value ?? const [];
+
+    // `null` is a real choice here ("use the launcher's automatic pick"), and
+    // `DropdownButtonFormField` keys its items by value, so the sentinel string
+    // carries that meaning through the widget and is mapped back on select.
+    const automatic = '\u0000automatic';
+    final selectedValue = instance.javaPath ?? automatic;
 
     return _Row(
       label: l10n.instanceJavaLabel,
       hint: l10n.instanceJavaHint,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: m3.Column(
+        crossAxisAlignment: m3.CrossAxisAlignment.stretch,
         children: [
-          ComboBox<String?>(
-            key: const ValueKey('instance-java'),
+          m3.DropdownButtonFormField<String>(
+            key: const m3.ValueKey('instance-java'),
+            initialValue: selectedValue,
             isExpanded: true,
-            value: instance.javaPath,
-            onChanged: (value) => onChanged(value),
+            decoration: m3.InputDecoration(
+              border: const m3.OutlineInputBorder(),
+              contentPadding: const m3.EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
+            ),
             items: [
-              ComboBoxItem(
-                value: null,
-                child: Text(l10n.instanceJavaAutomatic),
+              m3.DropdownMenuItem(
+                value: automatic,
+                child: m3.Text(l10n.instanceJavaAutomatic),
               ),
               for (final runtime in runtimes)
-                ComboBoxItem(
+                m3.DropdownMenuItem(
                   value: runtime.executable,
-                  child: Text(
+                  child: m3.Text(
                     runtime.majorVersion == null
                         ? runtime.versionName
                         : 'Java ${runtime.majorVersion!.majorVersion}'
@@ -666,24 +727,25 @@ class _JavaRowState extends ConsumerState<_JavaRow> {
               // is configured with, even if this launcher never scanned it.
               if (instance.javaPath != null &&
                   !runtimes.any((r) => r.executable == instance.javaPath))
-                ComboBoxItem(
+                m3.DropdownMenuItem(
                   value: instance.javaPath,
-                  child: Text(instance.javaPath!),
+                  child: m3.Text(instance.javaPath!),
                 ),
             ],
+            onChanged: (value) => onChanged(value == automatic ? null : value),
           ),
-          const SizedBox(height: 6),
-          Text(
+          const m3.SizedBox(height: 6),
+          m3.Text(
             runtimes.isEmpty
                 ? l10n.instanceJavaNoneDownloaded
                 : l10n.instanceJavaHintDetail,
-            style: theme.typography.caption?.copyWith(
-              color: theme.inactiveColor,
+            style: AppTheme.caption(context).copyWith(
+              color: scheme.onSurfaceVariant,
             ),
           ),
           if (instance.javaPath != null) ...[
-            const SizedBox(height: 8),
-            _javaTestRow(context, l10n, theme, instance.javaPath!),
+            const m3.SizedBox(height: 8),
+            _javaTestRow(context, l10n, expressiveScheme, instance.javaPath!),
           ],
         ],
       ),
@@ -693,49 +755,39 @@ class _JavaRowState extends ConsumerState<_JavaRow> {
   Widget _javaTestRow(
     BuildContext context,
     AppLocalizations l10n,
-    FluentThemeData theme,
+    m3e.M3EColorScheme scheme,
     String executable,
   ) {
     final result = _resultFor == executable ? _result : null;
     final running = result is _ProbeRunning;
-    final caption = theme.typography.caption?.copyWith(
-      color: theme.inactiveColor,
+    final caption = AppTheme.caption(context).copyWith(
+      color: scheme.onSurfaceVariant,
     );
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return m3.Column(
+      crossAxisAlignment: m3.CrossAxisAlignment.start,
       children: [
-        Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: Button(
-            key: const ValueKey('instance-java-test'),
+        m3.Align(
+          alignment: m3.AlignmentDirectional.centerStart,
+          child: AppButton(
+            key: const m3.ValueKey('instance-java-test'),
             onPressed: running ? null : () => _test(executable),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (running) ...[
-                  const SizedBox(
-                    width: 12,
-                    height: 12,
-                    child: ProgressRing(strokeWidth: 2),
-                  ),
-                  const SizedBox(width: 8),
-                ],
-                Text(
-                  running
-                      ? l10n.instanceJavaTestRunning
-                      : l10n.instanceJavaTest,
-                ),
-              ],
+            style: m3e.M3EButtonStyle.outlined,
+            size: m3e.M3EButtonSize.sm,
+            label: m3.Text(
+              running ? l10n.instanceJavaTestRunning : l10n.instanceJavaTest,
             ),
           ),
         ),
         if (result != null && !running)
-          Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: InfoBar(
-              key: const ValueKey('instance-java-test-result'),
-              title: Text(switch (result) {
+          m3.Padding(
+            padding: const m3.EdgeInsets.only(top: 6),
+            child: AppBanner(
+              key: const m3.ValueKey('instance-java-test-result'),
+              severity: result is _ProbeOk
+                  ? BannerSeverity.success
+                  : BannerSeverity.error,
+              message: switch (result) {
                 _ProbeOk(:final major, :final version, :final vendor) =>
                   l10n.instanceJavaTestOk(
                     major,
@@ -743,16 +795,13 @@ class _JavaRowState extends ConsumerState<_JavaRow> {
                     vendor.isEmpty ? l10n.instanceJavaTestNoVendor : vendor,
                   ),
                 _ => l10n.instanceJavaTestFailed,
-              }),
-              severity: result is _ProbeOk
-                  ? InfoBarSeverity.success
-                  : InfoBarSeverity.error,
+              },
             ),
           ),
         if (result == null && !running)
-          Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Text(l10n.instanceJavaTestHint, style: caption),
+          m3.Padding(
+            padding: const m3.EdgeInsets.only(top: 6),
+            child: m3.Text(l10n.instanceJavaTestHint, style: caption),
           ),
       ],
     );

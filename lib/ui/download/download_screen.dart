@@ -1,13 +1,19 @@
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_3_expressive/material_3_expressive.dart' as m3e;
+import 'package:material_ui/material_ui.dart' as m3;
+import 'package:oh_my_mc/ui/components/app_button.dart';
 
 import '../../core/install/version_installer.dart';
 import '../../core/net/progress.dart';
 import '../../core/net/version_manifest.dart';
 import '../../data/install_providers.dart';
 import '../../l10n/l10n.dart';
+import '../components/app_banner.dart';
+import '../components/hover_row.dart';
 import '../motion/motion.dart';
 import '../shell/shell_icons.dart';
+import '../theme/app_theme.dart';
 
 /// One manifest entry, flattened for the widget layer.
 ///
@@ -71,8 +77,8 @@ class _DownloadScreenState extends ConsumerState<DownloadScreen> {
     final installed = ref.watch(installedVersionsProvider);
     final query = _search.text.trim().toLowerCase();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return m3.Column(
+      crossAxisAlignment: m3.CrossAxisAlignment.stretch,
       children: [
         _Toolbar(
           search: _search,
@@ -81,9 +87,11 @@ class _DownloadScreenState extends ConsumerState<DownloadScreen> {
           onQuery: () => setState(() {}),
         ),
         if (install is! InstallIdle) _InstallPanel(state: install),
-        Expanded(
+        m3.Expanded(
           child: switch (list) {
-            VersionListLoading() => const Center(child: ProgressRing()),
+            VersionListLoading() => const m3.Center(
+              child: m3.CircularProgressIndicator(),
+            ),
             VersionListFailed(:final message) => _ListFailure(message: message),
             VersionListReady(:final manifest, :final fromCache) => _VersionList(
               versions: [
@@ -124,32 +132,36 @@ class _Toolbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = FluentTheme.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Row(
+    final scheme = m3.Theme.of(context).colorScheme;
+    return m3.Padding(
+      padding: const m3.EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: m3.Row(
         children: [
-          Text(l10n.downloadVersions, style: theme.typography.title),
-          const SizedBox(width: 16),
-          Expanded(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 320),
-              child: TextBox(
+          m3.Text(l10n.downloadVersions, style: AppTheme.title(context)),
+          const m3.SizedBox(width: 16),
+          m3.Expanded(
+            child: m3.ConstrainedBox(
+              constraints: const m3.BoxConstraints(maxWidth: 340),
+              child: m3e.M3ETextField(
                 controller: search,
                 placeholder: l10n.downloadSearchHint,
-                prefix: const Padding(
-                  padding: EdgeInsets.only(left: 8),
-                  child: Icon(ShellIcons.search, size: 14),
-                ),
+                leading: const m3.Icon(ShellIcons.search, size: 15),
                 onChanged: (_) => onQuery(),
               ),
             ),
           ),
-          const SizedBox(width: 12),
-          ToggleSwitch(
-            checked: snapshots,
+          const m3.SizedBox(width: 12),
+          m3e.M3ESwitch(
+            value: snapshots,
             onChanged: onSnapshots,
-            content: Text(l10n.downloadShowSnapshots),
+            semanticLabel: l10n.downloadShowSnapshots,
+          ),
+          const m3.SizedBox(width: 8),
+          m3.Text(
+            l10n.downloadShowSnapshots,
+            style: AppTheme.body(context).copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
           ),
         ],
       ),
@@ -177,32 +189,31 @@ class _VersionList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = FluentTheme.of(context);
 
     if (versions.isEmpty) {
-      return Center(
-        child: Text(
+      return m3.Center(
+        child: m3.Text(
           query.isEmpty
               ? l10n.downloadVersions
               : l10n.downloadSearchEmpty(query),
-          key: const ValueKey('download-empty'),
-          style: theme.typography.body,
+          key: const m3.ValueKey('download-empty'),
+          style: AppTheme.body(context),
         ),
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return m3.Column(
+      crossAxisAlignment: m3.CrossAxisAlignment.stretch,
       children: [
         if (stale)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: InfoBar(
-              title: Text(l10n.downloadStaleCache),
-              severity: InfoBarSeverity.warning,
+          m3.Padding(
+            padding: const m3.EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: AppBanner(
+              severity: BannerSeverity.warning,
+              message: l10n.downloadStaleCache,
             ),
           ),
-        Expanded(
+        m3.Expanded(
           child: StaggerList(
             itemCount: versions.length,
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -235,52 +246,45 @@ class _VersionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = FluentTheme.of(context);
+    final scheme = m3.Theme.of(context).colorScheme;
+    final expressive = m3e.M3ETheme.of(context).colorScheme;
     final actionable = !installed && !busy;
 
-    return HoverButton(
-      onPressed: actionable ? () => onInstall(version.id) : null,
-      builder: (context, states) => Container(
-        margin: const EdgeInsets.symmetric(vertical: 2),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: states.isHovered && actionable
-              ? theme.resources.subtleFillColorSecondary
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 28,
-              child: Icon(
-                installed ? ShellIcons.check : ShellIcons.download,
-                size: 16,
-                color: installed
-                    ? theme.resources.systemFillColorSuccess
-                    : theme.inactiveColor,
+    return HoverRow(
+      onTap: actionable ? () => onInstall(version.id) : null,
+      builder: (hovered) => m3.Row(
+        children: [
+          m3.SizedBox(
+            width: 28,
+            child: m3.Icon(
+              installed ? ShellIcons.check : ShellIcons.download,
+              size: 16,
+              color: installed
+                  ? expressive.success
+                  : scheme.onSurfaceVariant,
+            ),
+          ),
+          m3.Expanded(
+            child: m3.Text(version.id, style: AppTheme.body(context)),
+          ),
+          m3.Text(
+            version.isRelease ? l10n.downloadRelease : l10n.downloadSnapshot,
+            style: AppTheme.caption(context).copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+          const m3.SizedBox(width: 16),
+          m3.SizedBox(
+            width: 96,
+            child: m3.Text(
+              installed ? l10n.downloadInstalled : '',
+              textAlign: m3.TextAlign.end,
+              style: AppTheme.caption(context).copyWith(
+                color: expressive.success,
               ),
             ),
-            Expanded(child: Text(version.id, style: theme.typography.body)),
-            Text(
-              version.isRelease ? l10n.downloadRelease : l10n.downloadSnapshot,
-              style: theme.typography.caption?.copyWith(
-                color: theme.inactiveColor,
-              ),
-            ),
-            const SizedBox(width: 16),
-            SizedBox(
-              width: 96,
-              child: Text(
-                installed ? l10n.downloadInstalled : '',
-                textAlign: TextAlign.end,
-                style: theme.typography.caption?.copyWith(
-                  color: theme.resources.systemFillColorSuccess,
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -297,20 +301,19 @@ class _InstallPanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = FluentTheme.of(context);
+    final scheme = m3.Theme.of(context).colorScheme;
     final notifier = ref.read(installControllerProvider.notifier);
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: theme.resources.cardBackgroundFillColorSecondary,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: theme.resources.dividerStrokeColorDefault),
+    return m3.Padding(
+      padding: const m3.EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: m3.Container(
+        padding: const m3.EdgeInsets.all(14),
+        decoration: m3.BoxDecoration(
+          color: scheme.surfaceContainerHigh,
+          borderRadius: m3.BorderRadius.circular(14),
         ),
         child: switch (state) {
-          InstallIdle() => const SizedBox.shrink(),
+          InstallIdle() => const m3.SizedBox.shrink(),
           InstallRunning running => _Running(state: running),
           InstallDone(:final versionId, :final problemCount) => _Done(
             versionId: versionId,
@@ -341,66 +344,71 @@ class _Running extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
-    final theme = FluentTheme.of(context);
+    final scheme = m3.Theme.of(context).colorScheme;
     final progress = state.progress;
     final download = progress.download;
     final rate = state.bytesPerSecond;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return m3.Column(
+      crossAxisAlignment: m3.CrossAxisAlignment.stretch,
       children: [
-        Row(
+        m3.Row(
           children: [
-            Expanded(
-              child: Text(
+            m3.Expanded(
+              child: m3.Text(
                 l10n.downloadInstalling(state.versionId),
-                style: theme.typography.bodyStrong,
+                style: AppTheme.subtitle(context),
               ),
             ),
-            Text(
+            m3.Text(
               l10n.downloadStepOf(progress.step, progress.steps),
-              style: theme.typography.caption?.copyWith(
-                color: theme.inactiveColor,
+              style: AppTheme.caption(context).copyWith(
+                color: scheme.onSurfaceVariant,
               ),
             ),
-            const SizedBox(width: 12),
-            Button(
+            const m3.SizedBox(width: 12),
+            AppButton(
               onPressed: () =>
                   ref.read(installControllerProvider.notifier).cancel(),
-              child: Text(l10n.downloadCancel),
+              style: m3e.M3EButtonStyle.outlined,
+              size: m3e.M3EButtonSize.sm,
+              label: m3.Text(l10n.downloadCancel),
             ),
           ],
         ),
-        const SizedBox(height: 8),
-        // `null` is Fluent's indeterminate bar. A phase without a byte counter
-        // (unpacking natives) would otherwise freeze a determinate bar at 0%,
-        // which reads as a hang.
-        ProgressBar(value: download == null ? null : state.fraction * 100),
-        const SizedBox(height: 6),
-        Row(
+        const m3.SizedBox(height: 8),
+        // A phase without a byte counter (unpacking natives) has no fraction, so
+        // the bar goes indeterminate instead of freezing at 0%, which reads as a
+        // hang.
+        if (download == null)
+          const MotionRespectingProgressBar()
+        else
+          m3.LinearProgressIndicator(value: state.fraction.clamp(0.0, 1.0)),
+        const m3.SizedBox(height: 6),
+        m3.Row(
           children: [
-            Expanded(
-              child: Text(
+            m3.Expanded(
+              child: m3.Text(
                 phaseLabel(l10n, progress.phase),
-                style: theme.typography.caption,
+                style: AppTheme.caption(context),
               ),
             ),
             if (download != null) ...[
-              Text(
+              m3.Text(
                 l10n.downloadBytes(
                   formatBytes(download.bytesDone),
                   formatBytes(download.bytesTotal),
                 ),
-                style: theme.typography.caption,
+                style: AppTheme.caption(context),
               ),
               if (rate != null) ...[
-                const SizedBox(width: 12),
-                Text(
+                const m3.SizedBox(width: 12),
+                m3.Text(
                   // `formatRate` already appends "/s": passing it through the
                   // ".../s" message would render "1.0 MB/s/s".
                   l10n.downloadRate(formatBytes(rate.round())),
-                  style: theme.typography.caption?.copyWith(
-                    color: theme.inactiveColor,
+                  style: AppTheme.caption(context).copyWith(
+                    color: scheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -439,26 +447,30 @@ class _Done extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = FluentTheme.of(context);
+    final scheme = m3e.M3ETheme.of(context).colorScheme;
     final clean = problemCount == 0;
-    return Row(
+    return m3.Row(
       children: [
-        Icon(
-          clean ? ShellIcons.check : ShellIcons.warning,
+        m3.Icon(
+          clean ? ShellIcons.checkCircle : ShellIcons.warning,
           size: 16,
-          color: clean
-              ? theme.resources.systemFillColorSuccess
-              : theme.resources.systemFillColorCaution,
+          color: clean ? scheme.success : scheme.warning,
         ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
+        const m3.SizedBox(width: 8),
+        m3.Expanded(
+          child: m3.Text(
             clean
                 ? l10n.downloadComplete(versionId)
                 : l10n.downloadCompleteWithProblems(versionId, problemCount),
+            style: AppTheme.body(context),
           ),
         ),
-        Button(onPressed: onClose, child: Text(l10n.actionClose)),
+        AppButton(
+          onPressed: onClose,
+          style: m3e.M3EButtonStyle.text,
+          size: m3e.M3EButtonSize.sm,
+          label: m3.Text(l10n.actionClose),
+        ),
       ],
     );
   }
@@ -472,10 +484,15 @@ class _Message extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return m3.Row(
       children: [
-        Expanded(child: Text(text)),
-        Button(onPressed: onClose, child: Text(context.l10n.actionClose)),
+        m3.Expanded(child: m3.Text(text, style: AppTheme.body(context))),
+        AppButton(
+          onPressed: onClose,
+          style: m3e.M3EButtonStyle.text,
+          size: m3e.M3EButtonSize.sm,
+          label: m3.Text(context.l10n.actionClose),
+        ),
       ],
     );
   }
@@ -497,29 +514,35 @@ class _Failure extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = FluentTheme.of(context);
-    return Row(
+    final scheme = m3.Theme.of(context).colorScheme;
+    return m3.Row(
       children: [
-        Icon(
-          ShellIcons.error,
-          size: 16,
-          color: theme.resources.systemFillColorCritical,
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        m3.Icon(ShellIcons.error, size: 16, color: scheme.error),
+        const m3.SizedBox(width: 8),
+        m3.Expanded(
+          child: m3.Column(
+            crossAxisAlignment: m3.CrossAxisAlignment.start,
             children: [
-              Text(l10n.errorDownloadFailed),
+              m3.Text(l10n.errorDownloadFailed, style: AppTheme.body(context)),
               // The installer's own text, unlocalized on purpose: it names the
               // actual cause, and a generic message would hide it.
-              SelectableText(message, style: theme.typography.caption),
+              m3.SelectableText(message, style: AppTheme.caption(context)),
             ],
           ),
         ),
-        Button(onPressed: onRetry, child: Text(l10n.actionRetry)),
-        const SizedBox(width: 8),
-        Button(onPressed: onClose, child: Text(l10n.actionClose)),
+        AppButton(
+          onPressed: onRetry,
+          style: m3e.M3EButtonStyle.outlined,
+          size: m3e.M3EButtonSize.sm,
+          label: m3.Text(l10n.actionRetry),
+        ),
+        const m3.SizedBox(width: 8),
+        AppButton(
+          onPressed: onClose,
+          style: m3e.M3EButtonStyle.text,
+          size: m3e.M3EButtonSize.sm,
+          label: m3.Text(l10n.actionClose),
+        ),
       ],
     );
   }
@@ -533,23 +556,20 @@ class _ListFailure extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
-    final theme = FluentTheme.of(context);
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+    final scheme = m3.Theme.of(context).colorScheme;
+    return m3.Center(
+      child: m3.Column(
+        mainAxisSize: m3.MainAxisSize.min,
         children: [
-          Icon(
-            ShellIcons.error,
-            size: 32,
-            color: theme.resources.systemFillColorCritical,
-          ),
-          const SizedBox(height: 8),
-          SelectableText(message, style: theme.typography.caption),
-          const SizedBox(height: 12),
-          FilledButton(
+          m3.Icon(ShellIcons.error, size: 32, color: scheme.error),
+          const m3.SizedBox(height: 8),
+          m3.SelectableText(message, style: AppTheme.caption(context)),
+          const m3.SizedBox(height: 12),
+          AppButton(
             onPressed: () =>
                 ref.read(versionListProvider.notifier).load(forceRefresh: true),
-            child: Text(l10n.downloadRetry),
+            style: m3e.M3EButtonStyle.filled,
+            label: m3.Text(l10n.downloadRetry),
           ),
         ],
       ),

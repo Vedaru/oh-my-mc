@@ -1,5 +1,7 @@
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_3_expressive/material_3_expressive.dart' as m3e;
+import 'package:material_ui/material_ui.dart' as m3;
 
 import '../../app/providers.dart';
 import '../../core/instance/memory.dart';
@@ -7,6 +9,7 @@ import '../../data/settings.dart';
 import '../../l10n/l10n.dart';
 import '../motion/motion.dart';
 import '../shell/shell_icons.dart';
+import '../theme/app_theme.dart';
 import 'java_panel.dart';
 
 /// Everything the launcher lets a user change.
@@ -20,19 +23,18 @@ class SetupScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
-    final theme = FluentTheme.of(context);
     final settings = ref.watch(appSettingsProvider);
     final notifier = ref.read(appSettingsProvider.notifier);
 
     return MotionEntrance(
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Text(l10n.navSetup, style: theme.typography.title),
+        m3.Padding(
+          padding: const m3.EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: m3.Text(l10n.navSetup, style: AppTheme.title(context)),
         ),
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        m3.Expanded(
+          child: m3.ListView(
+            padding: const m3.EdgeInsets.fromLTRB(16, 0, 16, 16),
             children: [
               _Section(
                 title: l10n.setupLanguage,
@@ -53,7 +55,7 @@ class SetupScreen extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const m3.SizedBox(height: 12),
               _Section(
                 title: l10n.setupUi,
                 children: [
@@ -74,22 +76,29 @@ class SetupScreen extends ConsumerWidget {
                   _SettingRow(
                     label: l10n.setupMotion,
                     hint: l10n.setupMotionHint,
-                    child: ToggleSwitch(
-                      key: const ValueKey('setup-motion'),
-                      checked: settings.uiAnimations,
-                      // Turning this on cannot override the OS accessibility
-                      // setting: MotionScope ORs them.
-                      onChanged: notifier.setUiAnimations,
-                      content: Text(
-                        settings.uiAnimations
-                            ? l10n.setupMotionOn
-                            : l10n.setupMotionOff,
-                      ),
+                    child: m3.Row(
+                      children: [
+                        m3e.M3ESwitch(
+                          key: const m3.ValueKey('setup-motion'),
+                          value: settings.uiAnimations,
+                          // Turning this on cannot override the OS accessibility
+                          // setting: MotionScope ORs them.
+                          onChanged: notifier.setUiAnimations,
+                          semanticLabel: l10n.setupMotion,
+                        ),
+                        const m3.SizedBox(width: 10),
+                        m3.Text(
+                          settings.uiAnimations
+                              ? l10n.setupMotionOn
+                              : l10n.setupMotionOff,
+                          style: AppTheme.body(context),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const m3.SizedBox(height: 12),
               _Section(
                 title: l10n.setupLaunch,
                 children: [
@@ -97,7 +106,7 @@ class SetupScreen extends ConsumerWidget {
                   _GlobalMemoryRow(settings: settings),
                 ],
               ),
-              const SizedBox(height: 12),
+              const m3.SizedBox(height: 12),
               _Section(
                 title: l10n.setupJava,
                 children: const [JavaRuntimeList()],
@@ -118,20 +127,23 @@ class _Section extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = FluentTheme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.resources.cardBackgroundFillColorSecondary,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: theme.resources.dividerStrokeColorDefault),
+    final scheme = m3.Theme.of(context).colorScheme;
+    return m3.Container(
+      padding: const m3.EdgeInsets.all(14),
+      decoration: m3.BoxDecoration(
+        color: scheme.surfaceContainerLow,
+        borderRadius: m3.BorderRadius.circular(14),
+        border: m3.Border.all(color: scheme.outlineVariant),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: m3.Column(
+        crossAxisAlignment: m3.CrossAxisAlignment.stretch,
         children: [
-          Text(title, style: theme.typography.bodyStrong),
-          const SizedBox(height: 10),
-          for (final child in children) ...[child, const SizedBox(height: 10)],
+          m3.Text(title, style: AppTheme.label(context)),
+          const m3.SizedBox(height: 10),
+          for (final child in children) ...[
+            child,
+            const m3.SizedBox(height: 10),
+          ],
         ],
       ),
     );
@@ -152,34 +164,34 @@ class _SettingRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = FluentTheme.of(context);
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final scheme = m3.Theme.of(context).colorScheme;
+    return m3.Row(
+      crossAxisAlignment: m3.CrossAxisAlignment.start,
       children: [
-        SizedBox(
+        m3.SizedBox(
           width: 200,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: m3.Column(
+            crossAxisAlignment: m3.CrossAxisAlignment.start,
             children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Text(label, style: theme.typography.body),
+              m3.Padding(
+                padding: const m3.EdgeInsets.only(top: 6),
+                child: m3.Text(label, style: AppTheme.body(context)),
               ),
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Text(
+              m3.Padding(
+                padding: const m3.EdgeInsets.only(top: 2),
+                child: m3.Text(
                   hint,
-                  style: theme.typography.caption?.copyWith(
-                    color: theme.inactiveColor,
+                  style: AppTheme.caption(context).copyWith(
+                    color: scheme.onSurfaceVariant,
                   ),
                 ),
               ),
             ],
           ),
         ),
-        Expanded(
-          child: Align(
-            alignment: AlignmentDirectional.centerStart,
+        m3.Expanded(
+          child: m3.Align(
+            alignment: m3.AlignmentDirectional.centerStart,
             child: child,
           ),
         ),
@@ -205,19 +217,21 @@ class _Choice<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return RadioGroup<T>(
+    return m3e.M3ERadioGroup<T>(
       groupValue: value,
-      onChanged: (selected) {
-        if (selected != null) onChanged(selected);
-      },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      onChanged: onChanged,
+      child: m3.Column(
+        crossAxisAlignment: m3.CrossAxisAlignment.start,
         children: [
           for (final entry in options.entries)
-            RadioButton<T>(
-              key: ValueKey('$keyPrefix-${entry.key}'),
+            m3e.M3ERadio<T>(
+              key: m3.ValueKey('$keyPrefix-${entry.key}'),
               value: entry.key,
-              content: Text(entry.value),
+              groupValue: value,
+              onChanged: (selected) {
+                if (selected != null) onChanged(selected);
+              },
+              label: m3.Text(entry.value, style: AppTheme.body(context)),
             ),
         ],
       ),
@@ -282,10 +296,10 @@ class _PlayerNameRowState extends ConsumerState<_PlayerNameRow> {
     return _SettingRow(
       label: l10n.setupPlayerName,
       hint: l10n.setupPlayerNameHint,
-      child: SizedBox(
-        width: 220,
-        child: TextBox(
-          key: const ValueKey('setup-player-name'),
+      child: m3.SizedBox(
+        width: 260,
+        child: m3e.M3ETextField(
+          key: const m3.ValueKey('setup-player-name'),
           controller: _controller,
           focusNode: _focus,
           onSubmitted: (_) => _commit(),
@@ -317,41 +331,52 @@ class _GlobalMemoryRowState extends ConsumerState<_GlobalMemoryRow> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = FluentTheme.of(context);
+    final scheme = m3.Theme.of(context).colorScheme;
     final value = _dragging ?? widget.settings.memoryMb;
 
     return _SettingRow(
       label: l10n.setupMemory,
       hint: l10n.setupMemoryHint,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: m3.Column(
+        crossAxisAlignment: m3.CrossAxisAlignment.stretch,
         children: [
-          Text(l10n.instanceMemoryMb(value), style: theme.typography.body),
-          Slider(
-            key: const ValueKey('setup-memory'),
+          m3.Text(
+            l10n.instanceMemoryMb(value),
+            style: AppTheme.body(context),
+          ),
+          m3e.M3ESlider(
+            key: const m3.ValueKey('setup-memory'),
             value: clampMemoryMb(value).toDouble(),
             min: kMinMemoryMb.toDouble(),
             max: kMaxMemoryMb.toDouble(),
             divisions: (kMaxMemoryMb - kMinMemoryMb) ~/ _step,
+            semanticLabel: l10n.setupMemory,
             onChanged: (v) =>
                 setState(() => _dragging = (v / _step).round() * _step),
-            onChangeEnd: (v) {
-              final mb = (v / _step).round() * _step;
+            // `onChangeEnd` reports the value the widget was built with, not the
+            // one the drag produced, so the released value comes from `_dragging`.
+            onChangeEnd: (_) {
+              final mb = _dragging;
+              if (mb == null) return;
               setState(() => _dragging = null);
               ref
                   .read(appSettingsProvider.notifier)
                   .set(widget.settings.copyWith(memoryMb: mb));
             },
           ),
-          Row(
+          m3.Row(
             children: [
-              Icon(ShellIcons.warning, size: 12, color: theme.inactiveColor),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
+              m3.Icon(
+                ShellIcons.warning,
+                size: 13,
+                color: scheme.onSurfaceVariant,
+              ),
+              const m3.SizedBox(width: 5),
+              m3.Expanded(
+                child: m3.Text(
                   l10n.instanceMemoryBigger,
-                  style: theme.typography.caption?.copyWith(
-                    color: theme.inactiveColor,
+                  style: AppTheme.caption(context).copyWith(
+                    color: scheme.onSurfaceVariant,
                   ),
                 ),
               ),

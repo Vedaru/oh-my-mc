@@ -1,5 +1,5 @@
 import 'package:animations/animations.dart';
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import '../l10n/l10n.dart';
