@@ -1,5 +1,10 @@
 # M3.5 implementation notes — installer glue
 
+> **DONE at `1574cb5`** (both CIs green). 323 tests pass, 1 skipped. The real
+> 1.20.1 install was run end to end: 90 s, `verifyInstall(checkHashes: true)` clean.
+> Defects found along the way are listed under "What the tests caught". The next
+> milestone is visual work, which is blocked on a design direction.
+
 Scope: make the launcher able to install a version. Pure Dart, `lib/core/install/`,
 no Flutter (import law bans the engine under `lib/core/`), no visual decisions.
 
