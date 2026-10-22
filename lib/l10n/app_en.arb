@@ -70,6 +70,26 @@
       }
     }
   },
+  "instanceDeleteConfirmFiles": "Delete {name}? Its folder and everything in it will be removed. This cannot be undone.",
+  "@instanceDeleteConfirmFiles": {
+    "description": "Confirmation before deleting an instance along with the folder that holds its own files.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "1.20.4 Vanilla"
+      }
+    }
+  },
+  "instanceDeleteFilesFailed": "The instance was removed from the list, but its folder could not be deleted. Remove it by hand: {path}",
+  "@instanceDeleteFilesFailed": {
+    "description": "Shown when an instance's folder could not be deleted after the instance itself was removed, usually because a file is held open.",
+    "placeholders": {
+      "path": {
+        "type": "String",
+        "example": "/home/me/.local/share/oh-my-mc/instances/1-20-4"
+      }
+    }
+  },
   "instanceCount": "{count, plural, =0{No instances} =1{1 instance} other{{count} instances}}",
   "@instanceCount": {
     "description": "Number of installed instances.",
@@ -272,6 +292,40 @@
   "@instanceSectionFiles": {
     "description": "Detail page section: game folder and playtime."
   },
+  "instanceSectionArguments": "Arguments",
+  "@instanceSectionArguments": {
+    "description": "Detail page section: extra JVM and game arguments."
+  },
+  "instanceJvmArgsLabel": "JVM arguments",
+  "@instanceJvmArgsLabel": {
+    "description": "Label for the extra JVM argument editor."
+  },
+  "instanceJvmArgsHint": "One per line. Passed to Java before the game starts, e.g. -XX:+UseG1GC",
+  "@instanceJvmArgsHint": {
+    "description": "Explains the JVM argument editor."
+  },
+  "instanceGameArgsLabel": "Game arguments",
+  "@instanceGameArgsLabel": {
+    "description": "Label for the extra game argument editor."
+  },
+  "instanceGameArgsHint": "One per line. Passed to the game, e.g. --fullscreen",
+  "@instanceGameArgsHint": {
+    "description": "Explains the game argument editor."
+  },
+  "instanceArgsPreview": "{count, plural, =0{No extra arguments} =1{1 argument} other{{count} arguments}}",
+  "@instanceArgsPreview": {
+    "description": "How many arguments the current text parses to, so a quoting mistake is visible before launch.",
+    "placeholders": {
+      "count": {"type": "int", "example": "2"}
+    }
+  },
+  "instanceArgsPreviewList": "Will pass: {args}",
+  "@instanceArgsPreviewList": {
+    "description": "The arguments as the launcher will pass them, one per entry, after parsing quotes.",
+    "placeholders": {
+      "args": {"type": "String", "example": "-Xmx4G, -XX:+UseG1GC"}
+    }
+  },
   "instanceNameLabel": "Name",
   "@instanceNameLabel": {
     "description": "Label for the instance name field."
@@ -287,6 +341,10 @@
   "instanceIsolationHint": "Existing files are not moved when this changes.",
   "@instanceIsolationHint": {
     "description": "Warns that toggling isolation leaves files where they are."
+  },
+  "instanceIsolationEmpty": "This instance gets an empty folder of its own. Worlds, mods and options already in the shared folder stay there and are not copied or moved.",
+  "@instanceIsolationEmpty": {
+    "description": "Warning shown when an instance is set to isolated: it starts with an empty game directory rather than migrating existing files."
   },
   "instanceIsolationOn": "Separate folder",
   "@instanceIsolationOn": {
@@ -337,6 +395,35 @@
   "instanceJavaAutomatic": "Automatic (picked by version)",
   "@instanceJavaAutomatic": {
     "description": "Default Java choice: the version decides."
+  },
+  "instanceJavaTest": "Test",
+  "@instanceJavaTest": {
+    "description": "Button that runs the selected JVM to check it works."
+  },
+  "instanceJavaTestRunning": "Checking…",
+  "@instanceJavaTestRunning": {
+    "description": "Shown while the selected JVM is being run."
+  },
+  "instanceJavaTestOk": "Works: Java {major}, {version}, {vendor}",
+  "@instanceJavaTestOk": {
+    "description": "Result of a successful JVM probe.",
+    "placeholders": {
+      "major": {"type": "int", "example": "17"},
+      "version": {"type": "String", "example": "17.0.9"},
+      "vendor": {"type": "String", "example": "Eclipse Adoptium"}
+    }
+  },
+  "instanceJavaTestNoVendor": "an unnamed vendor",
+  "@instanceJavaTestNoVendor": {
+    "description": "Fills the vendor slot when the JVM does not report one."
+  },
+  "instanceJavaTestHint": "Runs this file to confirm it starts and reports its version.",
+  "@instanceJavaTestHint": {
+    "description": "Explains what the Java test button does before it is pressed."
+  },
+  "instanceJavaTestFailed": "This file did not answer as a Java runtime. Pick another one, or download it again.",
+  "@instanceJavaTestFailed": {
+    "description": "Result of a JVM probe that produced no version, which means the file is missing, is not a JVM, or cannot run on this machine."
   },
   "instanceJavaNoneDownloaded": "No downloaded runtimes yet. Get one from Setup.",
   "@instanceJavaNoneDownloaded": {

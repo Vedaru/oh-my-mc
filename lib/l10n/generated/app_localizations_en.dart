@@ -60,6 +60,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String instanceDeleteConfirmFiles(String name) {
+    return 'Delete $name? Its folder and everything in it will be removed. This cannot be undone.';
+  }
+
+  @override
+  String instanceDeleteFilesFailed(String path) {
+    return 'The instance was removed from the list, but its folder could not be deleted. Remove it by hand: $path';
+  }
+
+  @override
   String instanceCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -218,6 +228,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String get instanceSectionFiles => 'Files';
 
   @override
+  String get instanceSectionArguments => 'Arguments';
+
+  @override
+  String get instanceJvmArgsLabel => 'JVM arguments';
+
+  @override
+  String get instanceJvmArgsHint =>
+      'One per line. Passed to Java before the game starts, e.g. -XX:+UseG1GC';
+
+  @override
+  String get instanceGameArgsLabel => 'Game arguments';
+
+  @override
+  String get instanceGameArgsHint =>
+      'One per line. Passed to the game, e.g. --fullscreen';
+
+  @override
+  String instanceArgsPreview(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count arguments',
+      one: '1 argument',
+      zero: 'No extra arguments',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String instanceArgsPreviewList(String args) {
+    return 'Will pass: $args';
+  }
+
+  @override
   String get instanceNameLabel => 'Name';
 
   @override
@@ -229,6 +273,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get instanceIsolationHint =>
       'Existing files are not moved when this changes.';
+
+  @override
+  String get instanceIsolationEmpty =>
+      'This instance gets an empty folder of its own. Worlds, mods and options already in the shared folder stay there and are not copied or moved.';
 
   @override
   String get instanceIsolationOn => 'Separate folder';
@@ -264,6 +312,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get instanceJavaAutomatic => 'Automatic (picked by version)';
+
+  @override
+  String get instanceJavaTest => 'Test';
+
+  @override
+  String get instanceJavaTestRunning => 'Checking…';
+
+  @override
+  String instanceJavaTestOk(int major, String version, String vendor) {
+    return 'Works: Java $major, $version, $vendor';
+  }
+
+  @override
+  String get instanceJavaTestNoVendor => 'an unnamed vendor';
+
+  @override
+  String get instanceJavaTestHint =>
+      'Runs this file to confirm it starts and reports its version.';
+
+  @override
+  String get instanceJavaTestFailed =>
+      'This file did not answer as a Java runtime. Pick another one, or download it again.';
 
   @override
   String get instanceJavaNoneDownloaded =>

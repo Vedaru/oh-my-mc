@@ -268,6 +268,27 @@ class JavaInstallController extends Notifier<JavaInstallState> {
 ///
 /// Deliberately not merged with `JavaManager`'s scan: this list is what the
 /// user may delete, and a system JVM must never appear in it.
+/// Probes one executable, for the detail page's "test" button.
+///
+/// Injected so a widget test answers without spawning a JVM: `Process.run` is a
+/// real future, and one that never resolves inside the fake-async zone a widget
+/// test runs in would hang the suite.
+typedef JavaProbeRunner = Future<JavaRuntime?> Function(String executable);
+
+final javaProbeRunnerProvider = Provider<JavaProbeRunner>((ref) {
+  final probe = JavaProbe(
+    runProcess: (exe, args) async {
+      final result = await Process.run(exe, args);
+      return ProcessResultLike(
+        exitCode: result.exitCode,
+        stdout: '${result.stdout}',
+        stderr: '${result.stderr}',
+      );
+    },
+  );
+  return probe.probe;
+});
+
 final javaRuntimesProvider =
     AsyncNotifierProvider<JavaRuntimesController, List<ManagedJavaRuntime>>(
       JavaRuntimesController.new,

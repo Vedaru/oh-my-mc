@@ -60,6 +60,16 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String instanceDeleteConfirmFiles(String name) {
+    return '删除 $name？其文件夹及其中所有内容都会被移除，此操作无法撤销。';
+  }
+
+  @override
+  String instanceDeleteFilesFailed(String path) {
+    return '已从列表中移除该实例，但无法删除其文件夹，请手动删除：$path';
+  }
+
+  @override
   String instanceCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -215,6 +225,37 @@ class AppLocalizationsZh extends AppLocalizations {
   String get instanceSectionFiles => '文件';
 
   @override
+  String get instanceSectionArguments => '参数';
+
+  @override
+  String get instanceJvmArgsLabel => 'JVM 参数';
+
+  @override
+  String get instanceJvmArgsHint => '每行一个，在游戏启动前传给 Java，例如 -XX:+UseG1GC';
+
+  @override
+  String get instanceGameArgsLabel => '游戏参数';
+
+  @override
+  String get instanceGameArgsHint => '每行一个，直接传给游戏，例如 --fullscreen';
+
+  @override
+  String instanceArgsPreview(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 个参数',
+      zero: '没有额外参数',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String instanceArgsPreviewList(String args) {
+    return '将传入：$args';
+  }
+
+  @override
   String get instanceNameLabel => '名称';
 
   @override
@@ -225,6 +266,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get instanceIsolationHint => '切换后已有文件不会被移动。';
+
+  @override
+  String get instanceIsolationEmpty =>
+      '此实例将使用一个空白文件夹。共享文件夹中已有的世界、模组和设置会留在原处，不会被复制或移动。';
 
   @override
   String get instanceIsolationOn => '独立目录';
@@ -259,6 +304,26 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get instanceJavaAutomatic => '自动（按版本选择）';
+
+  @override
+  String get instanceJavaTest => '测试';
+
+  @override
+  String get instanceJavaTestRunning => '正在检查…';
+
+  @override
+  String instanceJavaTestOk(int major, String version, String vendor) {
+    return '可用：Java $major，$version，$vendor';
+  }
+
+  @override
+  String get instanceJavaTestNoVendor => '未标注的供应商';
+
+  @override
+  String get instanceJavaTestHint => '运行此文件，确认它能启动并报告版本。';
+
+  @override
+  String get instanceJavaTestFailed => '该文件未能以 Java 运行时身份响应，请换一个，或重新下载。';
 
   @override
   String get instanceJavaNoneDownloaded => '还没有下载过 Java 运行时，可前往「设置」获取。';

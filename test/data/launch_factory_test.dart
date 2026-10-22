@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:oh_my_mc/core/instance/args.dart';
 import 'package:oh_my_mc/core/instance/instance.dart';
 import 'package:oh_my_mc/core/mc/arch_compat.dart';
 import 'package:oh_my_mc/core/mc/host.dart';
@@ -269,6 +270,42 @@ void main() {
       );
 
       expect((outcome as LaunchReady).plan.args, contains('-XX:+UseG1GC'));
+    });
+
+    test('arguments typed by the user reach argv as written', () async {
+      final data = Directory(p.join(tmp.path, 'data'))
+        ..createSync(recursive: true);
+      final game = Directory(p.join(tmp.path, 'game'));
+      await writeVersion(game, '1.20.1');
+      final paths = pathsFor(data, game);
+
+      // The whole path the user's typing takes: editor text, parser, store, argv.
+      // A split in the wrong place here is a JVM rejection at launch, not a
+      // cosmetic problem.
+      final outcome = await prepareInstanceLaunch(
+        paths: paths,
+        settings: AppSettings.defaults,
+        instance: instance(
+          jvmArgs: parseArgs('-Dfoo="a b" -Xmx4G'),
+          gameArgs: parseArgs('--fullscreen --server "my host"'),
+        ),
+        javaManager: fakeJava(17),
+      );
+
+      final args = (outcome as LaunchReady).plan.args;
+      expect(args, contains('-Dfoo=a b'));
+      expect(
+        args,
+        isNot(contains('b')),
+        reason: 'the quoted part must not split',
+      );
+      expect(args, contains('-Xmx4G'));
+      expect(args, contains('--server'));
+      expect(
+        args,
+        contains('my host'),
+        reason: 'a game argument with a space stays one entry',
+      );
     });
 
     test('an isolated instance reads its own minecraft tree', () async {

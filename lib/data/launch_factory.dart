@@ -33,9 +33,12 @@ class LauncherPaths {
 
   GamePaths get gamePaths => GamePaths(game.path);
 
+  /// Every instance directory lives here. Exposed so deletion can check it is
+  /// staying inside it instead of trusting a stored id.
+  Directory get instanceRoot => Directory(p.join(data.path, 'instances'));
+
   /// One instance's own directory, under `<data>/instances/<id>`.
-  Directory instanceDir(String id) =>
-      Directory(p.join(data.path, 'instances', id));
+  Directory instanceDir(String id) => Directory(p.join(instanceRoot.path, id));
 
   /// The `minecraft` tree an instance actually launches against.
   ///

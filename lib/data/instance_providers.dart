@@ -1,7 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
 
 import '../core/instance/instance.dart';
 import 'instance_store.dart';
+import 'launch_factory.dart';
 
 /// The instance store, overridden at startup like [settingsStoreProvider].
 final instanceStoreProvider = Provider<InstanceStore>(
@@ -74,9 +78,22 @@ class InstanceListNotifier extends Notifier<InstanceListState> {
 
   InstanceStore get _store => ref.read(instanceStoreProvider);
 
+  /// Bumped by every write. A read that started before the bump is stale and must
+  /// not be published.
+  ///
+  /// Without this, `build`'s own `refresh` and any user edit race: `_commit`
+  /// publishes the new list, then awaits the disk write, and during that await an
+  /// older `load` completes and republishes the pre-edit list. The edit appears to
+  /// silently revert, and a later save persists the reverted value.
+  int _generation = 0;
+
   Future<void> refresh() async {
+    final generation = _generation;
     try {
       final instances = await _store.load();
+      // A write landed while this read was in flight; the read is older than the
+      // truth and would undo it.
+      if (generation != _generation) return;
       final previous = state;
       final keep = previous is InstanceListReady ? previous.selectedId : null;
       state = InstanceListReady(
@@ -107,6 +124,7 @@ class InstanceListNotifier extends Notifier<InstanceListState> {
     bool clearSelection = false,
   }) async {
     final current = ready;
+    _generation++;
     state = InstanceListReady(
       instances,
       skipped: current?.skipped ?? 0,
@@ -151,7 +169,21 @@ class InstanceListNotifier extends Notifier<InstanceListState> {
     ]);
   }
 
-  Future<void> remove(String id) async {
+  /// Removes an instance, and optionally the files it owns.
+  ///
+  /// Ordering matters: the list is written first, so a failed or partially
+  /// failed directory delete leaves stray bytes on disk but never an instance the
+  /// store still lists pointing at a folder that is gone. A user can delete the
+  /// directory by hand; they cannot recover a deleted profile.
+  ///
+  /// The delete is refused when [deleteFiles] would reach outside
+  /// `<data>/instances/`: [id] is the directory name, and although it is slugified
+  /// at creation, a hand-edited `instances.json` can contain `..`. The instance is
+  /// still removed from the list, because refusing that would strand it.
+  ///
+  /// Returns whether the folder is gone. `false` means the list entry was removed
+  /// but files remain, which the caller should tell the user about.
+  Future<bool> remove(String id, {bool deleteFiles = false}) async {
     final existing = ready?.instances ?? const <Instance>[];
     final remaining = [
       for (final i in existing)
@@ -164,6 +196,31 @@ class InstanceListNotifier extends Notifier<InstanceListState> {
       selectedId: remaining.isEmpty ? null : remaining.first.id,
       clearSelection: remaining.isEmpty,
     );
+    if (!deleteFiles) return true;
+    return deleteInstanceFiles(id);
+  }
+
+  /// Deletes one instance's directory, never anything above it.
+  ///
+  /// Returns `true` when there was nothing left to delete, so a caller can tell
+  /// "removed" from "removed, but the folder survives" and say so.
+  Future<bool> deleteInstanceFiles(String id) async {
+    final paths = ref.read(launcherPathsProvider);
+    final root = p.canonicalize(paths.instanceRoot.path);
+    final target = p.canonicalize(paths.instanceDir(id).path);
+    if (!p.isWithin(root, target)) return false;
+
+    final directory = Directory(target);
+    if (!await directory.exists()) return true;
+    try {
+      await directory.delete(recursive: true);
+      return true;
+    } on FileSystemException {
+      // A file held open by a running game is the realistic case on Windows.
+      // Surfacing this as an exception would abort a delete the user already
+      // confirmed; the list entry is gone either way.
+      return false;
+    }
   }
 
   /// Replaces one instance with an edited copy.

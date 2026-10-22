@@ -2,6 +2,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../core/instance/memory.dart';
 import '../../data/settings.dart';
 import '../../l10n/l10n.dart';
 import '../motion/motion.dart';
@@ -311,8 +312,6 @@ class _GlobalMemoryRowState extends ConsumerState<_GlobalMemoryRow> {
   /// is written once, on release.
   int? _dragging;
 
-  static const _minMb = 512;
-  static const _maxMb = 16384;
   static const _step = 512;
 
   @override
@@ -330,10 +329,10 @@ class _GlobalMemoryRowState extends ConsumerState<_GlobalMemoryRow> {
           Text(l10n.instanceMemoryMb(value), style: theme.typography.body),
           Slider(
             key: const ValueKey('setup-memory'),
-            value: value.clamp(_minMb, _maxMb).toDouble(),
-            min: _minMb.toDouble(),
-            max: _maxMb.toDouble(),
-            divisions: (_maxMb - _minMb) ~/ _step,
+            value: clampMemoryMb(value).toDouble(),
+            min: kMinMemoryMb.toDouble(),
+            max: kMaxMemoryMb.toDouble(),
+            divisions: (kMaxMemoryMb - kMinMemoryMb) ~/ _step,
             onChanged: (v) =>
                 setState(() => _dragging = (v / _step).round() * _step),
             onChangeEnd: (v) {

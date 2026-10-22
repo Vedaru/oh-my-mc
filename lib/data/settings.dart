@@ -7,6 +7,8 @@
 /// garbage is worse than one that starts with a default.
 library;
 
+import '../core/instance/memory.dart';
+
 /// Which theme to use. `system` follows the OS.
 enum ThemePreference { system, light, dark }
 
@@ -134,11 +136,15 @@ String _validPlayerName(Object? raw) {
       : AppSettings.defaultPlayerName;
 }
 
-/// 512 MiB below is not enough for any supported version; above 64 GiB is a
-/// typo (or a unit mix-up) that would make the JVM fail to reserve its heap.
+/// Out-of-range values fall back to the default rather than clamping: a stored
+/// `0` or `999999` is corruption, and silently turning it into 512 or 65536 would
+/// launch a game on a heap the user never chose. The range itself lives in
+/// [kMinMemoryMb]/[kMaxMemoryMb] so the sliders cannot drift from it.
 int _validMemoryMb(Object? raw) {
   if (raw is! int) return AppSettings.defaultMemoryMb;
-  if (raw < 512 || raw > 65536) return AppSettings.defaultMemoryMb;
+  if (raw < kMinMemoryMb || raw > kMaxMemoryMb) {
+    return AppSettings.defaultMemoryMb;
+  }
   return raw;
 }
 

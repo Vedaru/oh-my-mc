@@ -83,7 +83,7 @@ class InstancesScreen extends ConsumerWidget {
       context: context,
       builder: (context) => ContentDialog(
         title: Text(l10n.instanceDelete),
-        content: Text(l10n.instanceDeleteConfirm(instance.displayName)),
+        content: Text(l10n.instanceDeleteConfirmFiles(instance.displayName)),
         actions: [
           Button(
             onPressed: () => Navigator.pop(context, false),
@@ -98,7 +98,9 @@ class InstancesScreen extends ConsumerWidget {
       ),
     );
     if (confirmed != true) return;
-    await ref.read(instanceListProvider.notifier).remove(instance.id);
+    await ref
+        .read(instanceListProvider.notifier)
+        .remove(instance.id, deleteFiles: true);
   }
 
   /// Creating an instance is a name and a version. Deliberately a dialog rather

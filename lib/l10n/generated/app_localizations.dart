@@ -194,6 +194,18 @@ abstract class AppLocalizations {
   /// **'Delete {name}? This cannot be undone.'**
   String instanceDeleteConfirm(String name);
 
+  /// Confirmation before deleting an instance along with the folder that holds its own files.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}? Its folder and everything in it will be removed. This cannot be undone.'**
+  String instanceDeleteConfirmFiles(String name);
+
+  /// Shown when an instance's folder could not be deleted after the instance itself was removed, usually because a file is held open.
+  ///
+  /// In en, this message translates to:
+  /// **'The instance was removed from the list, but its folder could not be deleted. Remove it by hand: {path}'**
+  String instanceDeleteFilesFailed(String path);
+
   /// Number of installed instances.
   ///
   /// In en, this message translates to:
@@ -488,6 +500,48 @@ abstract class AppLocalizations {
   /// **'Files'**
   String get instanceSectionFiles;
 
+  /// Detail page section: extra JVM and game arguments.
+  ///
+  /// In en, this message translates to:
+  /// **'Arguments'**
+  String get instanceSectionArguments;
+
+  /// Label for the extra JVM argument editor.
+  ///
+  /// In en, this message translates to:
+  /// **'JVM arguments'**
+  String get instanceJvmArgsLabel;
+
+  /// Explains the JVM argument editor.
+  ///
+  /// In en, this message translates to:
+  /// **'One per line. Passed to Java before the game starts, e.g. -XX:+UseG1GC'**
+  String get instanceJvmArgsHint;
+
+  /// Label for the extra game argument editor.
+  ///
+  /// In en, this message translates to:
+  /// **'Game arguments'**
+  String get instanceGameArgsLabel;
+
+  /// Explains the game argument editor.
+  ///
+  /// In en, this message translates to:
+  /// **'One per line. Passed to the game, e.g. --fullscreen'**
+  String get instanceGameArgsHint;
+
+  /// How many arguments the current text parses to, so a quoting mistake is visible before launch.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No extra arguments} =1{1 argument} other{{count} arguments}}'**
+  String instanceArgsPreview(int count);
+
+  /// The arguments as the launcher will pass them, one per entry, after parsing quotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Will pass: {args}'**
+  String instanceArgsPreviewList(String args);
+
   /// Label for the instance name field.
   ///
   /// In en, this message translates to:
@@ -511,6 +565,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Existing files are not moved when this changes.'**
   String get instanceIsolationHint;
+
+  /// Warning shown when an instance is set to isolated: it starts with an empty game directory rather than migrating existing files.
+  ///
+  /// In en, this message translates to:
+  /// **'This instance gets an empty folder of its own. Worlds, mods and options already in the shared folder stay there and are not copied or moved.'**
+  String get instanceIsolationEmpty;
 
   /// Isolation switch, on: this instance has its own files.
   ///
@@ -571,6 +631,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Automatic (picked by version)'**
   String get instanceJavaAutomatic;
+
+  /// Button that runs the selected JVM to check it works.
+  ///
+  /// In en, this message translates to:
+  /// **'Test'**
+  String get instanceJavaTest;
+
+  /// Shown while the selected JVM is being run.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking…'**
+  String get instanceJavaTestRunning;
+
+  /// Result of a successful JVM probe.
+  ///
+  /// In en, this message translates to:
+  /// **'Works: Java {major}, {version}, {vendor}'**
+  String instanceJavaTestOk(int major, String version, String vendor);
+
+  /// Fills the vendor slot when the JVM does not report one.
+  ///
+  /// In en, this message translates to:
+  /// **'an unnamed vendor'**
+  String get instanceJavaTestNoVendor;
+
+  /// Explains what the Java test button does before it is pressed.
+  ///
+  /// In en, this message translates to:
+  /// **'Runs this file to confirm it starts and reports its version.'**
+  String get instanceJavaTestHint;
+
+  /// Result of a JVM probe that produced no version, which means the file is missing, is not a JVM, or cannot run on this machine.
+  ///
+  /// In en, this message translates to:
+  /// **'This file did not answer as a Java runtime. Pick another one, or download it again.'**
+  String get instanceJavaTestFailed;
 
   /// Java picker hint when the launcher has no managed runtime.
   ///

@@ -7,12 +7,14 @@ import 'package:go_router/go_router.dart';
 import '../../app/providers.dart';
 import '../../app/router.dart';
 import '../../core/instance/instance.dart';
+import '../../core/instance/memory.dart';
 import '../../data/instance_providers.dart';
 import '../../data/java_providers.dart';
 import '../../data/launch_factory.dart';
 import '../../l10n/l10n.dart';
 import '../motion/motion.dart';
 import '../shell/shell_icons.dart';
+import 'args_field.dart';
 import 'instance_card.dart';
 
 /// One instance's settings.
@@ -158,6 +160,28 @@ class InstanceDetailScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               _Section(
+                title: l10n.instanceSectionArguments,
+                children: [
+                  ArgsField(
+                    fieldKey: const ValueKey('instance-jvm-args'),
+                    label: l10n.instanceJvmArgsLabel,
+                    hint: l10n.instanceJvmArgsHint,
+                    value: instance.jvmArgs,
+                    onChanged: (args) =>
+                        notifier.update(instance!.copyWith(jvmArgs: args)),
+                  ),
+                  ArgsField(
+                    fieldKey: const ValueKey('instance-game-args'),
+                    label: l10n.instanceGameArgsLabel,
+                    hint: l10n.instanceGameArgsHint,
+                    value: instance.gameArgs,
+                    onChanged: (args) =>
+                        notifier.update(instance!.copyWith(gameArgs: args)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _Section(
                 title: l10n.instanceSectionFiles,
                 children: [
                   _ReadOnlyRow(
@@ -241,7 +265,10 @@ class InstanceDetailScreen extends ConsumerWidget {
       context: context,
       builder: (context) => ContentDialog(
         title: Text(l10n.instanceDelete),
-        content: Text(l10n.instanceDeleteConfirm(instance.displayName)),
+        // The prompt promises the folder goes, because it does: this is the one
+        // destructive action in the app, and "delete" that leaves half a gigabyte
+        // behind is how users end up with an unreadable data directory.
+        content: Text(l10n.instanceDeleteConfirmFiles(instance.displayName)),
         actions: [
           Button(
             onPressed: () => Navigator.pop(context, false),
@@ -256,9 +283,29 @@ class InstanceDetailScreen extends ConsumerWidget {
       ),
     );
     if (confirmed != true) return;
-    await ref.read(instanceListProvider.notifier).remove(instance.id);
+
+    final notifier = ref.read(instanceListProvider.notifier);
+    final path = ref.read(launcherPathsProvider).instanceDir(instance.id).path;
+    final deleted = await notifier.remove(instance.id, deleteFiles: true);
     if (!context.mounted) return;
     _close(context);
+    if (deleted) return;
+
+    // The list entry is already gone, so this is not a failed delete - it is a
+    // leftover folder. Say where it is, so the user can finish the job.
+    await showDialog<void>(
+      context: context,
+      builder: (context) => ContentDialog(
+        title: Text(l10n.instanceDelete),
+        content: SelectableText(l10n.instanceDeleteFilesFailed(path)),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.actionClose),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -435,15 +482,32 @@ class _IsolationRow extends StatelessWidget {
       hint: l10n.instanceIsolationHint,
       child: Align(
         alignment: AlignmentDirectional.centerStart,
-        child: ToggleSwitch(
-          key: const ValueKey('instance-isolation'),
-          checked: isolated,
-          onChanged: (value) => onChanged(
-            value ? IsolationKind.isolated : IsolationKind.shareLibraries,
-          ),
-          content: Text(
-            isolated ? l10n.instanceIsolationOn : l10n.instanceIsolationOff,
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ToggleSwitch(
+              key: const ValueKey('instance-isolation'),
+              checked: isolated,
+              onChanged: (value) => onChanged(
+                value ? IsolationKind.isolated : IsolationKind.shareLibraries,
+              ),
+              content: Text(
+                isolated ? l10n.instanceIsolationOn : l10n.instanceIsolationOff,
+              ),
+            ),
+            // Turning this on does not migrate anything: the instance simply
+            // starts reading an empty directory. Saying so is the difference
+            // between "where did my world go" and an informed choice.
+            if (isolated)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: InfoBar(
+                  key: const ValueKey('instance-isolation-empty'),
+                  title: Text(l10n.instanceIsolationEmpty),
+                  severity: InfoBarSeverity.warning,
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -484,12 +548,12 @@ class _MemoryRow extends ConsumerWidget {
           if (value != null) ...[
             const SizedBox(height: 6),
             Slider(
-              value: value.clamp(_minMb, _maxMb).toDouble(),
-              min: _minMb.toDouble(),
-              max: _maxMb.toDouble(),
+              value: clampMemoryMb(value).toDouble(),
+              min: kMinMemoryMb.toDouble(),
+              max: kMaxMemoryMb.toDouble(),
               // 1 GiB steps: the exact MiB is not a decision anyone makes, and a
               // continuous slider invites pointless precision.
-              divisions: (_maxMb - _minMb) ~/ 1024,
+              divisions: (kMaxMemoryMb - kMinMemoryMb) ~/ 1024,
               label: l10n.instanceMemoryMb(value),
               onChanged: (v) => onChanged((v / 1024).round() * 1024),
             ),
@@ -504,20 +568,70 @@ class _MemoryRow extends ConsumerWidget {
       ),
     );
   }
-
-  static const _minMb = 512;
-  static const _maxMb = 16384;
 }
 
 /// Per-instance JVM override: the detected runtimes, or the global default.
-class _JavaRow extends ConsumerWidget {
+class _JavaRow extends ConsumerStatefulWidget {
   const _JavaRow({required this.instance, required this.onChanged});
 
   final Instance instance;
   final void Function(String? path) onChanged;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_JavaRow> createState() => _JavaRowState();
+}
+
+/// The probe result, as the row renders it.
+sealed class _ProbeResult {
+  const _ProbeResult();
+}
+
+class _ProbeRunning extends _ProbeResult {
+  const _ProbeRunning();
+}
+
+class _ProbeOk extends _ProbeResult {
+  const _ProbeOk(this.major, this.version, this.vendor);
+
+  final int major;
+  final String version;
+  final String vendor;
+}
+
+class _ProbeFailed extends _ProbeResult {
+  const _ProbeFailed();
+}
+
+class _JavaRowState extends ConsumerState<_JavaRow> {
+  _ProbeResult? _result;
+
+  /// Which executable [_result] describes. A result for the previous choice must
+  /// not be shown against the new one: "Works: Java 17" next to a 8 runtime is
+  /// worse than no answer.
+  String? _resultFor;
+
+  Future<void> _test(String executable) async {
+    setState(() {
+      _result = const _ProbeRunning();
+      _resultFor = executable;
+    });
+    final runtime = await ref.read(javaProbeRunnerProvider)(executable);
+    if (!mounted || _resultFor != executable) return;
+    setState(() {
+      _result = runtime == null
+          ? const _ProbeFailed()
+          : _ProbeOk(
+              runtime.majorVersion,
+              runtime.versionString,
+              runtime.vendor,
+            );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final instance = widget.instance;
+    final onChanged = widget.onChanged;
     final l10n = context.l10n;
     final theme = FluentTheme.of(context);
     final runtimes = ref.watch(javaRuntimesProvider).value ?? const [];
@@ -567,8 +681,80 @@ class _JavaRow extends ConsumerWidget {
               color: theme.inactiveColor,
             ),
           ),
+          if (instance.javaPath != null) ...[
+            const SizedBox(height: 8),
+            _javaTestRow(context, l10n, theme, instance.javaPath!),
+          ],
         ],
       ),
+    );
+  }
+
+  Widget _javaTestRow(
+    BuildContext context,
+    AppLocalizations l10n,
+    FluentThemeData theme,
+    String executable,
+  ) {
+    final result = _resultFor == executable ? _result : null;
+    final running = result is _ProbeRunning;
+    final caption = theme.typography.caption?.copyWith(
+      color: theme.inactiveColor,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: Button(
+            key: const ValueKey('instance-java-test'),
+            onPressed: running ? null : () => _test(executable),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (running) ...[
+                  const SizedBox(
+                    width: 12,
+                    height: 12,
+                    child: ProgressRing(strokeWidth: 2),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                Text(
+                  running
+                      ? l10n.instanceJavaTestRunning
+                      : l10n.instanceJavaTest,
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (result != null && !running)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: InfoBar(
+              key: const ValueKey('instance-java-test-result'),
+              title: Text(switch (result) {
+                _ProbeOk(:final major, :final version, :final vendor) =>
+                  l10n.instanceJavaTestOk(
+                    major,
+                    version,
+                    vendor.isEmpty ? l10n.instanceJavaTestNoVendor : vendor,
+                  ),
+                _ => l10n.instanceJavaTestFailed,
+              }),
+              severity: result is _ProbeOk
+                  ? InfoBarSeverity.success
+                  : InfoBarSeverity.error,
+            ),
+          ),
+        if (result == null && !running)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(l10n.instanceJavaTestHint, style: caption),
+          ),
+      ],
     );
   }
 }
