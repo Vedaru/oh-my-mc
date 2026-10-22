@@ -113,7 +113,7 @@ void main() {
       // Reading first also proves the installed set can be read before any
       // install happened, which is the state on a fresh profile.
       c.read(installedVersionsProvider);
-      await pumpEventQueue();
+      await c.read(installedVersionsProvider.notifier).refresh();
       expect(c.read(installedVersionsProvider), isEmpty);
 
       await notifier.install('1.20.1', includeAssets: false);
@@ -129,7 +129,7 @@ void main() {
       );
       expect(done.fileCount, greaterThan(0));
 
-      await pumpEventQueue();
+      await c.read(installedVersionsProvider.notifier).refresh();
       expect(
         c.read(installedVersionsProvider),
         {'1.20.1'},
@@ -300,7 +300,7 @@ void main() {
 
       final c = container();
       c.read(installedVersionsProvider);
-      await pumpEventQueue();
+      await c.read(installedVersionsProvider.notifier).refresh();
 
       expect(c.read(installedVersionsProvider), isEmpty);
     });
@@ -312,7 +312,7 @@ void main() {
 
       final c = container();
       c.read(installedVersionsProvider);
-      await pumpEventQueue();
+      await c.read(installedVersionsProvider.notifier).refresh();
 
       expect(c.read(installedVersionsProvider), {'1.19.4'});
     });
@@ -355,7 +355,7 @@ void main() {
     test('a missing versions directory is empty, not an error', () async {
       final c = container();
       c.read(installedVersionsProvider);
-      await pumpEventQueue();
+      await c.read(installedVersionsProvider.notifier).refresh();
 
       expect(c.read(installedVersionsProvider), isEmpty);
     });
