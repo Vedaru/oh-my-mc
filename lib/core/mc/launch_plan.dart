@@ -40,11 +40,12 @@ LaunchPlan assembleLaunchPlan({
   required List<String> classpath,
   required List<String> nativeArchives,
   String? jarOverride,
+  String? separator,
 }) {
-  final separator = classpathSeparator;
+  final sep = separator ?? classpathSeparator;
   final joined = jarOverride != null
-      ? [jarOverride, ...classpath].join(separator)
-      : classpath.join(separator);
+      ? [jarOverride, ...classpath].join(sep)
+      : classpath.join(sep);
 
   // Replace the literal ${classpath} the version metadata already contains.
   final resolvedJvm = [

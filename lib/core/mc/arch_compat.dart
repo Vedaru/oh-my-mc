@@ -36,6 +36,17 @@ enum BlockerCode {
 
   /// The version needs a newer Java than the one found.
   javaTooOld,
+
+  /// Nothing on the machine can start a JVM at all.
+  noRuntime,
+
+  /// A runtime was found and is new enough, but it is not the major version the
+  /// version declares. Not fatal - reported so the UI can offer a better one.
+  javaMajorMismatch,
+
+  /// The install on disk is incomplete: a classpath or natives file the launch
+  /// is about to hand the JVM does not exist.
+  missingFiles,
 }
 
 /// Detects metadata-level blockers for [version] on [host].

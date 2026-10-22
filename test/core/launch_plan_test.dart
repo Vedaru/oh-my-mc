@@ -101,10 +101,17 @@ void main() {
   });
 
   group('legacy launch plan (1.12.2, linux x64)', () {
-    test('has no jvm args from metadata but still gets natives', () {
+    test('gets a synthesized jvm block and still gets natives', () {
       final plan = planFor('1.12.2', java: '/jdk8/bin/java');
       expect(plan.executable, '/jdk8/bin/java');
-      expect(plan.args.first, 'net.minecraft.client.main.Main');
+      // Not `args.first == mainClass`: a legacy launch has JVM flags in front of
+      // it, and asserting otherwise locked in a command line the JVM rejects.
+      expect(plan.args, contains('net.minecraft.client.main.Main'));
+      expect(plan.args, contains('-cp'));
+      expect(
+        plan.args.any((a) => a.startsWith('-Djava.library.path=')),
+        isTrue,
+      );
       expect(plan.nativeArchives, isNotEmpty);
       expect(plan.args.join(' '), contains('--username Steve'));
     });

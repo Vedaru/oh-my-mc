@@ -97,11 +97,19 @@ List<String> renderArguments(
     ];
   }
 
-  // Legacy: a single space-separated string. Split on whitespace because no
-  // placeholder value may contain a space that survives as one token — paths
-  // are passed as separate argv entries by the caller, not concatenated.
+  // Legacy: a single space-separated game-arg string, and *no* JVM args in the
+  // metadata at all. Up to 1.12.2 Mojang's launcher supplied the JVM block
+  // itself, so it has to be synthesized here or the JVM is started with neither
+  // a classpath nor a natives directory and cannot find its main class.
+  if (side == ArgSide.jvm) {
+    return [
+      '-Djava.library.path=${vars.nativesDirectory}',
+      '-cp',
+      vars.classpath,
+    ];
+  }
+
   final raw = version.minecraftArguments ?? '';
-  if (side == ArgSide.jvm) return const [];
   return [
     for (final token in raw.split(RegExp(r'\s+')).where((t) => t.isNotEmpty))
       expandPlaceholders(token, vars),

@@ -350,6 +350,45 @@ re-add it. `arch_compat` only has to handle the macOS-arm64 case below.
   `https://git.vedaru.cn/<owner>/<repo>/actions/runs/<n>/jobs/<i>/logs`.
 * `assert s.count(x)` against YAML written by hand is fragile — rewrite the file instead of patching it.
 
+## Launch traps (M4.1)
+
+* **Versions before 1.13 carry no `arguments.jvm` at all.** Mojang's launcher
+  supplied the JVM block itself in that era, so `renderArguments(..., ArgSide.jvm)`
+  returned `[]` — and the resulting argv was `java <mainClass> <gameArgs>`, which
+  a real JVM rejects with `Could not find or load main class`. Verified by running
+  that exact argv against Temurin 17. The synthesized block must contain
+  `-Djava.library.path` **and** `-cp`; both are needed, and `-cp` must carry the
+  joined classpath as a single argv entry.
+* **An existing test asserted the bug.** `legacy versions render no jvm arguments
+  of their own` expected `isEmpty`, and `launch_plan_test` asserted
+  `plan.args.first == mainClass` for 1.12.2. Both were true statements about
+  broken behaviour. When a test's *name* says "and still gets natives", check
+  whether it is documenting a gap rather than a contract.
+* **Classpath entries come out of `buildLibraryGraph` as maven-relative paths.**
+  Joining them directly hands the JVM `com/google/gson/...`, which it resolves
+  against the *process* CWD — not the game directory. Always route through
+  `buildClasspath`, which also appends the client jar (last, so modloader-patched
+  libraries keep first-wins precedence).
+* **A test using an absolute temp root cannot detect a missing `p.absolute`.**
+  `p.absolute` is a no-op on an absolute path, so the assertion passes either way.
+  The regression test must use a relative `GamePaths('relative-mc')`. Found by
+  mutation: the first version of this test survived deletion of the call.
+* **`logging.client.argument` is `-Dlog4j.configurationFile=${path}`, and the
+  metadata names the file separately in `logging.client.file.id`.** Substituting
+  the *directory* for `${path}` makes log4j fail silently and the game exits with
+  no diagnostic. Use `p.join(loggingConfigs, file.id)`.
+* **`javaTooOld` must be fatal.** It is tempting to treat every blocker except
+  "no runtime" as a warning; launching 1.20.1 on Java 8 does start a process and
+  then dies with `UnsupportedClassVersionError`, which is a much worse user
+  experience than refusing. `javaMajorMismatch` (newer than declared) *is* a
+  warning — the game runs, only mods that assume the major are at risk.
+* **`tool/verify_launch.dart` is the only check that proves the argv is real.**
+  Unit tests assert what we *believe* the JVM accepts; this runs a real JDK
+  against a real install with the main class swapped for a stub. It caught the
+  log4j bug that every unit test passed over. Run it after touching
+  `launch_service.dart`:
+  `dart run tool/verify_launch.dart <jdk-home> <mc-dir>`.
+
 ## Installer traps (M3.5)
 
 * **`FileDownloader.download(concurrency:)` was ignored** — the loop awaited each

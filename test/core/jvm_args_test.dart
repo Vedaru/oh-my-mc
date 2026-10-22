@@ -189,14 +189,21 @@ void main() {
       );
     });
 
-    test('legacy versions render no jvm arguments of their own', () {
+    test('legacy versions get a synthesized jvm block', () {
       final args = renderArguments(
         loadVersion('1.8.9'),
         ArgSide.jvm,
         _linux,
         _vars,
       );
-      expect(args, isEmpty);
+      // Was `isEmpty`, which asserted the bug: metadata has no arguments.jvm
+      // before 1.13, so an empty result meant the JVM was started with no
+      // classpath and no natives directory at all.
+      expect(args, [
+        '-Djava.library.path=${_vars.nativesDirectory}',
+        '-cp',
+        _vars.classpath,
+      ]);
     });
   });
 }

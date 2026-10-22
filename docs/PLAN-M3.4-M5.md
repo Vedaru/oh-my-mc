@@ -203,6 +203,13 @@ covers both in one pass, and the network test covers the "real metadata still pa
 
 ### M4 — Launch screen + instance list (first vertical slice)
 
+> **Superseded in part.** M4.1/M4.2 (the launch path) are done and documented
+> separately in `docs/PLAN-M4.1.md`; the table below is retained for the UI
+> tasks 4.3–4.6, which remain blocked on a visual direction. The `LaunchHandle`
+> in 4.2 now has a real `prepareLaunch` to wrap, and its blockers are the
+> dialogs 5.4 needs.
+
+
 | Task | Deliverable |
 |---|---|
 | 4.1 | `Instance` model + `InstanceStore` over `instance.json`; one instance per version dir, plus a default |
