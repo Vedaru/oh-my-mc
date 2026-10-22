@@ -448,8 +448,10 @@ class _PlayRow extends StatelessWidget {
             if (instance != null)
               AppButton(
                 key: const m3.ValueKey('launch-open-settings'),
+                // Push, so the run view stays underneath: settings is a visit,
+                // and back returns to the log and the stop button.
                 onPressed: () =>
-                    context.go(Routes.instanceDetail(instance!.id)),
+                    context.push(Routes.instanceDetail(instance!.id)),
                 style: AppButtonStyle.outlined,
                 icon: const m3.Icon(ShellIcons.settings, size: 14),
                 label: m3.Text(l10n.instanceOpen),

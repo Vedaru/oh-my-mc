@@ -39,7 +39,6 @@ class InstancesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(instanceListProvider);
-    final notifier = ref.read(instanceListProvider.notifier);
     final session = ref.watch(launchControllerProvider);
 
     return PageBody(
@@ -51,22 +50,16 @@ class InstancesScreen extends ConsumerWidget {
         // (PLAN-M11 §3.1).
         InstanceListLoading() => const _GridSkeleton(),
         InstanceListFailed(:final message) => _Failure(message: message),
-        InstanceListReady(
-          :final instances,
-          :final selectedId,
-          :final skipped,
-        ) =>
-          _Grid(
-            instances: instances,
-            selectedId: selectedId,
-            skipped: skipped,
-            session: session,
-            onSelect: notifier.select,
-            onLaunch: (instance) => _launch(context, ref, instance),
-            onOpen: (instance) => (onOpen ?? _defaultOpen(context))(instance),
-            onCreate: () => _createInstance(context, ref),
-            onDelete: (instance) => _delete(context, ref, instance),
-          ),
+        InstanceListReady(:final instances, :final skipped) => _Grid(
+          instances: instances,
+          skipped: skipped,
+          session: session,
+          onLaunch: (instance) => _launch(context, ref, instance),
+          onOpen: (instance) =>
+              (onOpen ?? _defaultOpen(context, ref))(instance),
+          onCreate: () => _createInstance(context, ref),
+          onDelete: (instance) => _delete(context, ref, instance),
+        ),
       },
     );
   }
@@ -90,14 +83,25 @@ class InstancesScreen extends ConsumerWidget {
     await controller.launch(instance);
   }
 
-  /// Opens one instance's settings.
+  /// Opens an instance's card: the live session's page while it is running,
+  /// otherwise that instance's settings.
   ///
-  /// `push`, not `go`: the two pages have to coexist for the duration of the
-  /// transition, because a `Hero` can only fly between routes that are both in
-  /// the navigator. `go` rebuilds the stack, which turns the move into a
-  /// replacement and silently drops the icon's flight into the header.
-  void Function(Instance) _defaultOpen(BuildContext context) =>
-      (instance) => context.push(Routes.instanceDetail(instance.id));
+  /// `push` for settings, because the card and the page have to coexist for the
+  /// transition, which is what lets the icon fly into the header. `go` for the
+  /// run view: it is the session's page, not a detail of the grid, and pushing
+  /// it would leave a second copy of the grid underneath.
+  void Function(Instance) _defaultOpen(BuildContext context, WidgetRef ref) =>
+      (instance) {
+        switch (instanceTargetFor(
+          ref.read(launchControllerProvider),
+          instance,
+        )) {
+          case InstanceTarget.run:
+            context.go(Routes.launch);
+          case InstanceTarget.settings:
+            context.push(Routes.instanceDetail(instance.id));
+        }
+      };
 
   Future<void> _delete(
     BuildContext context,
@@ -179,13 +183,33 @@ class InstancesScreen extends ConsumerWidget {
   }
 }
 
+/// What an instance's card leads to.
+enum InstanceTarget {
+  /// The live session's page: log, stop button, version settings.
+  run,
+
+  /// This instance's settings.
+  settings,
+}
+
+/// Decides a card's destination from the live session.
+///
+/// Only the instance that owns the session leads back to the run view - that is
+/// the way back to the log and the stop button after visiting settings from
+/// there. Every other card leads to its own settings.
+///
+/// Pure, so it is tested without a router, and so the grid's outline and the
+/// click cannot disagree: both ask this.
+InstanceTarget instanceTargetFor(LaunchSession session, Instance instance) {
+  final running = session.isBusy && session.instanceId == instance.id;
+  return running ? InstanceTarget.run : InstanceTarget.settings;
+}
+
 class _Grid extends StatelessWidget {
   const _Grid({
     required this.instances,
-    required this.selectedId,
     required this.skipped,
     required this.session,
-    required this.onSelect,
     required this.onCreate,
     required this.onDelete,
     required this.onOpen,
@@ -193,10 +217,8 @@ class _Grid extends StatelessWidget {
   });
 
   final List<Instance> instances;
-  final String? selectedId;
   final int skipped;
   final LaunchSession session;
-  final void Function(String? id) onSelect;
   final void Function(Instance instance) onLaunch;
   final void Function(Instance instance) onOpen;
   final Future<void> Function(Instance instance) onDelete;
@@ -206,7 +228,6 @@ class _Grid extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final scheme = m3.Theme.of(context).colorScheme;
-
     if (instances.isEmpty) {
       return _Empty(onCreate: onCreate);
     }
@@ -261,20 +282,22 @@ class _Grid extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final instance = instances[index];
                   final busy = session.isBusy;
+                  final running =
+                      instanceTargetFor(session, instance) ==
+                      InstanceTarget.run;
                   return StaggerItem(
                     index: index,
                     itemCount: instances.length,
                     child: InstanceCard(
                       instance: instance,
-                      selected: instance.id == selectedId,
-                      // Tapping selects *and* opens: selection alone is
-                      // invisible feedback on a screen with no other action, and
-                      // the launch screen is reachable from the play button.
+                      running: running,
+                      // Tapping opens: the run view while this instance owns the
+                      // session, its settings otherwise. See `instanceTargetFor`.
                       onTap: () => onOpen(instance),
                       // Every play button is disabled while any instance runs:
                       // a second JVM would fight over the same files.
                       onPlay: busy ? null : () => onLaunch(instance),
-                      busy: busy && session.instanceId == instance.id,
+                      busy: busy && running,
                       // Delete lives behind an explicit menu rather than on the
                       // card: a destructive action next to a play button gets
                       // clicked by accident.

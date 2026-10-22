@@ -16,7 +16,7 @@ import '../theme/app_theme.dart';
 class InstanceCard extends StatefulWidget {
   const InstanceCard({
     required this.instance,
-    required this.selected,
+    required this.running,
     required this.onTap,
     this.onPlay,
     this.busy = false,
@@ -25,7 +25,12 @@ class InstanceCard extends StatefulWidget {
   });
 
   final Instance instance;
-  final bool selected;
+
+  /// Whether this instance owns the live session. The card marks only that one:
+  /// a border on the merely *selected* card said nothing a user could act on,
+  /// and it was visible on a fresh grid because the first instance is selected
+  /// by default.
+  final bool running;
   final VoidCallback onTap;
 
   /// Launch this instance directly. `null` disables the button, which is what a
@@ -52,10 +57,10 @@ class _InstanceCardState extends State<InstanceCard> {
     final scheme = m3.Theme.of(context).colorScheme;
     final motion = MotionScope.of(context);
 
-    // Selection is an outline, not a fill: the cards carry version art later, and
-    // a tint over it would fight the art. Unselected cards carry no outline at
-    // all - the same filled surface the settings sections use, so a page is one
-    // material rather than a set of boxes.
+    // The outline is an outline, not a fill: the cards carry version art later,
+    // and a tint over it would fight the art. Cards without a live session carry
+    // no outline at all - the same filled surface the settings sections use, so
+    // a page is one material rather than a set of boxes.
     final radius = m3.BorderRadius.circular(16);
 
     final card = m3.MouseRegion(
@@ -74,7 +79,7 @@ class _InstanceCardState extends State<InstanceCard> {
             color: _hovered
                 ? scheme.surfaceContainerHigh
                 : scheme.surfaceContainerLow,
-            border: widget.selected
+            border: widget.running
                 ? m3.Border.all(color: scheme.primary, width: 2)
                 : null,
           ),
