@@ -95,14 +95,7 @@ GoRoute _route(
 ///
 /// Two decisions live here and nowhere else:
 ///
-///  * **Slide, never a fade.** A fade is an `Opacity` over the whole page, which
-///    forces an offscreen save-layer of the entire window on every frame of the
-///    transition. On a 1.25-scale panel Flutter renders at device pixel ratio 2,
-///    so a fullscreen surface is 4088x2500 - ten megapixels re-rasterised per
-///    frame, which is exactly when the animation stops being smooth. A
-///    translation is composited from the page's own raster instead, and the
-///    `RepaintBoundary` keeps that raster valid for the whole move. The page
-///    entrance (`MotionEntrance`) made the same trade for the same reason.
+///  * **Slide, never a fade.** See [PageSlideTransition].
 ///  * **Reduced motion.** Per `PLAN-M1-M4.md` §3, neither animation package
 ///    honours `MediaQuery.disableAnimations`, so `MotionScope` resolves the policy
 ///    and the duration is collapsed to zero here. Verified: a zero-duration
@@ -122,44 +115,61 @@ Page<void> appPage(
     child: child,
     transitionDuration: motion.of(Durations.slow),
     reverseTransitionDuration: motion.of(Durations.slow),
-    transitionsBuilder: appPageTransition,
+    transitionsBuilder: (context, animation, secondary, child) =>
+        PageSlideTransition(
+          animation: animation,
+          secondaryAnimation: secondary,
+          child: child,
+        ),
   );
 }
 
-/// The page transition itself: a slide, with no fade over the page.
+/// Slides a page in. Never fades it.
 ///
-/// Public so a test can build it directly. Going through the router cannot
-/// prove this property: `MaterialApp` wraps every route in its own default
-/// transition (a zoom, which is a fade and a scale), so a `FadeTransition`
-/// ancestor search from inside a page finds that wrapper no matter what this
-/// builder does.
-Widget appPageTransition(
-  BuildContext context,
-  Animation<double> animation,
-  Animation<double> secondaryAnimation,
-  Widget child,
-) {
-  final motion = MotionScope.of(context);
-  // The incoming page travels a little; the outgoing one drifts the other way
-  // at half the distance, so the two read as one surface moving rather than a
-  // sheet slapped on top.
-  final enter = Tween<Offset>(
-    begin: const Offset(0.04, 0),
+/// A fade is an `Opacity` over the whole page, so every frame of the move
+/// re-rasterises the window offscreen. At this app's 2x device pixel ratio a
+/// fullscreen page is ten megapixels, and that is the difference between smooth
+/// in a tile and jittery fullscreen. A translation is composited from the
+/// page's own raster, which the [RepaintBoundary] keeps valid for the move.
+class PageSlideTransition extends StatelessWidget {
+  const PageSlideTransition({
+    required this.animation,
+    required this.secondaryAnimation,
+    required this.child,
+    super.key,
+  });
+
+  final Animation<double> animation;
+  final Animation<double> secondaryAnimation;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final motion = MotionScope.of(context);
+    // The incoming page travels a little; the outgoing one drifts the other way
+    // at half the distance, so a change reads as one surface moving rather than
+    // a sheet landing on top.
+    return SlideTransition(
+      position: _drift(
+        secondaryAnimation,
+        MotionCurves.exit,
+        const Offset(-0.02, 0),
+      ),
+      child: SlideTransition(
+        position: _drift(animation, motion.curve, const Offset(0.04, 0)),
+        child: RepaintBoundary(child: child),
+      ),
+    );
+  }
+
+  static Animation<Offset> _drift(
+    Animation<double> parent,
+    Curve curve,
+    Offset from,
+  ) => Tween<Offset>(
+    begin: from,
     end: Offset.zero,
-  ).chain(CurveTween(curve: motion.curve)).animate(animation);
-  final exit = Tween<Offset>(
-    begin: Offset.zero,
-    end: const Offset(-0.02, 0),
-  ).chain(CurveTween(curve: MotionCurves.exit)).animate(secondaryAnimation);
-  return SlideTransition(
-    position: exit,
-    child: SlideTransition(
-      position: enter,
-      // Keeps the page's raster valid for the whole move, so the slide is a
-      // composite rather than a re-render.
-      child: RepaintBoundary(child: child),
-    ),
-  );
+  ).chain(CurveTween(curve: curve)).animate(parent);
 }
 
 /// Title for the current route, for the window/title bar.

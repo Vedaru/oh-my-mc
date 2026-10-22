@@ -268,64 +268,41 @@ void main() {
     expect(find.byType(SlideTransition), findsWidgets);
   });
 
-  testWidgets('the page transition is a slide, with no fade over the page', (
+  testWidgets('the page transition slides, and never fades the page', (
     tester,
   ) async {
-    // A fade is an `Opacity` over the page, and animating it re-rasterises the
-    // entire window offscreen every frame. That is affordable at a small window
-    // and visibly drops frames at fullscreen on a 2x surface - the "smooth in a
-    // tile, jittery fullscreen" report.
-    //
-    // Built directly rather than through the router: `MaterialApp` wraps every
-    // route in its own zoom transition (a fade and a scale), so an ancestor
-    // search from inside a live page cannot tell this builder apart from that
-    // wrapper.
-    final animation = AnimationController(
-      vsync: const TestVSync(),
-      duration: const Duration(milliseconds: 400),
-    );
-    addTearDown(animation.dispose);
-    final secondary = AnimationController(
-      vsync: const TestVSync(),
-      duration: const Duration(milliseconds: 400),
-    );
-    addTearDown(secondary.dispose);
+    // A fade is an `Opacity` over the page, so every frame of the move
+    // re-rasterises the window offscreen - ten megapixels at fullscreen on a 2x
+    // surface. Built directly, because `MaterialApp` wraps every route in its own
+    // zoom transition: from inside a live page an ancestor search finds that
+    // wrapper's fade instead of this one.
+    final enter = AnimationController(vsync: const TestVSync());
+    addTearDown(enter.dispose);
+    final exit = AnimationController(vsync: const TestVSync());
+    addTearDown(exit.dispose);
 
     await tester.pumpWidget(
       Directionality(
         textDirection: TextDirection.ltr,
         child: MotionScope(
           motion: Motion.full,
-          child: Builder(
-            builder: (context) => appPageTransition(
-              context,
-              animation,
-              secondary,
-              const Text('page'),
-            ),
+          child: PageSlideTransition(
+            animation: enter,
+            secondaryAnimation: exit,
+            child: const Text('page'),
           ),
         ),
       ),
     );
 
-    expect(find.text('page'), findsOneWidget);
-    expect(
-      find.byType(FadeTransition),
-      findsNothing,
-      reason: 'a fade over the page is a save-layer per frame',
-    );
-    expect(
-      find.byType(SlideTransition),
-      findsWidgets,
-      reason: 'a transform is composited from the cached raster',
-    );
+    expect(find.byType(FadeTransition), findsNothing);
+    expect(find.byType(SlideTransition), findsWidgets);
     expect(
       find.ancestor(
         of: find.text('page'),
         matching: find.byType(RepaintBoundary),
       ),
       findsWidgets,
-      reason: 'the page needs its own raster for the slide to reuse',
     );
   });
 }

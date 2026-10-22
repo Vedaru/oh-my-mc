@@ -185,11 +185,9 @@ class MotionEntrance extends StatelessWidget {
         // or a log. A transform is free by comparison, and the entrance still
         // reads as an arrival.
         //
-        // The boundary is what makes the transform free in practice: a
-        // `Transform` above a subtree still repaints that subtree unless it is a
-        // layer of its own, and at a 2x device pixel ratio a fullscreen page is
-        // ten megapixels per frame to repaint. Behind a boundary the whole
-        // entrance is a composite of a raster that was rendered once.
+        // The boundary is what makes the transform free: without one, every
+        // frame of the slide repaints the subtree, which is a fullscreen page's
+        // ten megapixels at this app's pixel ratio.
         child: SlideAnimation(
           duration: motion.stagger.itemDuration,
           curve: motion.stagger.curve,
