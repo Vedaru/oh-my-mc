@@ -278,6 +278,48 @@ abstract class AppLocalizations {
   /// **'Installed'**
   String get downloadInstalled;
 
+  /// Trailing state of a version whose install was interrupted.
+  ///
+  /// In en, this message translates to:
+  /// **'Incomplete'**
+  String get downloadIncomplete;
+
+  /// Heading of the repair offer on the launch page.
+  ///
+  /// In en, this message translates to:
+  /// **'The install did not finish'**
+  String get launchRepairTitle;
+
+  /// Heading when the version directory was deleted.
+  ///
+  /// In en, this message translates to:
+  /// **'This version is not installed'**
+  String get launchRepairMissingTitle;
+
+  /// Body when the version is gone; version is the version id.
+  ///
+  /// In en, this message translates to:
+  /// **'{version} is not on disk any more. Install it again to launch this instance.'**
+  String launchRepairMissingBody(String version);
+
+  /// Body of the repair offer; count is the missing file count.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} file(s) are missing, so this version cannot start. Resuming only downloads what is absent.'**
+  String launchRepairBody(int count);
+
+  /// Button that resumes an interrupted install.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume install'**
+  String get launchRepairAction;
+
+  /// Button that opens the download page for a version that is not on disk.
+  ///
+  /// In en, this message translates to:
+  /// **'Install it'**
+  String get launchMissingVersionAction;
+
   /// Release channel filter.
   ///
   /// In en, this message translates to:
@@ -619,6 +661,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Files'**
   String get instanceSectionFiles;
+
+  /// Heading of the per-instance mod manager.
+  ///
+  /// In en, this message translates to:
+  /// **'Mods'**
+  String get modsTitle;
+
+  /// Subtitle counts: how many mods the game will load.
+  ///
+  /// In en, this message translates to:
+  /// **'{enabled} of {total} enabled'**
+  String modsCounts(int enabled, int total);
+
+  /// Placeholder of the mod filter field.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter'**
+  String get modsSearchHint;
+
+  /// Rescans the mods folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get modsRefresh;
+
+  /// Opens the mods folder in the file manager.
+  ///
+  /// In en, this message translates to:
+  /// **'Open folder'**
+  String get modsOpenFolder;
+
+  /// Trailing state of a disabled mod.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get modsDisabled;
+
+  /// Confirmation title for deleting a jar.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this mod?'**
+  String get modsDeleteTitle;
+
+  /// Confirmation body; name is the mod display name.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} will be removed from the mods folder.'**
+  String modsDeleteBody(String name);
+
+  /// Confirm button that deletes the jar.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get modsDeleteAction;
+
+  /// Empty state heading for the mods list.
+  ///
+  /// In en, this message translates to:
+  /// **'No mods yet'**
+  String get modsEmptyTitle;
+
+  /// Empty state body.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop a .jar into the mods folder, or get one from the download page.'**
+  String get modsEmptyBody;
+
+  /// Empty state button that goes to the download page.
+  ///
+  /// In en, this message translates to:
+  /// **'Get mods'**
+  String get modsEmptyAction;
+
+  /// Shown when renaming a jar fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not change the mod: {reason}'**
+  String modsToggleFailed(String reason);
+
+  /// Supporting text of the mods row in version settings.
+  ///
+  /// In en, this message translates to:
+  /// **'mods/ · select to manage'**
+  String get modsManageHint;
 
   /// Description under the Files section heading.
   ///

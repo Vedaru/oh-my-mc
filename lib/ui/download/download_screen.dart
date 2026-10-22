@@ -81,6 +81,9 @@ class _DownloadScreenState extends ConsumerState<DownloadScreen> {
     final list = ref.watch(versionListProvider);
     final install = ref.watch(installControllerProvider);
     final installed = ref.watch(installedVersionsProvider);
+    // Interrupted installs are *not* in `installed`: their row has to stay
+    // clickable so the resume has somewhere to start.
+    final incomplete = ref.watch(incompleteInstallsProvider);
     final query = _search.text.trim().toLowerCase();
 
     return PageBody(
@@ -118,6 +121,7 @@ class _DownloadScreenState extends ConsumerState<DownloadScreen> {
                   ],
                   query: query,
                   installed: installed,
+                  incomplete: incomplete,
                   stale: fromCache,
                   // A second install while one is running would race on the same
                   // `libraries/` tree; the rows are inert until it finishes.
@@ -259,6 +263,7 @@ class _VersionList extends StatelessWidget {
   const _VersionList({
     required this.versions,
     required this.installed,
+    required this.incomplete,
     required this.busy,
     required this.stale,
     required this.query,
@@ -267,6 +272,9 @@ class _VersionList extends StatelessWidget {
 
   final List<VersionRowData> versions;
   final Set<String> installed;
+
+  /// Ids whose install was interrupted. They stay clickable: the click resumes.
+  final Set<String> incomplete;
   final bool busy;
   final bool stale;
   final String query;
@@ -306,6 +314,7 @@ class _VersionList extends StatelessWidget {
             itemBuilder: (context, index) => _VersionRow(
               version: versions[index],
               installed: installed.contains(versions[index].id),
+              incomplete: incomplete.contains(versions[index].id),
               busy: busy,
               onInstall: onInstall,
             ),
@@ -320,12 +329,16 @@ class _VersionRow extends StatelessWidget {
   const _VersionRow({
     required this.version,
     required this.installed,
+    required this.incomplete,
     required this.busy,
     required this.onInstall,
   });
 
   final VersionRowData version;
   final bool installed;
+
+  /// The install started and did not finish; the files may be partial.
+  final bool incomplete;
   final bool busy;
   final void Function(String versionId) onInstall;
 
@@ -334,7 +347,8 @@ class _VersionRow extends StatelessWidget {
     final l10n = context.l10n;
     final scheme = m3.Theme.of(context).colorScheme;
     final success = AppTheme.status(context).success;
-    final actionable = !installed && !busy;
+    // An incomplete install is actionable: that is the resume.
+    final actionable = (!installed || incomplete) && !busy;
 
     return HoverRow(
       onTap: actionable ? () => onInstall(version.id) : null,
@@ -343,9 +357,17 @@ class _VersionRow extends StatelessWidget {
           m3.SizedBox(
             width: 28,
             child: m3.Icon(
-              installed ? ShellIcons.check : ShellIcons.download,
+              installed
+                  ? ShellIcons.check
+                  : incomplete
+                  ? ShellIcons.warning
+                  : ShellIcons.download,
               size: 16,
-              color: installed ? success : scheme.onSurfaceVariant,
+              color: installed
+                  ? success
+                  : incomplete
+                  ? AppTheme.status(context).warning
+                  : scheme.onSurfaceVariant,
             ),
           ),
           m3.Expanded(
@@ -360,9 +382,19 @@ class _VersionRow extends StatelessWidget {
           m3.SizedBox(
             width: 96,
             child: m3.Text(
-              installed ? l10n.downloadInstalled : '',
+              installed
+                  ? l10n.downloadInstalled
+                  : incomplete
+                  ? l10n.downloadIncomplete
+                  : '',
               textAlign: m3.TextAlign.end,
-              style: AppTheme.caption(context).copyWith(color: success),
+              style: AppTheme.caption(context).copyWith(
+                color: installed
+                    ? success
+                    : incomplete
+                    ? AppTheme.status(context).warning
+                    : scheme.onSurfaceVariant,
+              ),
             ),
           ),
         ],

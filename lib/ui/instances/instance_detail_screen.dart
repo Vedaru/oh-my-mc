@@ -257,6 +257,8 @@ class InstanceDetailScreen extends ConsumerWidget {
                         _openFolder(context, ref, instance!, folder: folder),
                     onOpenRoot: () => _openFolder(context, ref, instance!),
                     onCopyPath: (path) => _copyPath(context, path),
+                    onManageMods: () =>
+                        context.go(Routes.instanceMods(instance!.id)),
                   ),
                 ],
               ),
@@ -882,12 +884,18 @@ class _FilesList extends StatefulWidget {
     required this.onOpenFolder,
     required this.onOpenRoot,
     required this.onCopyPath,
+    required this.onManageMods,
   });
 
   final Instance instance;
   final void Function(GameFolderKind folder) onOpenFolder;
   final VoidCallback onOpenRoot;
   final void Function(String path) onCopyPath;
+
+  /// The mods row is the one content folder with a screen behind it: PCL's
+  /// 版本设置 → Mod 管理 is where enabling and deleting happens, so the row opens
+  /// that instead of a file manager (the trailing icon still opens the folder).
+  final VoidCallback onManageMods;
 
   @override
   State<_FilesList> createState() => _FilesListState();
@@ -944,14 +952,18 @@ class _FilesListState extends State<_FilesList> {
                     ),
                     leadingIcon: _folderIcon(folder.kind),
                     label: _folderLabel(l10n, folder.kind),
-                    supporting: '${folder.kind.directoryName}/',
+                    supporting: folder.kind == GameFolderKind.mods
+                        ? l10n.modsManageHint
+                        : '${folder.kind.directoryName}/',
                     trailingText: l10n.instanceFolderItems(folder.entries),
                     trailingTextKey: m3.ValueKey(
                       'instance-folder-count-${folder.kind.name}',
                     ),
                     trailingIcon: ShellIcons.openExternal,
                     trailingTooltip: l10n.instanceOpenFolderTooltip,
-                    onPressed: () => widget.onOpenFolder(folder.kind),
+                    onPressed: folder.kind == GameFolderKind.mods
+                        ? widget.onManageMods
+                        : () => widget.onOpenFolder(folder.kind),
                     onTrailingPressed: () => widget.onOpenFolder(folder.kind),
                   ),
               ],

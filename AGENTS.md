@@ -286,6 +286,12 @@ the current gap table and the ordered backlog. Two rules from it bind new code:
   dropped into an instance tree by hand is not an install and will not launch.
 - **The instance grid is home**; there is no Launch tab. `/launch` is the running
   view (log, stop, version settings) that a Play navigates to.
+- **An install is not finished because its JSON exists.** `versions/<id>/<id>.json`
+  is written before the libraries, so a killed install looks complete to every
+  "is it installed" check. `InstallJournal` writes `versions/<id>/.installing`
+  before the first byte and removes it only when verification is clean; both
+  `InstalledVersions` and the download row treat a marked version as *not
+  installed*, which is what keeps the resume clickable after a restart.
 - **A loader is not always a profile.** Fabric/Quilt publish a version JSON
   (install = write it); Forge/NeoForge publish an installer jar that must run with a
   JVM. The installer path also writes `launcher_profiles.json` first and trusts

@@ -114,6 +114,31 @@ class AppLocalizationsZh extends AppLocalizations {
   String get downloadInstalled => '已安装';
 
   @override
+  String get downloadIncomplete => '未完成';
+
+  @override
+  String get launchRepairTitle => '安装没有完成';
+
+  @override
+  String get launchRepairMissingTitle => '这个版本还没有安装';
+
+  @override
+  String launchRepairMissingBody(String version) {
+    return '$version 已经不在磁盘上了，重新安装后才能启动这个实例。';
+  }
+
+  @override
+  String launchRepairBody(int count) {
+    return '缺少 $count 个文件，这个版本无法启动。继续安装只会补下缺失的部分。';
+  }
+
+  @override
+  String get launchRepairAction => '继续安装';
+
+  @override
+  String get launchMissingVersionAction => '去安装';
+
+  @override
   String get downloadRelease => '正式版';
 
   @override
@@ -283,6 +308,54 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get instanceSectionFiles => '文件';
+
+  @override
+  String get modsTitle => '模组';
+
+  @override
+  String modsCounts(int enabled, int total) {
+    return '已启用 $enabled / 共 $total';
+  }
+
+  @override
+  String get modsSearchHint => '筛选';
+
+  @override
+  String get modsRefresh => '刷新';
+
+  @override
+  String get modsOpenFolder => '打开文件夹';
+
+  @override
+  String get modsDisabled => '已禁用';
+
+  @override
+  String get modsDeleteTitle => '删除这个模组？';
+
+  @override
+  String modsDeleteBody(String name) {
+    return '$name 会从 mods 文件夹里删除。';
+  }
+
+  @override
+  String get modsDeleteAction => '删除';
+
+  @override
+  String get modsEmptyTitle => '还没有模组';
+
+  @override
+  String get modsEmptyBody => '把 .jar 放进 mods 文件夹，或从下载页获取。';
+
+  @override
+  String get modsEmptyAction => '去获取模组';
+
+  @override
+  String modsToggleFailed(String reason) {
+    return '无法修改模组：$reason';
+  }
+
+  @override
+  String get modsManageHint => 'mods/ · 点击管理';
 
   @override
   String get instanceFilesHint => '版本目录和四个内容文件夹，点一行即可打开。';

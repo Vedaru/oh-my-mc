@@ -137,6 +137,15 @@ class ScriptedInstalled extends InstalledVersions {
   Set<String> build() => state0;
 }
 
+class ScriptedIncomplete extends IncompleteInstalls {
+  ScriptedIncomplete(this.state0);
+
+  final Set<String> state0;
+
+  @override
+  Set<String> build() => state0;
+}
+
 void main() {
   late Directory tmp;
   late ScriptedInstallController installs;
@@ -154,6 +163,7 @@ void main() {
     WidgetTester tester, {
     VersionListState? list,
     Set<String> installed = const {},
+    Set<String> incomplete = const {},
   }) async {
     final container = ProviderContainer(
       overrides: [
@@ -163,6 +173,9 @@ void main() {
         installControllerProvider.overrideWith(() => installs),
         installedVersionsProvider.overrideWith(
           () => ScriptedInstalled(installed),
+        ),
+        incompleteInstallsProvider.overrideWith(
+          () => ScriptedIncomplete(incomplete),
         ),
       ],
     );
@@ -263,6 +276,23 @@ void main() {
 
     expect(installs.installedCalled, ['1.20.1']);
     expect(installs.loaders, [LoaderKind.vanilla]);
+  });
+
+  testWidgets('an interrupted install says so and stays clickable', (
+    tester,
+  ) async {
+    // The state a killed download leaves: the version is *not* installed (the
+    // JSON exists, the libraries do not). Before the journal existed this row read
+    // "Installed" and did nothing, which left no way to finish the install.
+    await pump(tester, incomplete: {'1.20.1'});
+
+    expect(find.text('Incomplete'), findsOneWidget);
+    expect(find.text('Installed'), findsNothing);
+
+    await tester.tap(find.text('1.20.1').first);
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(installs.installedCalled, ['1.20.1']);
   });
 
   testWidgets('the loader chosen in the toolbar is what gets installed', (

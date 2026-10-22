@@ -9,9 +9,11 @@ import '../../core/instance/instance.dart';
 import '../../core/launch/launch_handle.dart';
 import '../../data/instance_providers.dart';
 import '../../core/mc/arch_compat.dart';
+import '../../data/install_providers.dart';
 import '../../data/java_providers.dart';
 import '../../data/launch_providers.dart';
 import '../../l10n/l10n.dart';
+import '../components/app_banner.dart';
 import '../components/page_body.dart';
 import '../motion/motion.dart';
 import '../instances/instance_card.dart';
@@ -72,6 +74,10 @@ class LaunchScreen extends ConsumerWidget {
             // in place, and a settings deep link at that point is a round trip
             // the user will not take.
             _JavaOfferArea(instance: selected, session: session),
+            // The other refusal the launcher can fix by itself. Kept next to the
+            // Java offer because they are the same kind of message: "this is what
+            // stopped you, and here is the button that unblocks it".
+            _RepairOfferArea(instance: selected, session: session),
             const m3.SizedBox(height: 20),
             // Flexible, not Expanded: an idle console keeps its own height.
             Flexible(child: _LogTail(lines: session.log)),
@@ -130,6 +136,63 @@ class _NothingSelected extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Offers to finish an install that did not complete.
+///
+/// This is the recovery entry that survives a restart. Before it, the only repair
+/// affordance was inside `InstallDone(problemCount > 0)` - a state a *finished*
+/// install reaches - so an install killed mid-download (or by a `pkill`) left a
+/// version whose JSON exists, whose 67 jars do not, and which had no button
+/// anywhere to fix it. The marker file is what makes the state visible; this is
+/// what makes it actionable.
+class _RepairOfferArea extends ConsumerWidget {
+  const _RepairOfferArea({required this.instance, required this.session});
+
+  final Instance instance;
+  final LaunchSession session;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final missing = session.blockers.where(
+      (b) => b.code == BlockerCode.missingFiles,
+    );
+    final noVersion = session.blockers.any(
+      (b) => b.code == BlockerCode.missingVersion,
+    );
+    if (missing.isEmpty && !noVersion) return const SizedBox.shrink();
+
+    final busy = ref.watch(installControllerProvider) is InstallRunning;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: AppBanner(
+        key: const ValueKey('launch-repair-offer'),
+        severity: BannerSeverity.warning,
+        title: noVersion
+            ? l10n.launchRepairMissingTitle
+            : l10n.launchRepairTitle,
+        message: noVersion
+            ? l10n.launchRepairMissingBody(instance.versionId)
+            : l10n.launchRepairBody(missing.first.count ?? 0),
+        actionLabel: noVersion
+            ? l10n.launchMissingVersionAction
+            : l10n.launchRepairAction,
+        onAction: busy
+            ? null
+            : () {
+                if (noVersion) {
+                  context.go(Routes.download);
+                } else {
+                  ref
+                      .read(installControllerProvider.notifier)
+                      .repair(instance.versionId);
+                }
+              },
       ),
     );
   }

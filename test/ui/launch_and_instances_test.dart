@@ -9,6 +9,7 @@ import 'package:oh_my_mc/core/instance/instance.dart';
 import 'package:oh_my_mc/core/launch/launch_handle.dart';
 import 'package:oh_my_mc/core/mc/arch_compat.dart';
 import 'package:oh_my_mc/core/mc/launch_service.dart';
+import 'package:oh_my_mc/data/install_providers.dart';
 import 'package:oh_my_mc/data/instance_providers.dart';
 import 'package:oh_my_mc/data/instance_store.dart';
 import 'package:oh_my_mc/data/launch_providers.dart';
@@ -147,9 +148,11 @@ Future<ProviderContainer> pumpScreen(
   Instance? selected,
   FakeLaunchHandle Function()? handle,
   AppSettings settings = AppSettings.defaults,
+  InstallController Function()? installs,
 }) async {
   final container = ProviderContainer(
     overrides: [
+      if (installs != null) installControllerProvider.overrideWith(installs),
       settingsStoreProvider.overrideWith(
         (ref) => MemorySettingsStore(settings),
       ),
@@ -212,6 +215,17 @@ Instance sample({
   lastPlayedAt: lastPlayedAt,
   totalPlaytime: totalPlaytime,
 );
+
+/// Records `repair()` without touching the network or the launcher's tree.
+class ScriptedRepairController extends InstallController {
+  final repaired = <String>[];
+
+  @override
+  InstallState build() => const InstallIdle();
+
+  @override
+  Future<void> repair(String versionId) async => repaired.add(versionId);
+}
 
 void main() {
   group('instance list state', () {
@@ -727,17 +741,67 @@ void main() {
       await handle.dispose();
     });
 
-    testWidgets('a refused launch for another reason offers no Java download', (
+    testWidgets('a missing-files refusal offers to resume the install', (
       tester,
     ) async {
-      // `missingFiles` is fixed by reinstalling the version, not by Java; an
-      // offer here would send the user to a 96 MB download that changes nothing.
+      // `missingFiles` is fixed by finishing the install, not by Java; the offer
+      // is the resume, and it has to work after a restart - which is why it is
+      // derived from the blocker rather than from an install that is still in
+      // memory.
       final handle = FakeLaunchHandle(
         prepareOutcome: const LaunchRefused([
           LaunchBlocker(
             code: BlockerCode.missingFiles,
             message: '3 files are missing from the install.',
-            remedy: 'Install the version again.',
+            remedy:
+                'Resume the install; only the missing files are downloaded.',
+            count: 3,
+          ),
+        ]),
+      );
+      final installs = ScriptedRepairController();
+      await pumpScreen(
+        tester,
+        const LaunchScreen(),
+        instances: [sample()],
+        handle: () => handle,
+        installs: () => installs,
+      );
+
+      await tester.tap(find.widgetWithText(AppButton, 'Play'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 150));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('java-panel')), findsNothing);
+      expect(find.byKey(const ValueKey('launch-repair-offer')), findsOneWidget);
+      expect(
+        find.text(
+          '3 file(s) are missing, so this version cannot start. '
+          'Resuming only downloads what is absent.',
+        ),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text('Resume install'));
+      await tester.pumpAndSettle();
+      // The instance's own version id: a loader instance repairs the loader id,
+      // whose chain resolves to the vanilla install underneath.
+      expect(installs.repaired, [sample().versionId]);
+      await handle.dispose();
+    });
+
+    testWidgets('a refusal with nothing to fix offers no repair', (
+      tester,
+    ) async {
+      // An arch mismatch cannot be repaired by downloading: the offer must not
+      // appear or it teaches the user that the button does nothing.
+      final handle = FakeLaunchHandle(
+        prepareOutcome: const LaunchRefused([
+          LaunchBlocker(
+            code: BlockerCode.lwjgl2OnArm64Mac,
+            message: 'This version needs Rosetta on Apple Silicon.',
+            remedy: 'Use a build with arm64 natives.',
           ),
         ]),
       );
@@ -753,8 +817,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 150));
       await tester.pumpAndSettle();
 
-      expect(find.byKey(const ValueKey('java-panel')), findsNothing);
-      expect(find.textContaining('Launch refused'), findsOneWidget);
+      expect(find.byKey(const ValueKey('launch-repair-offer')), findsNothing);
       await handle.dispose();
     });
 

@@ -10,7 +10,9 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oh_my_mc/core/instance/instance.dart';
 import 'package:oh_my_mc/core/mc/game_folders.dart';
+import 'package:oh_my_mc/core/mods/mod_scanner.dart';
 import 'package:oh_my_mc/data/instance_providers.dart';
+import 'package:oh_my_mc/data/mods_providers.dart';
 import 'package:oh_my_mc/data/instance_store.dart';
 import 'package:oh_my_mc/data/launch_factory.dart';
 import 'package:oh_my_mc/data/settings.dart';
@@ -191,6 +193,9 @@ void main() {
     await shoot(tester, '/instances', 'instances-empty');
   });
 
+  // A fixed mods folder for the screenshot: the shot reviews the arrangement, and
+  // a real scan would need jars on disk.
+
   // A fixed answer for the content-folder scan: the shot exists to review the
   // arrangement of the section, not to race the filesystem.
   Override foldersOverride({
@@ -238,6 +243,16 @@ void main() {
       overrides: [
         foldersOverride(mods: 14, resourcePacks: 3, shaderPacks: 0, saves: 6),
       ],
+    );
+  });
+
+  testWidgets('instance mods', (tester) async {
+    await shoot(
+      tester,
+      '/instances/a/mods',
+      'instance-mods',
+      instances: [_instance('a', 'Survival', '1.20.1')],
+      overrides: [modsRepositoryProvider.overrideWithValue(_ShotMods())],
     );
   });
 
@@ -303,4 +318,50 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 2));
   });
+}
+
+class _ShotMods implements ModsRepository {
+  @override
+  Future<List<ModEntry>> scan(String directory) async => [
+    const ModEntry(
+      path: '/g/mods/sodium.jar',
+      enabled: true,
+      sizeBytes: 780000,
+      loader: ModLoaderKind.fabric,
+      id: 'sodium',
+      name: 'Sodium',
+      version: '0.5.11',
+    ),
+    const ModEntry(
+      path: '/g/mods/iris.jar',
+      enabled: true,
+      sizeBytes: 2400000,
+      loader: ModLoaderKind.fabric,
+      id: 'iris',
+      name: 'Iris Shaders',
+      version: '1.7.3',
+    ),
+    const ModEntry(
+      path: '/g/mods/jei.jar.disabled',
+      enabled: false,
+      sizeBytes: 1200000,
+      loader: ModLoaderKind.forge,
+      id: 'jei',
+      name: 'Just Enough Items',
+      version: '15.2.0',
+    ),
+    const ModEntry(
+      path: '/g/mods/old.jar',
+      enabled: true,
+      sizeBytes: 90000,
+      loader: ModLoaderKind.unknown,
+      problem: 'no mod metadata in the jar',
+    ),
+  ];
+
+  @override
+  Future<String> setEnabled(ModEntry mod, bool enabled) async => mod.path;
+
+  @override
+  Future<void> delete(ModEntry mod) async {}
 }

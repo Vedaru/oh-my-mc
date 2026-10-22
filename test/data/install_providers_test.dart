@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:oh_my_mc/core/install/install_journal.dart';
 import 'package:oh_my_mc/core/net/progress.dart';
 import 'package:oh_my_mc/core/install/version_installer.dart';
 import 'package:oh_my_mc/data/install_providers.dart';
@@ -272,6 +273,38 @@ void main() {
       await pumpEventQueue();
 
       expect(c.read(installedVersionsProvider), {'1.19.4'});
+    });
+
+    test('an interrupted install is incomplete, not installed', () async {
+      // Exactly the state a `pkill` leaves: the JSON is written, the libraries are
+      // not. It must NOT count as installed, or the download row stops offering
+      // the only thing that can fix it.
+      final dir = Directory(paths.gamePaths.versionDir('26.3'))
+        ..createSync(recursive: true);
+      await File('${dir.path}/26.3.json').writeAsString('{}');
+      await InstallJournal.begin(paths.gamePaths, '26.3', stage: 'download');
+
+      final c = container();
+      c.read(installedVersionsProvider);
+      await pumpEventQueue();
+
+      expect(c.read(installedVersionsProvider), isEmpty);
+      expect(c.read(incompleteInstallsProvider), {'26.3'});
+    });
+
+    test('finishing the install moves it to installed', () async {
+      final dir = Directory(paths.gamePaths.versionDir('26.3'))
+        ..createSync(recursive: true);
+      await File('${dir.path}/26.3.json').writeAsString('{}');
+      await InstallJournal.begin(paths.gamePaths, '26.3');
+      await InstallJournal.finish(paths.gamePaths, '26.3');
+
+      final c = container();
+      c.read(installedVersionsProvider);
+      await pumpEventQueue();
+
+      expect(c.read(installedVersionsProvider), {'26.3'});
+      expect(c.read(incompleteInstallsProvider), isEmpty);
     });
 
     test('a missing versions directory is empty, not an error', () async {

@@ -64,12 +64,11 @@ wrong: installing wrote files, and nothing pointed the launcher at them.
 | Loaders: Fabric / Quilt profile install | **done** | `lib/core/mc/loader_meta.dart`, download page loader selector |
 | Loaders: Forge / NeoForge installer jar | **done** | `forge_install.dart`, `/download` loader selector |
 | UI: language, theme, accent colour | **done** | `/setup` |
-| **Loader install** (Forge/NeoForge) | **missing** | needs the official installer jar; Fabric/Quilt are done |
-| **Mod management** (scan `fabric.mod.json`/`mods.toml`/`mcmod.info`, enable/disable/delete) | **missing** | - |
+| 版本设置 → Mod 管理: read `fabric.mod.json`/`quilt.mod.json`/`mods.toml`/`mcmod.info`, enable/disable by rename, delete, filter | **done** | `lib/core/mods/mod_scanner.dart`, `/instances/:id/mods` |
+| Interrupted installs: journal, resume from the download row and from a refused launch | **done** | `lib/core/install/install_journal.dart`, `InstallController.repair` |
 | **Mod search/install** (Modrinth/CurseForge, dependencies) | **missing** | - |
 | **Modpack import/export** (`.zip`, `.mrpack`) | **missing** | - |
 | **Instance import/export/clone** | **missing** (ARB strings only) | `instanceImport`, `instanceExport`, `instanceClone` |
-| **Per-version window size** | **missing** | `Instance` has no width/height |
 | **Crash analysis** | **missing** | - |
 | **Microsoft sign-in, skin** | **missing** | offline identity only |
 | 资源包 / 光影 / 存档 / 数据包 / 服务器 entries | **missing** | - |
@@ -114,7 +113,16 @@ the per-version mods/resourcepacks/shaderpacks/saves entries (list + open folder
 delete), and "open folder" for each. This is cheap and closes the "where do I put
 my mods" question.
 
-**P3 - mods.** Local scan first (the three metadata formats → name/version/enabled
+**P3 - mods (local scan landed).** `mods/` is read as a list: `fabric.mod.json`,
+`quilt.mod.json`, `META-INF/mods.toml`, `META-INF/neoforge.mods.toml` and
+`mcmod.info`, each mapped to id/name/version/loader; a jar with no descriptor, a
+renamed text file and a truncated zip are all *rows with a reason* rather than
+silent omissions, because the fix for a wrong drop is deleting it. Enabling is the
+`.jar` ↔ `.jar.disabled` rename every launcher uses, so a hand-fixed folder stays
+in sync. Still open: Modrinth search/install with dependency resolution, and
+CurseForge (needs an API key - a separate decision).
+
+The old plan for this step was: scan first (the three metadata formats → name/version/enabled
 by file extension), enable/disable by renaming `.jar` ↔ `.jar.disabled`, delete.
 Then Modrinth search/install with dependency resolution. CurseForge needs an API key
 and is a separate decision.

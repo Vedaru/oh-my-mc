@@ -10,6 +10,7 @@ class LaunchBlocker {
     required this.code,
     required this.message,
     required this.remedy,
+    this.count,
   });
 
   final BlockerCode code;
@@ -17,6 +18,12 @@ class LaunchBlocker {
 
   /// What the user can actually do about it.
   final String remedy;
+
+  /// How many things are wrong, when that is a number the UI can act on (missing
+  /// files). Kept as a field rather than parsed out of [message]: the message is
+  /// localized prose, and a UI that regexes its own text is a UI that breaks in
+  /// translation.
+  final int? count;
 
   @override
   String toString() => '$code: $message ($remedy)';

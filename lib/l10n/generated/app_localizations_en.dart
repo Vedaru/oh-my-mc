@@ -117,6 +117,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get downloadInstalled => 'Installed';
 
   @override
+  String get downloadIncomplete => 'Incomplete';
+
+  @override
+  String get launchRepairTitle => 'The install did not finish';
+
+  @override
+  String get launchRepairMissingTitle => 'This version is not installed';
+
+  @override
+  String launchRepairMissingBody(String version) {
+    return '$version is not on disk any more. Install it again to launch this instance.';
+  }
+
+  @override
+  String launchRepairBody(int count) {
+    return '$count file(s) are missing, so this version cannot start. Resuming only downloads what is absent.';
+  }
+
+  @override
+  String get launchRepairAction => 'Resume install';
+
+  @override
+  String get launchMissingVersionAction => 'Install it';
+
+  @override
   String get downloadRelease => 'Release';
 
   @override
@@ -289,6 +314,55 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get instanceSectionFiles => 'Files';
+
+  @override
+  String get modsTitle => 'Mods';
+
+  @override
+  String modsCounts(int enabled, int total) {
+    return '$enabled of $total enabled';
+  }
+
+  @override
+  String get modsSearchHint => 'Filter';
+
+  @override
+  String get modsRefresh => 'Refresh';
+
+  @override
+  String get modsOpenFolder => 'Open folder';
+
+  @override
+  String get modsDisabled => 'Off';
+
+  @override
+  String get modsDeleteTitle => 'Delete this mod?';
+
+  @override
+  String modsDeleteBody(String name) {
+    return '$name will be removed from the mods folder.';
+  }
+
+  @override
+  String get modsDeleteAction => 'Delete';
+
+  @override
+  String get modsEmptyTitle => 'No mods yet';
+
+  @override
+  String get modsEmptyBody =>
+      'Drop a .jar into the mods folder, or get one from the download page.';
+
+  @override
+  String get modsEmptyAction => 'Get mods';
+
+  @override
+  String modsToggleFailed(String reason) {
+    return 'Could not change the mod: $reason';
+  }
+
+  @override
+  String get modsManageHint => 'mods/ · select to manage';
 
   @override
   String get instanceFilesHint =>

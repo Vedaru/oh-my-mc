@@ -34,6 +34,7 @@ class ListRow extends StatelessWidget {
     this.supportingMono = false,
     this.trailingText,
     this.trailingTextKey,
+    this.trailingControl,
     this.trailingIcon,
     this.trailingTooltip,
     this.onPressed,
@@ -58,6 +59,11 @@ class ListRow extends StatelessWidget {
   final String? trailingText;
   final Key? trailingTextKey;
 
+  /// The trailing *selection control* of the M3 anatomy - a switch or a checkbox.
+  /// It sits at the very edge, after the metadata, because it is the row's state
+  /// and not part of its description.
+  final Widget? trailingControl;
+
   final m3.IconData? trailingIcon;
   final String? trailingTooltip;
 
@@ -74,7 +80,10 @@ class ListRow extends StatelessWidget {
 
     return HoverRow(
       onTap: onPressed,
-      padding: const m3.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      // 10px vertical: a two-line row lands near 56dp, the M3 minimum for a list
+      // item with supporting text, without going to the 72dp touch size on a
+      // desktop where the pointer is precise.
+      padding: const m3.EdgeInsets.symmetric(horizontal: 8, vertical: 10),
       builder: (hovered) => m3.Row(
         children: [
           if (leadingIcon != null) ...[
@@ -139,6 +148,10 @@ class ListRow extends StatelessWidget {
               color: scheme.onSurfaceVariant,
               visualDensity: m3.VisualDensity.compact,
             ),
+          if (trailingControl != null) ...[
+            const m3.SizedBox(width: 4),
+            trailingControl!,
+          ],
         ],
       ),
     );

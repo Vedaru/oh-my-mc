@@ -14,6 +14,7 @@ import '../net/progress.dart';
 import '../net/version_manifest.dart';
 import 'asset_layout.dart';
 import 'extract.dart';
+import 'install_journal.dart';
 import 'verify.dart';
 
 /// The step an install has reached. Ordered, so the UI can show "step 3 of 6"
@@ -138,6 +139,9 @@ class VersionInstaller {
     }
 
     phase(InstallPhase.manifest, step: 1);
+    // Marked before the first byte is written: everything after this point can be
+    // interrupted, and an interrupted install has to be recognisable as such.
+    await InstallJournal.begin(paths, versionId, stage: 'manifest');
     final manifest = await _loadManifest(paths, cancel);
 
     phase(InstallPhase.versionJson, step: 2, detail: versionId);
@@ -209,6 +213,13 @@ class VersionInstaller {
 
     phase(InstallPhase.verify, step: 9);
     final verification = await verifyInstall(plan);
+
+    // Only a complete tree loses its marker. A verified-incomplete one keeps it,
+    // so the download row keeps offering the install and a resume is one click
+    // away instead of being buried in a state that no longer exists.
+    if (verification.problems.isEmpty) {
+      await InstallJournal.finish(paths, versionId);
+    }
 
     return InstallResult(
       versionId: versionId,

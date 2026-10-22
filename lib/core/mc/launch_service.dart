@@ -181,7 +181,10 @@ LaunchOutcome prepareLaunch({
           message:
               '${missing.length} file(s) are missing from the install, '
               'starting with ${p.basename(missing.first)}.',
-          remedy: 'Install the version again; the download is incomplete.',
+          // Resuming is the right remedy and the launcher can offer it in place:
+          // the downloader skips what is already on disk.
+          remedy: 'Resume the install; only the missing files are downloaded.',
+          count: missing.length,
         ),
       );
     }

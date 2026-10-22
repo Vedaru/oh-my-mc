@@ -450,7 +450,9 @@ void main() {
       expect(find.byType(ListRow), findsNWidgets(6));
       // Every row carries its supporting text - the on-disk name - so the localized
       // label and the real folder name sit in the same place in each row.
-      expect(find.text('mods/'), findsOneWidget);
+      // The mods row's supporting text now says it opens the manager, not just
+      // which folder it is.
+      expect(find.textContaining('mods/'), findsOneWidget);
       expect(find.text('resourcepacks/'), findsOneWidget);
       expect(find.text('shaderpacks/'), findsOneWidget);
       expect(find.text('saves/'), findsOneWidget);

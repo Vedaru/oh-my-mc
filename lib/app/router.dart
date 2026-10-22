@@ -22,6 +22,13 @@ abstract final class Routes {
   static const instanceDetailPattern = '/instances/:id';
 
   static String instanceDetail(String id) => '/instances/$id';
+
+  /// 版本设置 → Mod 管理. A child of the detail route, so the rail keeps the
+  /// instance section selected and Back is the browser's own history.
+  static const instanceModsSegment = 'mods';
+
+  static String instanceMods(String id) =>
+      '/instances/$id/$instanceModsSegment';
 }
 
 /// Builds the app's [GoRouter].
@@ -58,7 +65,13 @@ GoRouter createRouter({
           // The detail route is a *relative* child (`:id`), which is what makes
           // `/instances/<id>` resolve. A child repeating its parent's segment
           // would be a second, competing table.
-          _route(Routes.instances, screens, routes: [_route(':id', screens)]),
+          _route(
+            Routes.instances,
+            screens,
+            routes: [
+              _route(':id', screens, routes: [_route(':mods', screens)]),
+            ],
+          ),
           _route(Routes.download, screens),
           _route(Routes.setup, screens),
           _route(Routes.logs, screens),

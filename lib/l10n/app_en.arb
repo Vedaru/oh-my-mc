@@ -141,6 +141,44 @@
     "description": "Installs the selected version or loader."
   },
   "downloadInstalled": "Installed",
+  "downloadIncomplete": "Incomplete",
+  "@downloadIncomplete": {
+    "description": "Trailing state of a version whose install was interrupted."
+  },
+  "launchRepairTitle": "The install did not finish",
+  "launchRepairMissingTitle": "This version is not installed",
+  "@launchRepairMissingTitle": {
+    "description": "Heading when the version directory was deleted."
+  },
+  "launchRepairMissingBody": "{version} is not on disk any more. Install it again to launch this instance.",
+  "@launchRepairMissingBody": {
+    "description": "Body when the version is gone; version is the version id.",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "@launchRepairTitle": {
+    "description": "Heading of the repair offer on the launch page."
+  },
+  "launchRepairBody": "{count} file(s) are missing, so this version cannot start. Resuming only downloads what is absent.",
+  "@launchRepairBody": {
+    "description": "Body of the repair offer; count is the missing file count.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "launchRepairAction": "Resume install",
+  "@launchRepairAction": {
+    "description": "Button that resumes an interrupted install."
+  },
+  "launchMissingVersionAction": "Install it",
+  "@launchMissingVersionAction": {
+    "description": "Button that opens the download page for a version that is not on disk."
+  },
   "@downloadInstalled": {
     "description": "Marks a version that is already installed."
   },
@@ -369,6 +407,80 @@
     "description": "Detail page section: heap size and JVM choice."
   },
   "instanceSectionFiles": "Files",
+  "modsTitle": "Mods",
+  "@modsTitle": {
+    "description": "Heading of the per-instance mod manager."
+  },
+  "modsCounts": "{enabled} of {total} enabled",
+  "@modsCounts": {
+    "description": "Subtitle counts: how many mods the game will load.",
+    "placeholders": {
+      "enabled": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "modsSearchHint": "Filter",
+  "@modsSearchHint": {
+    "description": "Placeholder of the mod filter field."
+  },
+  "modsRefresh": "Refresh",
+  "@modsRefresh": {
+    "description": "Rescans the mods folder."
+  },
+  "modsOpenFolder": "Open folder",
+  "@modsOpenFolder": {
+    "description": "Opens the mods folder in the file manager."
+  },
+  "modsDisabled": "Off",
+  "@modsDisabled": {
+    "description": "Trailing state of a disabled mod."
+  },
+  "modsDeleteTitle": "Delete this mod?",
+  "@modsDeleteTitle": {
+    "description": "Confirmation title for deleting a jar."
+  },
+  "modsDeleteBody": "{name} will be removed from the mods folder.",
+  "@modsDeleteBody": {
+    "description": "Confirmation body; name is the mod display name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "modsDeleteAction": "Delete",
+  "@modsDeleteAction": {
+    "description": "Confirm button that deletes the jar."
+  },
+  "modsEmptyTitle": "No mods yet",
+  "@modsEmptyTitle": {
+    "description": "Empty state heading for the mods list."
+  },
+  "modsEmptyBody": "Drop a .jar into the mods folder, or get one from the download page.",
+  "@modsEmptyBody": {
+    "description": "Empty state body."
+  },
+  "modsEmptyAction": "Get mods",
+  "@modsEmptyAction": {
+    "description": "Empty state button that goes to the download page."
+  },
+  "modsToggleFailed": "Could not change the mod: {reason}",
+  "@modsToggleFailed": {
+    "description": "Shown when renaming a jar fails.",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "modsManageHint": "mods/ · select to manage",
+  "@modsManageHint": {
+    "description": "Supporting text of the mods row in version settings."
+  },
   "instanceFilesHint": "The version folder and its four content folders. Select a row to open it.",
   "@instanceFilesHint": {
     "description": "Description under the Files section heading."

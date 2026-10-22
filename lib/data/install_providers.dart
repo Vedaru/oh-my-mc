@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/install/version_installer.dart';
 import '../core/instance/instance.dart';
+import '../core/install/install_journal.dart';
 import '../core/mc/forge_install.dart';
 import '../core/mc/loader_meta.dart';
 import '../core/mc/local_host.dart';
@@ -360,6 +361,60 @@ class InstallController extends Notifier<InstallState> {
         .path;
   }
 
+  /// Completes an install that was interrupted, or whose files were deleted.
+  ///
+  /// Deliberately not `install(versionId, loader: …)`: the version JSON is already
+  /// on disk (Forge writes its own), and re-running an installer jar to replace 60
+  /// missing libraries would take minutes and need a JVM. The shared pipeline
+  /// already resolves the inheritance chain, hashes what is present and downloads
+  /// only the rest.
+  Future<void> repair(String versionId) async {
+    if (isBusy) return;
+    final paths = ref.read(launcherPathsProvider);
+    final cancel = CancelToken();
+    _cancel = cancel;
+    final installer = ref.read(installerFactoryProvider)();
+    _installer = installer;
+    state = InstallRunning(
+      versionId: versionId,
+      progress: const InstallProgress(phase: InstallPhase.manifest, step: 1),
+    );
+    try {
+      final result = await installer.install(
+        versionId: versionId,
+        paths: paths.gamePaths,
+        host: localRuleContext(),
+        cancel: cancel,
+        onProgress: (progress) {
+          if (cancel.isCancelled || !ref.mounted) return;
+          state = InstallRunning(
+            versionId: versionId,
+            progress: progress,
+            bytesPerSecond: progress.download?.bytesPerSecond,
+          );
+        },
+      );
+      if (!ref.mounted) return;
+      state = InstallDone(
+        versionId: versionId,
+        problemCount: result.verification.problems.length,
+        fileCount: result.verification.checkedFiles,
+      );
+      await ref.read(installedVersionsProvider.notifier).refresh();
+      await ref.read(instanceListProvider.notifier).ensureForVersion(versionId);
+    } on CancelledException {
+      if (ref.mounted) state = InstallCancelled(versionId: versionId);
+    } catch (e) {
+      if (ref.mounted) {
+        state = InstallFailed(versionId: versionId, message: _describe(e));
+      }
+    } finally {
+      installer.close();
+      if (identical(_installer, installer)) _installer = null;
+      _cancel = null;
+    }
+  }
+
   /// Stops the running install. Returns immediately; the state moves to
   /// [InstallCancelled] when the installer actually unwinds.
   void cancel() => _cancel?.cancel();
@@ -401,16 +456,45 @@ class InstalledVersions extends Notifier<Set<String>> {
       return;
     }
     final ids = <String>{};
+    final incomplete = <String>{};
     await for (final entry in dir.list(followLinks: false)) {
       if (entry is! Directory) continue;
       final id = entry.uri.pathSegments.lastWhere((s) => s.isNotEmpty);
       // A version directory without its JSON is a half-deleted install: it
       // cannot be launched, so offering it as installed would be wrong.
-      if (await File(paths.gamePaths.versionJson(id)).exists()) ids.add(id);
+      if (!await File(paths.gamePaths.versionJson(id)).exists()) continue;
+      // ...and neither is a version whose install was interrupted. The JSON is
+      // written first and the libraries last, so its presence says nothing about
+      // the 67 jars that may be missing. Keeping it out of `installed` is what
+      // leaves the download row clickable, which is the whole recovery path for an
+      // install killed mid-flight.
+      if (InstallJournal.isIncomplete(paths.gamePaths, id)) {
+        incomplete.add(id);
+        continue;
+      }
+      ids.add(id);
     }
-    if (ref.mounted) state = ids;
+    if (ref.mounted) {
+      state = ids;
+      ref.read(incompleteInstallsProvider.notifier).setAll(incomplete);
+    }
   }
 }
+
+/// Versions whose install was interrupted: the directory and version JSON exist,
+/// the libraries may not.
+///
+/// Published by [InstalledVersions.refresh] rather than scanning a second time, so
+/// the two sets can never disagree.
+class IncompleteInstalls extends Notifier<Set<String>> {
+  @override
+  Set<String> build() => const {};
+
+  void setAll(Set<String> ids) => state = ids;
+}
+
+final incompleteInstallsProvider =
+    NotifierProvider<IncompleteInstalls, Set<String>>(IncompleteInstalls.new);
 
 /// The version list, loaded once per session and cached on disk by the service.
 sealed class VersionListState {
