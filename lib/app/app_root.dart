@@ -33,7 +33,7 @@ typedef ScreenBuilder = Widget Function(
 class AppRoot extends ConsumerWidget {
   const AppRoot({
     required this.screens,
-    this.initialLocation = Routes.launch,
+    this.initialLocation = Routes.instances,
     this.overrideMotion,
     super.key,
   });

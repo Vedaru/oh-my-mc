@@ -34,9 +34,9 @@ Future<void> _setLanguage(
 void main() {
   testWidgets('the app resolves English and shows it', (tester) async {
     await _pumpApp(tester, locale: const Locale('en'));
-    // The header shows the current screen, not the product name: "Launch" appears
-    // in the rail item and in the header title.
-    expect(find.text('Launch'), findsWidgets);
+    // The header shows the current screen, not the product name: "Instances" is
+    // the rail's first item and the header title on the home route.
+    expect(find.text('Instances'), findsWidgets);
   });
 
   testWidgets('the app resolves Chinese and the widget tree is localized', (

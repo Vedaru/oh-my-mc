@@ -260,6 +260,12 @@ abstract class AppLocalizations {
   /// **'Loaders'**
   String get downloadLoaders;
 
+  /// Loader choice meaning "no loader": the plain game version.
+  ///
+  /// In en, this message translates to:
+  /// **'Vanilla'**
+  String get loaderVanilla;
+
   /// Installs the selected version or loader.
   ///
   /// In en, this message translates to:
@@ -1069,6 +1075,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Refresh'**
   String get javaRefresh;
+
+  /// Heading over the user-supplied Java search directories.
+  ///
+  /// In en, this message translates to:
+  /// **'Java directories'**
+  String get javaDirsTitle;
+
+  /// Explains that a bundled runtime is installed automatically and extra directories can be added.
+  ///
+  /// In en, this message translates to:
+  /// **'The launcher installs its own Java when a version needs one. Add a folder here to reuse JDKs you already have.'**
+  String get javaDirsHint;
+
+  /// Button that opens a directory picker for an extra Java search folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Add folder…'**
+  String get javaAddDir;
+
+  /// Removes one user-supplied Java directory from the search list.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get javaRemoveDir;
 
   /// Generic cancel button.
   ///

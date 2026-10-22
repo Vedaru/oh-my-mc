@@ -108,6 +108,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get downloadLoaders => 'Loaders';
 
   @override
+  String get loaderVanilla => 'Vanilla';
+
+  @override
   String get downloadInstall => 'Install';
 
   @override
@@ -591,6 +594,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get javaRefresh => 'Refresh';
+
+  @override
+  String get javaDirsTitle => 'Java directories';
+
+  @override
+  String get javaDirsHint =>
+      'The launcher installs its own Java when a version needs one. Add a folder here to reuse JDKs you already have.';
+
+  @override
+  String get javaAddDir => 'Add folder…';
+
+  @override
+  String get javaRemoveDir => 'Remove';
 
   @override
   String get javaCancel => 'Cancel';

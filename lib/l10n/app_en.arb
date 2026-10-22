@@ -129,6 +129,10 @@
     "description": "Version list tab."
   },
   "downloadLoaders": "Loaders",
+  "loaderVanilla": "Vanilla",
+  "@loaderVanilla": {
+    "description": "Loader choice meaning \"no loader\": the plain game version."
+  },
   "@downloadLoaders": {
     "description": "Installer tab for Forge/Fabric and friends."
   },
@@ -840,6 +844,22 @@
     "description": "Confirms deleting a downloaded Java runtime."
   },
   "javaRefresh": "Refresh",
+  "javaDirsTitle": "Java directories",
+  "@javaDirsTitle": {
+    "description": "Heading over the user-supplied Java search directories."
+  },
+  "javaDirsHint": "The launcher installs its own Java when a version needs one. Add a folder here to reuse JDKs you already have.",
+  "@javaDirsHint": {
+    "description": "Explains that a bundled runtime is installed automatically and extra directories can be added."
+  },
+  "javaAddDir": "Add folder…",
+  "@javaAddDir": {
+    "description": "Button that opens a directory picker for an extra Java search folder."
+  },
+  "javaRemoveDir": "Remove",
+  "@javaRemoveDir": {
+    "description": "Removes one user-supplied Java directory from the search list."
+  },
   "@javaRefresh": {
     "description": "Button that rescans for installed Java runtimes."
   },

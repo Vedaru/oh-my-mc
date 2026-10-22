@@ -104,7 +104,7 @@ class OhMyMcApp extends StatelessWidget {
     this.launchHandleFactory,
     this.locale,
     this.themeMode,
-    this.initialLocation = Routes.launch,
+    this.initialLocation = Routes.instances,
   });
 
   final SettingsStore? store;

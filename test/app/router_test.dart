@@ -115,15 +115,16 @@ void main() {
     expect(find.text('route:${Routes.instances}'), findsOneWidget);
   });
 
-  testWidgets('an unknown location lands on launch instead of crashing', (
-    tester,
-  ) async {
-    await pumpApp(tester, initialLocation: '/definitely/not/a/route');
-    await tester.pumpAndSettle();
+  testWidgets(
+    'an unknown location lands on the home grid instead of crashing',
+    (tester) async {
+      await pumpApp(tester, initialLocation: '/definitely/not/a/route');
+      await tester.pumpAndSettle();
 
-    expect(find.text('route:${Routes.launch}'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
+      expect(find.text('route:${Routes.instances}'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('initialLocation is honoured', (tester) async {
     await pumpApp(tester, initialLocation: Routes.logs);

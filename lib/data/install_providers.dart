@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/install/version_installer.dart';
+import '../core/instance/instance.dart';
+import '../core/mc/loader_meta.dart';
 import '../core/mc/local_host.dart';
 import '../core/net/cancellation.dart';
 import '../core/net/version_manifest.dart';
@@ -115,7 +117,12 @@ class InstallController extends Notifier<InstallState> {
   /// caller will launch an isolated instance: libraries and assets are
   /// content-addressed and identical across instances, so copying them per
   /// instance would multiply a 400 MB install by the number of instances.
-  Future<void> install(String versionId, {bool includeAssets = true}) async {
+  Future<void> install(
+    String versionId, {
+    bool includeAssets = true,
+    LoaderKind? loader,
+    String? loaderVersion,
+  }) async {
     if (isBusy) return;
 
     final paths = ref.read(launcherPathsProvider);
@@ -124,6 +131,8 @@ class InstallController extends Notifier<InstallState> {
 
     final installer = ref.read(installerFactoryProvider)();
     _installer = installer;
+    final kind = loader ?? LoaderKind.vanilla;
+    final meta = kind == LoaderKind.vanilla ? null : LoaderMeta();
 
     state = InstallRunning(
       versionId: versionId,
@@ -131,8 +140,46 @@ class InstallController extends Notifier<InstallState> {
     );
 
     try {
+      // A loader is not a second pipeline: its meta service hands over a complete
+      // version JSON that inherits the game version, so writing that file makes
+      // the rest of this install identical to vanilla's.
+      var installId = versionId;
+      var resolvedLoaderVersion = loaderVersion;
+      if (meta != null) {
+        // `null` means "whatever is current": the download page lets the user pick
+        // a loader, not a loader build, which is the choice PCL makes for them too.
+        var version = resolvedLoaderVersion;
+        if (version == null || version.isEmpty) {
+          final available = await meta.loaderVersions(
+            kind,
+            versionId,
+            cancel: cancel,
+          );
+          if (available.isEmpty) {
+            throw StateError('${kind.label} has no build for $versionId');
+          }
+          version = available.first;
+        }
+        resolvedLoaderVersion = version;
+        state = InstallRunning(
+          versionId: versionId,
+          progress: InstallProgress(
+            phase: InstallPhase.versionJson,
+            step: 2,
+            detail: '${kind.label} $version',
+          ),
+        );
+        installId = await LoaderProfileWriter(meta).prepare(
+          kind: kind,
+          gameVersion: versionId,
+          loaderVersion: version,
+          paths: paths.gamePaths,
+          cancel: cancel,
+        );
+      }
+
       final result = await installer.install(
-        versionId: versionId,
+        versionId: installId,
         paths: paths.gamePaths,
         host: localRuleContext(),
         includeAssets: includeAssets,
@@ -161,7 +208,16 @@ class InstallController extends Notifier<InstallState> {
       // ...and the launch page needs something to point at: a finished download
       // becomes a launchable instance, exactly as it does in PCL, instead of
       // waiting for the user to invent a name for files they just downloaded.
-      await ref.read(instanceListProvider.notifier).ensureForVersion(versionId);
+      await ref
+          .read(instanceListProvider.notifier)
+          .ensureForVersion(
+            installId,
+            loader: kind,
+            loaderVersion: resolvedLoaderVersion,
+            name: kind == LoaderKind.vanilla
+                ? null
+                : '$versionId · ${kind.label}',
+          );
     } on CancelledException {
       if (ref.mounted) state = InstallCancelled(versionId: versionId);
     } catch (e) {
@@ -169,6 +225,7 @@ class InstallController extends Notifier<InstallState> {
         state = InstallFailed(versionId: versionId, message: _describe(e));
       }
     } finally {
+      meta?.close();
       installer.close();
       if (identical(_installer, installer)) _installer = null;
       _cancel = null;

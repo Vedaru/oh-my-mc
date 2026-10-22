@@ -178,6 +178,12 @@ class MotionEntrance extends StatelessWidget {
       child: AnimationConfiguration.staggeredList(
         position: 0,
         duration: motion.stagger.itemDuration,
+        // Slide only, no page-wide fade. An `Opacity` over the whole page forces a
+        // save-layer every frame, so the compositor re-rasterises the entire
+        // window to move it a few pixels - which is exactly what "the animation
+        // runs at a low frame rate" looks like on a 1440x900 page holding a grid
+        // or a log. A transform is free by comparison, and the entrance still
+        // reads as an arrival.
         child: SlideAnimation(
           duration: motion.stagger.itemDuration,
           curve: motion.stagger.curve,
@@ -191,7 +197,7 @@ class MotionEntrance extends StatelessWidget {
             EnterFrom.right => distance,
             _ => 0,
           },
-          child: FadeInAnimation(child: body),
+          child: body,
         ),
       ),
     );

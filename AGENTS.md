@@ -240,6 +240,12 @@ the current gap table and the ordered backlog. Two rules from it bind new code:
   just downloaded.
 - **The version card is the selector**, and per-version settings live in
   `/instances/:id`, never in the global `/setup` page.
+- **The instance grid is home**; there is no Launch tab. `/launch` is the running
+  view (log, stop, version settings) that a Play navigates to.
+- **Java: own runtime first.** A version that runs elsewhere usually fails here
+  because *that* launcher shipped the JVM, so the scan looks inside Prism/official
+  launcher/JetBrains/sdkman layouts, the launcher downloads its own runtime on
+  demand, and `/setup` → Java accepts extra directories (`AppSettings.javaDirs`).
 
 ## Ship targets (decided — do not "helpfully" add more)
 

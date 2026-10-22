@@ -7,6 +7,8 @@
 /// garbage is worse than one that starts with a default.
 library;
 
+import 'dart:convert';
+
 import '../core/instance/memory.dart';
 
 /// Which theme to use. `system` follows the OS.
@@ -35,6 +37,7 @@ class AppSettings {
     this.accent = AccentChoice.blue,
     this.playerName = defaultPlayerName,
     this.memoryMb = defaultMemoryMb,
+    this.javaDirs = const [],
   });
 
   /// A valid offline player name (3-16 ASCII word characters). Shown to other
@@ -64,6 +67,14 @@ class AppSettings {
   /// Global heap cap, used when an instance has no override.
   final int memoryMb;
 
+  /// Extra directories to look for a JVM in, on top of the built-in roots.
+  ///
+  /// The launcher downloads its own runtime when a version needs one, but a user
+  /// who already keeps JDKs somewhere (a toolchain manager, a second launcher, an
+  /// IDE) should not have to download a second copy: pointing at the directory is
+  /// enough.
+  final List<String> javaDirs;
+
   /// Persisted form. Keys are stable strings, not enum indices, so reordering an
   /// enum cannot silently reinterpret an existing user's setting.
   Map<String, Object?> toMap() => {
@@ -72,6 +83,10 @@ class AppSettings {
     'accent': accent.name,
     'playerName': playerName,
     'memoryMb': memoryMb,
+    // A list, so it is stored as JSON in a single string key: the settings store
+    // writes scalars, and one key per directory would leak the list's length into
+    // the preferences file.
+    'javaDirs': jsonEncode(javaDirs),
   };
 
   /// Reads [map], falling back to [defaults] per field rather than wholesale, so
@@ -97,6 +112,7 @@ class AppSettings {
       // worse, start with an empty name; clamp it back to the default instead.
       playerName: _validPlayerName(map['playerName']),
       memoryMb: _validMemoryMb(map['memoryMb']),
+      javaDirs: _validJavaDirs(map['javaDirs']),
     );
   }
 
@@ -106,12 +122,14 @@ class AppSettings {
     AccentChoice? accent,
     String? playerName,
     int? memoryMb,
+    List<String>? javaDirs,
   }) => AppSettings(
     theme: theme ?? this.theme,
     language: language ?? this.language,
     accent: accent ?? this.accent,
     playerName: playerName ?? this.playerName,
     memoryMb: memoryMb ?? this.memoryMb,
+    javaDirs: javaDirs ?? this.javaDirs,
   );
 
   @override
@@ -122,17 +140,24 @@ class AppSettings {
           other.language == language &&
           other.accent == accent &&
           other.playerName == playerName &&
-          other.memoryMb == memoryMb;
+          other.memoryMb == memoryMb &&
+          _sameList(other.javaDirs, javaDirs);
 
   @override
-  int get hashCode =>
-      Object.hash(theme, language, accent, playerName, memoryMb);
+  int get hashCode => Object.hash(
+    theme,
+    language,
+    accent,
+    playerName,
+    memoryMb,
+    Object.hashAll(javaDirs),
+  );
 
   @override
   String toString() =>
       'AppSettings(theme: ${theme.name}, language: ${language.name}, '
       'accent: ${accent.name}, playerName: $playerName, '
-      'memoryMb: $memoryMb)';
+      'memoryMb: $memoryMb, javaDirs: $javaDirs)';
 }
 
 /// Minecraft accepts 3-16 characters from `[A-Za-z0-9_]`. Anything else is a
@@ -155,6 +180,30 @@ int _validMemoryMb(Object? raw) {
     return AppSettings.defaultMemoryMb;
   }
   return raw;
+}
+
+/// Reads the JSON-encoded directory list. Anything unreadable is an empty list:
+/// losing the extra search paths costs a rescan, not a crash.
+List<String> _validJavaDirs(Object? raw) {
+  if (raw is! String || raw.isEmpty) return const [];
+  try {
+    final decoded = jsonDecode(raw);
+    if (decoded is! List) return const [];
+    return [
+      for (final entry in decoded)
+        if (entry is String && entry.trim().isNotEmpty) entry,
+    ];
+  } on FormatException {
+    return const [];
+  }
+}
+
+bool _sameList(List<String> a, List<String> b) {
+  if (a.length != b.length) return false;
+  for (var i = 0; i < a.length; i++) {
+    if (a[i] != b[i]) return false;
+  }
+  return true;
 }
 
 T _enumByName<T extends Enum>(List<T> values, Object? raw, T fallback) {

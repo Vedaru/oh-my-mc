@@ -157,14 +157,32 @@ void main() {
 
     test('macOS looks inside JavaVirtualMachines homes', () {
       final roots = javaSearchRoots(HostOs.osx);
-      expect(roots.single.directory, '/Library/Java/JavaVirtualMachines');
-      expect(roots.single.relativeExecutable, 'Contents/Home/bin/java');
+      expect(roots.first.directory, '/Library/Java/JavaVirtualMachines');
+      expect(roots.first.relativeExecutable, 'Contents/Home/bin/java');
     });
 
     test('linux looks in /usr/lib/jvm', () {
       final roots = javaSearchRoots(HostOs.linux);
-      expect(roots.single.directory, '/usr/lib/jvm');
-      expect(roots.single.relativeExecutable, 'bin/java');
+      expect(roots.first.directory, '/usr/lib/jvm');
+      expect(roots.first.relativeExecutable, 'bin/java');
+    });
+
+    test('other launchers\' runtimes are search roots, three levels deep', () {
+      // The case behind "it launches in Prism but not here": Prism keeps its JVMs
+      // in its own directory, so a user with no system JDK still has a Java 25 on
+      // disk. Not looking there is a launcher bug, not a missing JVM.
+      final roots = javaSearchRoots(HostOs.linux, home: '/home/u');
+      final prism = roots.firstWhere(
+        (r) => r.directory.endsWith('PrismLauncher/java'),
+      );
+      expect(prism.depth, 3);
+      expect(prism.directory, '/home/u/.local/share/PrismLauncher/java');
+
+      final os = javaSearchRoots(HostOs.osx, home: '/Users/u');
+      expect(
+        os.map((r) => r.directory),
+        contains('/Users/u/Library/Application Support/PrismLauncher/java'),
+      );
     });
   });
 
@@ -183,6 +201,48 @@ void main() {
         javaHome: '/opt/jdk21',
       );
       expect(paths.first, '/opt/jdk21/bin/java');
+    });
+
+    test('a JRE nested in another launcher\'s directory is found', () {
+      final tmp = Directory.systemTemp.createTempSync('java-home');
+      addTearDown(() => tmp.deleteSync(recursive: true));
+      final java = File(
+        '${tmp.path}/.local/share/PrismLauncher/java/temurin/25.0.1/bin/java',
+      )..createSync(recursive: true);
+      File('${tmp.path}/.minecraft/runtime/java-runtime-delta/bin/java')
+          .createSync(recursive: true);
+      File('${tmp.path}/.jdks/temurin-21/bin/java').createSync(recursive: true);
+
+      final paths = defaultJavaSearchPaths(
+        os: HostOs.linux,
+        env: {'HOME': tmp.path},
+      );
+
+      expect(paths, contains(java.path));
+      expect(
+        paths,
+        contains('${tmp.path}/.minecraft/runtime/java-runtime-delta/bin/java'),
+      );
+      expect(paths, contains('${tmp.path}/.jdks/temurin-21/bin/java'));
+    });
+
+    test('a user-supplied directory is scanned like an install root', () {
+      final tmp = Directory.systemTemp.createTempSync('java-extra');
+      addTearDown(() => tmp.deleteSync(recursive: true));
+      // Both shapes a user might point at: the JDK home itself, and a folder of
+      // JDKs (a toolchain manager's layout).
+      final direct = File('${tmp.path}/jdk-25/bin/java')
+        ..createSync(recursive: true);
+      final nested = File('${tmp.path}/jdks/temurin-21/bin/java')
+        ..createSync(recursive: true);
+
+      final paths = defaultJavaSearchPaths(
+        os: HostOs.linux,
+        extraRoots: [tmp.path, '${tmp.path}/jdks'],
+      );
+
+      expect(paths, contains(direct.path));
+      expect(paths, contains(nested.path));
     });
 
     test('managed roots are searched before JAVA_HOME', () {

@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:oh_my_mc/core/install/version_installer.dart';
 import 'package:oh_my_mc/core/net/progress.dart';
 import 'package:oh_my_mc/core/net/version_manifest.dart';
+import 'package:oh_my_mc/core/instance/instance.dart';
 import 'package:oh_my_mc/data/install_providers.dart';
 import 'package:oh_my_mc/ui/download/download_screen.dart';
 import 'package:oh_my_mc/ui/motion/motion.dart';
@@ -52,6 +53,9 @@ VersionManifest _manifest() => VersionManifest.fromJson({
 /// test here is what the screen renders for each state.
 class ScriptedInstallController extends InstallController {
   final installedCalled = <String>[];
+
+  /// Which loader each call asked for; `LoaderKind.vanilla` when none was given.
+  final loaders = <LoaderKind>[];
   int cancelCalls = 0;
 
   /// When set, [install] stops at [InstallRunning] and never finishes, which is
@@ -62,8 +66,14 @@ class ScriptedInstallController extends InstallController {
   InstallState build() => const InstallIdle();
 
   @override
-  Future<void> install(String versionId, {bool includeAssets = true}) async {
+  Future<void> install(
+    String versionId, {
+    bool includeAssets = true,
+    LoaderKind? loader,
+    String? loaderVersion,
+  }) async {
     installedCalled.add(versionId);
+    loaders.add(loader ?? LoaderKind.vanilla);
     state = InstallRunning(
       versionId: versionId,
       progress: const InstallProgress(
@@ -252,6 +262,35 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(installs.installedCalled, ['1.20.1']);
+    expect(installs.loaders, [LoaderKind.vanilla]);
+  });
+
+  testWidgets('the loader chosen in the toolbar is what gets installed', (
+    tester,
+  ) async {
+    await pump(tester);
+
+    // PCL's loader tab, as a segmented control next to the list.
+    final fabric = find.descendant(
+      of: find.byKey(const ValueKey('download-loader')),
+      matching: find.text('Fabric'),
+    );
+    expect(fabric, findsOneWidget);
+    await tester.tap(fabric);
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<m3.SegmentedButton<LoaderKind>>(
+            find.byKey(const ValueKey('download-loader')),
+          )
+          .selected,
+      {LoaderKind.fabric},
+    );
+    await tester.tap(find.text('1.20.1'));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(installs.installedCalled, ['1.20.1']);
+    expect(installs.loaders, [LoaderKind.fabric]);
   });
 
   testWidgets('a running install shows phase, bytes, speed and a cancel', (

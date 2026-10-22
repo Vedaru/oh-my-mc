@@ -105,6 +105,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get downloadLoaders => '模组加载器';
 
   @override
+  String get loaderVanilla => '原版';
+
+  @override
   String get downloadInstall => '安装';
 
   @override
@@ -572,6 +575,18 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get javaRefresh => '刷新';
+
+  @override
+  String get javaDirsTitle => 'Java 目录';
+
+  @override
+  String get javaDirsHint => '版本需要时启动器会自己安装 Java；这里可以补充你已有的 JDK 目录。';
+
+  @override
+  String get javaAddDir => '添加目录…';
+
+  @override
+  String get javaRemoveDir => '移除';
 
   @override
   String get javaCancel => '取消';

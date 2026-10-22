@@ -24,16 +24,16 @@ class ShellDestination {
 
 /// The destinations, in rail order.
 ///
-/// **Launch first and no Instances tab**, which is PCL's operation logic: the
-/// launch page owns version selection (its picker lists every version and reaches
-/// management from there), so a second tab whose only job is choosing what the
-/// launch page already chooses is two doors to one room. `/instances` still
-/// exists as a route - it is the management screen the picker links to.
+/// **The instance grid is home, and there is no Launch tab.** Every card already
+/// carries the two things a launch page would offer - the version and a Play
+/// button - so a Launch tab was a second door to the same room. `/launch` remains
+/// a route: it is the running view a Play navigates to, with the log, the stop
+/// button and version settings.
 List<ShellDestination> destinationsFor(AppLocalizations l10n) => [
   ShellDestination(
-    location: Routes.launch,
-    label: (l) => l.navLaunch,
-    icon: ShellIcons.forRoute(Routes.launch),
+    location: Routes.instances,
+    label: (l) => l.navInstances,
+    icon: ShellIcons.forRoute(Routes.instances),
   ),
   ShellDestination(
     location: Routes.download,

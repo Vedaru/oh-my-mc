@@ -173,10 +173,22 @@ class ProcessResultLike {
 /// A place to look for JDKs: a directory whose subdirectories are JDK homes,
 /// plus the path to `java` relative to each home.
 class JavaSearchRoot {
-  const JavaSearchRoot(this.directory, this.relativeExecutable);
+  const JavaSearchRoot(
+    this.directory,
+    this.relativeExecutable, {
+    this.depth = 1,
+  });
 
   final String directory;
   final String relativeExecutable;
+
+  /// How many directory levels below [directory] a runtime may live.
+  ///
+  /// System JDKs are `<root>/<jdk>/bin/java` (1). The launchers that manage their
+  /// own runtimes nest deeper - Prism keeps `java/<vendor>/<version>/bin/java`,
+  /// the official launcher `runtime/<flavour>/bin/java` - and those are exactly the
+  /// JVMs a user who "can launch it in Prism" already has on disk.
+  final int depth;
 }
 
 /// The per-OS install roots, independent of what exists on this machine.
@@ -184,22 +196,73 @@ class JavaSearchRoot {
 /// Separated from [defaultJavaSearchPaths] so the *rule* can be asserted on any
 /// host — a Linux CI box has no `C:\Program Files`, but the intent still needs
 /// a test.
-List<JavaSearchRoot> javaSearchRoots(HostOs os) => switch (os) {
-  HostOs.windows => const [
-    JavaSearchRoot(r'C:\Program Files\Java', r'bin\java.exe'),
-    JavaSearchRoot(r'C:\Program Files\Eclipse Adoptium', r'bin\java.exe'),
-    JavaSearchRoot(r'C:\Program Files\Microsoft', r'bin\java.exe'),
-    JavaSearchRoot(r'C:\Program Files\Zulu', r'bin\java.exe'),
-    JavaSearchRoot(r'C:\Program Files (x86)\Java', r'bin\java.exe'),
-  ],
-  HostOs.osx => const [
-    JavaSearchRoot(
-      '/Library/Java/JavaVirtualMachines',
-      'Contents/Home/bin/java',
-    ),
-  ],
-  HostOs.linux => const [JavaSearchRoot('/usr/lib/jvm', 'bin/java')],
-};
+List<JavaSearchRoot> javaSearchRoots(HostOs os, {String? home}) {
+  final h = home ?? '';
+  return switch (os) {
+    HostOs.windows => [
+      const JavaSearchRoot(r'C:\Program Files\Java', r'bin\java.exe'),
+      const JavaSearchRoot(
+        r'C:\Program Files\Eclipse Adoptium',
+        r'bin\java.exe',
+      ),
+      const JavaSearchRoot(r'C:\Program Files\Microsoft', r'bin\java.exe'),
+      const JavaSearchRoot(r'C:\Program Files\Zulu', r'bin\java.exe'),
+      const JavaSearchRoot(r'C:\Program Files (x86)\Java', r'bin\java.exe'),
+      // Launcher-managed runtimes: launching a 26.x profile in Prism or the
+      // official launcher works because *they* shipped the JVM.
+      if (h.isNotEmpty)
+        JavaSearchRoot('$h\\PrismLauncher\\java', r'bin\java.exe', depth: 3),
+      if (h.isNotEmpty) JavaSearchRoot('$h\\.jdks', r'bin\java.exe', depth: 2),
+    ],
+    HostOs.osx => [
+      const JavaSearchRoot(
+        '/Library/Java/JavaVirtualMachines',
+        'Contents/Home/bin/java',
+        depth: 1,
+      ),
+      if (h.isNotEmpty)
+        JavaSearchRoot(
+          '$h/Library/Java/JavaVirtualMachines',
+          'Contents/Home/bin/java',
+        ),
+      if (h.isNotEmpty)
+        JavaSearchRoot(
+          '$h/Library/Application Support/PrismLauncher/java',
+          'bin/java',
+          depth: 3,
+        ),
+    ],
+    HostOs.linux => [
+      const JavaSearchRoot('/usr/lib/jvm', 'bin/java'),
+      const JavaSearchRoot('/usr/java', 'bin/java'),
+      const JavaSearchRoot('/opt', 'bin/java', depth: 2),
+      if (h.isNotEmpty) ...[
+        // IntelliJ / sdkman: a JVM the user installed on purpose.
+        JavaSearchRoot('$h/.jdks', 'bin/java', depth: 2),
+        JavaSearchRoot('$h/.sdkman/candidates/java', 'bin/java', depth: 2),
+        // Other launchers' bundled runtimes. This is the case that matters: a
+        // version that runs in Prism has a JVM *there*, and the user should not
+        // have to download a second copy of it.
+        JavaSearchRoot(
+          '$h/.local/share/PrismLauncher/java',
+          'bin/java',
+          depth: 3,
+        ),
+        JavaSearchRoot(
+          '$h/.var/app/org.prismlauncher.PrismLauncher/data/PrismLauncher/java',
+          'bin/java',
+          depth: 3,
+        ),
+        JavaSearchRoot('$h/.minecraft/runtime', 'bin/java', depth: 2),
+        JavaSearchRoot(
+          '$h/.var/app/com.mojang.Minecraft/.minecraft/runtime',
+          'bin/java',
+          depth: 2,
+        ),
+      ],
+    ],
+  };
+}
 
 /// Where to look for a `java` executable.
 ///
@@ -213,6 +276,10 @@ List<String> defaultJavaSearchPaths({
   String? javaHome,
   List<String> managedRoots = const [],
   Map<String, String> env = const {},
+
+  /// Directories the user pointed at, scanned like an install root (one level of
+  /// subdirectories, plus the directory itself).
+  List<String> extraRoots = const [],
 }) {
   final paths = <String>[...managedRoots];
 
@@ -222,8 +289,27 @@ List<String> defaultJavaSearchPaths({
     paths.add('$home${sep}bin${sep}java${os == HostOs.windows ? '.exe' : ''}');
   }
 
-  for (final root in javaSearchRoots(os)) {
-    paths.addAll(_subdirsWithJava(root.directory, root.relativeExecutable));
+  for (final dir in extraRoots) {
+    final sep = os == HostOs.windows ? r'\' : '/';
+    final exe = 'bin${sep}java${os == HostOs.windows ? '.exe' : ''}';
+    // The directory may be a JDK home itself, or a folder of them (a toolchain
+    // manager's layout), so both are offered.
+    final direct = File('$dir$sep$exe');
+    if (direct.existsSync()) paths.add(direct.path);
+    paths.addAll(
+      _subdirsWithJava(
+        dir,
+        'bin/${os == HostOs.windows ? 'java.exe' : 'java'}',
+        2,
+      ),
+    );
+  }
+
+  final userHome = env['HOME'] ?? env['USERPROFILE'];
+  for (final root in javaSearchRoots(os, home: userHome)) {
+    paths.addAll(
+      _subdirsWithJava(root.directory, root.relativeExecutable, root.depth),
+    );
   }
 
   switch (os) {
@@ -240,17 +326,45 @@ List<String> defaultJavaSearchPaths({
   return paths;
 }
 
-List<String> _subdirsWithJava(String root, String relative) {
-  final dir = Directory(root);
-  if (!dir.existsSync()) return const [];
+List<String> _subdirsWithJava(String root, String relative, [int depth = 1]) {
   final found = <String>[];
-  for (final entry in dir.listSync()) {
-    if (entry is! Directory) continue;
-    final candidate = File('${entry.path}/$relative');
-    if (candidate.existsSync()) found.add(candidate.path);
-  }
+  _collectJava(Directory(root), relative, depth, found, {root});
   found.sort();
   return found;
+}
+
+/// Walks [dir] at most [depth] levels, collecting `relative` executables.
+///
+/// Depth-limited rather than a full walk: `$HOME` can hold a hundred thousand
+/// files, and a launcher that stat()s them all at startup is worse than one that
+/// misses a JVM in an unusual place.
+void _collectJava(
+  Directory dir,
+  String relative,
+  int depth,
+  List<String> out,
+  Set<String> visited,
+) {
+  if (depth <= 0 || !dir.existsSync()) return;
+  List<FileSystemEntity> entries;
+  try {
+    entries = dir.listSync(followLinks: false);
+  } on FileSystemException {
+    // Permission-denied or a broken mount under a home directory is normal.
+    return;
+  }
+  for (final entry in entries) {
+    if (entry is! Directory) continue;
+    // A symlinked JDK directory is common (`/opt/java/openjdk -> ...`), so links
+    // are followed once, guarded against cycles.
+    if (!visited.add(entry.path)) continue;
+    final candidate = File('${entry.path}/$relative');
+    if (candidate.existsSync()) {
+      out.add(candidate.path);
+      continue;
+    }
+    _collectJava(entry, relative, depth - 1, out, visited);
+  }
 }
 
 /// Picks the best runtime for a required major version.
@@ -312,6 +426,7 @@ class JavaManager {
   Future<List<JavaRuntime>> scan({
     String? javaHome,
     List<String> managedRoots = const [],
+    List<String> extraRoots = const [],
     Map<String, String>? environment,
   }) async {
     _scanned = true;
@@ -327,6 +442,7 @@ class JavaManager {
       javaHome: javaHome,
       managedRoots: managedRoots,
       env: environment ?? Platform.environment,
+      extraRoots: extraRoots,
     )) {
       if (!seen.add(path)) continue;
       final runtime = await probe.probe(path);

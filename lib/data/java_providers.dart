@@ -10,6 +10,7 @@ import '../core/mc/java_provisioner.dart';
 import '../core/mc/version_json.dart';
 import '../core/mc/local_host.dart';
 import '../core/net/cancellation.dart';
+import '../app/providers.dart';
 import 'launch_factory.dart';
 
 /// Builds a provisioner. Overridden in tests so no widget test opens a socket.
@@ -458,10 +459,13 @@ JavaRequirement resolveJavaRequirement({
 /// spawning `java -version` to answer the same question ten times.
 final javaScanProvider = FutureProvider<List<JavaRuntime>>((ref) async {
   final paths = ref.read(launcherPathsProvider);
+  // Watched, not read: pointing at a directory must rescan without a restart.
+  final javaDirs = ref.watch(appSettingsProvider.select((s) => s.javaDirs));
   final manager = JavaManager(hostOs: localHostOs);
   return manager.scan(
     environment: const {},
     managedRoots: managedJavaExecutables(paths.data),
+    extraRoots: javaDirs,
   );
 });
 

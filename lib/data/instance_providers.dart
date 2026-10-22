@@ -165,16 +165,25 @@ class InstanceListNotifier extends Notifier<InstanceListState> {
   /// card on the launch page - and it is why "I installed 26.3 but cannot play it"
   /// was a real dead end: installing wrote files, and nothing pointed the launcher
   /// at them.
-  Future<Instance> ensureForVersion(String versionId) async {
+  Future<Instance> ensureForVersion(
+    String versionId, {
+    LoaderKind loader = LoaderKind.vanilla,
+    String? loaderVersion,
+    String? name,
+  }) async {
     final existing = ready?.instances ?? const <Instance>[];
     for (final instance in existing) {
-      if (instance.versionId == versionId &&
-          instance.loader == LoaderKind.vanilla) {
+      if (instance.versionId == versionId && instance.loader == loader) {
         await select(instance.id);
         return instance;
       }
     }
-    return create(name: versionId, versionId: versionId);
+    return create(
+      name: name ?? versionId,
+      versionId: versionId,
+      loader: loader,
+      loaderVersion: loaderVersion,
+    );
   }
 
   /// Renames in place. The id does **not** change: it is the directory name, and

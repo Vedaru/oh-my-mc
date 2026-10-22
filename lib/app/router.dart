@@ -34,13 +34,13 @@ abstract final class Routes {
 /// [initialLocation] exists for tests and for restoring the last screen.
 GoRouter createRouter({
   required Widget Function(BuildContext context, GoRouterState state) screens,
-  String initialLocation = Routes.launch,
+  String initialLocation = Routes.instances,
 }) {
   return GoRouter(
     initialLocation: initialLocation,
     // An unknown location is a deep link from a stale bookmark or a typo, never a
     // crash: drop the user on the launch screen, which is always valid.
-    onException: (context, state, router) => router.go(Routes.launch),
+    onException: (context, state, router) => router.go(Routes.instances),
     routes: [
       _route(Routes.launch, screens),
       // The detail route is a *relative* child (`:id`), which is what makes

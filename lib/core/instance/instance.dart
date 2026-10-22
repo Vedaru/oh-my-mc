@@ -207,6 +207,15 @@ enum LoaderKind {
   neoforge,
   quilt;
 
+  /// Brand names, and therefore identical in every language.
+  String get label => switch (this) {
+    LoaderKind.vanilla => 'Vanilla',
+    LoaderKind.fabric => 'Fabric',
+    LoaderKind.forge => 'Forge',
+    LoaderKind.neoforge => 'NeoForge',
+    LoaderKind.quilt => 'Quilt',
+  };
+
   static LoaderKind fromName(String? name) => values.firstWhere(
     (v) => v.name == name,
     orElse: () => LoaderKind.vanilla,

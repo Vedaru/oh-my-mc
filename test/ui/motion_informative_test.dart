@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart' as m3;
 import 'package:oh_my_mc/core/install/version_installer.dart';
 import 'package:oh_my_mc/core/net/progress.dart';
 import 'package:oh_my_mc/core/net/version_manifest.dart';
+import 'package:oh_my_mc/core/instance/instance.dart';
 import 'package:oh_my_mc/data/install_providers.dart';
 import 'package:oh_my_mc/ui/components/skeleton_block.dart';
 import 'package:oh_my_mc/ui/download/download_screen.dart';
@@ -86,7 +87,12 @@ class _CompleteBytesRunning extends InstallController {
   void reset() => state = const InstallIdle();
 
   @override
-  Future<void> install(String versionId, {bool includeAssets = true}) async {}
+  Future<void> install(
+    String versionId, {
+    bool includeAssets = true,
+    LoaderKind? loader,
+    String? loaderVersion,
+  }) async {}
 }
 
 void main() {

@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart' as m3;
@@ -7,6 +8,7 @@ import 'package:oh_my_mc/ui/components/app_dialog.dart';
 import '../../core/mc/java_catalog.dart';
 import '../../core/mc/local_host.dart';
 import '../../core/net/progress.dart';
+import '../../app/providers.dart';
 import '../../data/java_providers.dart';
 import '../../l10n/l10n.dart';
 import '../shell/shell_icons.dart';
@@ -376,6 +378,8 @@ class JavaRuntimeList extends ConsumerWidget {
             ],
           ),
         },
+        const m3.SizedBox(height: 16),
+        const _JavaDirectories(),
       ],
     );
   }
@@ -457,6 +461,107 @@ class _RuntimeRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Where the launcher looks for a JVM, beyond the built-in roots.
+///
+/// Two things live here because they answer one question ("which Java do I
+/// launch with?"): the launcher installs its own runtime on demand (the panel on
+/// the launch screen), and the user can point at folders that already hold JDKs
+/// instead of downloading a second copy.
+class _JavaDirectories extends ConsumerWidget {
+  const _JavaDirectories();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final scheme = m3.Theme.of(context).colorScheme;
+    final settings = ref.watch(appSettingsProvider);
+
+    Future<void> add() async {
+      final picked = await FilePicker.getDirectoryPath(
+        dialogTitle: l10n.javaAddDir,
+      );
+      if (picked == null || picked.isEmpty) return;
+      if (settings.javaDirs.contains(picked)) return;
+      await ref
+          .read(appSettingsProvider.notifier)
+          .set(settings.copyWith(javaDirs: [...settings.javaDirs, picked]));
+      // The scan provider watches this list, so the new directory is probed
+      // without a restart; the invalidate only forces a fresh process spawn for
+      // runtimes that were already known.
+      ref.invalidate(javaRuntimesProvider);
+    }
+
+    Future<void> remove(String dir) async {
+      await ref
+          .read(appSettingsProvider.notifier)
+          .set(
+            settings.copyWith(
+              javaDirs: [
+                for (final entry in settings.javaDirs)
+                  if (entry != dir) entry,
+              ],
+            ),
+          );
+      ref.invalidate(javaRuntimesProvider);
+    }
+
+    return m3.Column(
+      crossAxisAlignment: m3.CrossAxisAlignment.stretch,
+      mainAxisSize: m3.MainAxisSize.min,
+      children: [
+        m3.Row(
+          children: [
+            m3.Expanded(
+              child: m3.Text(
+                l10n.javaDirsTitle,
+                style: AppTheme.subtitle(context),
+              ),
+            ),
+            AppButton(
+              key: const m3.ValueKey('java-add-dir'),
+              onPressed: add,
+              style: AppButtonStyle.outlined,
+              size: AppButtonSize.sm,
+              icon: const m3.Icon(ShellIcons.folder, size: 14),
+              label: m3.Text(l10n.javaAddDir),
+            ),
+          ],
+        ),
+        const m3.SizedBox(height: 6),
+        m3.Text(
+          l10n.javaDirsHint,
+          style: AppTheme.caption(context)
+              .copyWith(color: scheme.onSurfaceVariant),
+        ),
+        for (final dir in settings.javaDirs) ...[
+          const m3.SizedBox(height: 8),
+          m3.Row(
+            children: [
+              m3.Icon(ShellIcons.folder, size: 15, color: scheme.primary),
+              const m3.SizedBox(width: 8),
+              m3.Expanded(
+                child: m3.Text(
+                  dir,
+                  style: AppTheme.body(context),
+                  maxLines: 1,
+                  overflow: m3.TextOverflow.ellipsis,
+                ),
+              ),
+              AppButton(
+                key: m3.ValueKey('java-remove-dir-$dir'),
+                onPressed: () => remove(dir),
+                style: AppButtonStyle.text,
+                size: AppButtonSize.sm,
+                label: m3.Text(l10n.javaRemoveDir),
+              ),
+            ],
+          ),
+        ],
+      ],
     );
   }
 }

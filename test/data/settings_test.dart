@@ -13,6 +13,7 @@ void main() {
               theme: theme,
               language: language,
               accent: accent,
+              javaDirs: const ['/opt/jdks', '/home/u/.jdks'],
             );
             expect(
               AppSettings.fromMap(original.toMap()),
@@ -56,6 +57,25 @@ void main() {
       ).toMap();
       expect(map['theme'], 'dark');
       expect(map['language'], 'chinese');
+    });
+
+    test('javaDirs round-trips as one JSON value and ignores junk', () {
+      const settings = AppSettings(javaDirs: ['/a', '/b']);
+      expect(AppSettings.fromMap(settings.toMap()).javaDirs, ['/a', '/b']);
+
+      // A hand-edited or truncated value costs a rescan, not a crash.
+      expect(
+        AppSettings.fromMap(const {'javaDirs': 'not json'}).javaDirs,
+        isEmpty,
+      );
+      expect(
+        AppSettings.fromMap(const {'javaDirs': '{"a":1}'}).javaDirs,
+        isEmpty,
+      );
+      expect(
+        AppSettings.fromMap(const {'javaDirs': '["/ok", 3, ""]'}).javaDirs,
+        ['/ok'],
+      );
     });
 
     test('the accent defaults to blue', () {

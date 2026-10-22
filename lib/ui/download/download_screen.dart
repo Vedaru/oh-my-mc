@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart' as m3;
 import 'package:oh_my_mc/ui/components/app_button.dart';
 
 import '../../core/install/version_installer.dart';
+import '../../core/instance/instance.dart';
 import '../../core/net/progress.dart';
 import '../../core/net/version_manifest.dart';
 import '../../data/install_providers.dart';
@@ -66,6 +67,7 @@ class DownloadScreen extends ConsumerStatefulWidget {
 class _DownloadScreenState extends ConsumerState<DownloadScreen> {
   final _search = TextEditingController();
   bool _snapshots = false;
+  var _loader = LoaderKind.vanilla;
 
   @override
   void dispose() {
@@ -90,6 +92,9 @@ class _DownloadScreenState extends ConsumerState<DownloadScreen> {
           _Toolbar(
             search: _search,
             snapshots: _snapshots,
+            loader: _loader,
+            busy: install is InstallRunning,
+            onLoader: (value) => setState(() => _loader = value),
             onSnapshots: (value) => setState(() => _snapshots = value),
             onQuery: () => setState(() {}),
           ),
@@ -117,8 +122,9 @@ class _DownloadScreenState extends ConsumerState<DownloadScreen> {
                   // A second install while one is running would race on the same
                   // `libraries/` tree; the rows are inert until it finishes.
                   busy: install is InstallRunning,
-                  onInstall: (id) =>
-                      ref.read(installControllerProvider.notifier).install(id),
+                  onInstall: (id) => ref
+                      .read(installControllerProvider.notifier)
+                      .install(id, loader: _loader),
                 ),
             },
           ),
@@ -132,12 +138,25 @@ class _Toolbar extends StatelessWidget {
   const _Toolbar({
     required this.search,
     required this.snapshots,
+    required this.loader,
+    required this.busy,
+    required this.onLoader,
     required this.onSnapshots,
     required this.onQuery,
   });
 
   final TextEditingController search;
   final bool snapshots;
+
+  /// Which loader this page installs. PCL asks the same question with a loader tab;
+  /// here it sits beside the version list because the list is the same for both.
+  final LoaderKind loader;
+
+  /// A running install owns the pipeline; switching loaders mid-install would
+  /// change the meaning of the row that is already downloading.
+  final bool busy;
+
+  final ValueChanged<LoaderKind> onLoader;
   final ValueChanged<bool> onSnapshots;
   final VoidCallback onQuery;
 
@@ -145,15 +164,21 @@ class _Toolbar extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final scheme = m3.Theme.of(context).colorScheme;
+    // A Wrap, not a Row: search + loader + snapshot toggle no longer fit on one
+    // line at the app's minimum window width, and an overflowing toolbar is worse
+    // than a two-line one.
     return m3.Padding(
       padding: const m3.EdgeInsets.only(bottom: 12),
-      child: m3.Row(
+      child: m3.Wrap(
+        spacing: 12,
+        runSpacing: 10,
+        crossAxisAlignment: m3.WrapCrossAlignment.center,
         children: [
           m3.SizedBox(
-            // A fixed width, not ConstrainedBox: inside a Row an Expanded would
+            // A fixed width, not ConstrainedBox: inside a flex an Expanded would
             // hand down tight constraints and the cap would be ignored, which is
             // how this field used to stretch across the whole page.
-            width: 380,
+            width: 340,
             child: AppTextField(
               controller: search,
               hint: l10n.downloadSearchHint,
@@ -161,17 +186,47 @@ class _Toolbar extends StatelessWidget {
               onChanged: (_) => onQuery(),
             ),
           ),
-          const m3.SizedBox(width: 12),
-          AppSwitch(
-            value: snapshots,
-            onChanged: onSnapshots,
-            label: l10n.downloadShowSnapshots,
+          // The loader choice belongs next to the list it applies to: the versions
+          // are the same, only what gets installed around them changes.
+          m3.SegmentedButton<LoaderKind>(
+            key: const m3.ValueKey('download-loader'),
+            segments: [
+              m3.ButtonSegment<LoaderKind>(
+                value: LoaderKind.vanilla,
+                label: m3.Text(l10n.loaderVanilla),
+                icon: const m3.Icon(ShellIcons.instance, size: 15),
+              ),
+              m3.ButtonSegment<LoaderKind>(
+                value: LoaderKind.fabric,
+                label: m3.Text(LoaderKind.fabric.label),
+              ),
+              m3.ButtonSegment<LoaderKind>(
+                value: LoaderKind.quilt,
+                label: m3.Text(LoaderKind.quilt.label),
+              ),
+            ],
+            selected: {loader},
+            // `null` disables the whole control, which is what a running install
+            // needs: the row already downloading must keep its meaning.
+            onSelectionChanged: busy
+                ? null
+                : (selection) => onLoader(selection.first),
           ),
-          const m3.SizedBox(width: 8),
-          m3.Text(
-            l10n.downloadShowSnapshots,
-            style: AppTheme.body(context)
-                .copyWith(color: scheme.onSurfaceVariant),
+          m3.Row(
+            mainAxisSize: m3.MainAxisSize.min,
+            children: [
+              AppSwitch(
+                value: snapshots,
+                onChanged: onSnapshots,
+                label: l10n.downloadShowSnapshots,
+              ),
+              const m3.SizedBox(width: 8),
+              m3.Text(
+                l10n.downloadShowSnapshots,
+                style: AppTheme.body(context)
+                    .copyWith(color: scheme.onSurfaceVariant),
+              ),
+            ],
           ),
         ],
       ),
