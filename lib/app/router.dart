@@ -116,12 +116,8 @@ Page<void> appPage(
     child: child,
     transitionDuration: motion.of(Durations.slow),
     reverseTransitionDuration: motion.of(Durations.slow),
-    transitionsBuilder: (context, animation, secondary, child) =>
-        PageSlideTransition(
-          animation: animation,
-          secondaryAnimation: secondary,
-          child: child,
-        ),
+    transitionsBuilder: (context, animation, _, child) =>
+        PageSlideTransition(animation: animation, child: child),
   );
 }
 
@@ -135,43 +131,35 @@ Page<void> appPage(
 class PageSlideTransition extends StatelessWidget {
   const PageSlideTransition({
     required this.animation,
-    required this.secondaryAnimation,
     required this.child,
     super.key,
   });
 
   final Animation<double> animation;
-  final Animation<double> secondaryAnimation;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     final motion = MotionScope.of(context);
-    // The incoming page travels a little; the outgoing one drifts the other way
-    // at half the distance, so a change reads as one surface moving rather than
-    // a sheet landing on top.
+    // Only the incoming page moves. Drifting the outgoing one too needed the
+    // secondary animation, and a page that reports it as 1 without being covered
+    // rests at a negative offset: the detail page rendered 29 px to the left,
+    // under the rail. A transition that is zero at rest by construction cannot
+    // do that.
     return ClipRect(
       // The page is translated inside the content area, and a transform paints
-      // outside its layout bounds. Without the clip, the outgoing page's edge
-      // slid over the navigation rail, which is the "page under the tab bar"
-      // that shows up mid-transition.
+      // outside its layout bounds. Without the clip, the page's left edge lands
+      // on the navigation rail mid-slide.
       child: SlideTransition(
-        position: _drift(
-          secondaryAnimation,
-          MotionCurves.exit,
-          const Offset(-0.02, 0),
-        ),
-        child: SlideTransition(
-          position: _drift(animation, motion.curve, const Offset(0.04, 0)),
-          child: RepaintBoundary(
-            // Pages are transparent: the shell paints the background. Without a
-            // surface of its own, the outgoing page's text shows through the
-            // incoming one mid-slide - two screens printed on top of each other.
-            // Painting it here makes the move read as one page replacing another.
-            child: ColoredBox(
-              color: m3.Theme.of(context).scaffoldBackgroundColor,
-              child: child,
-            ),
+        position: _drift(animation, motion.curve, const Offset(0.04, 0)),
+        child: RepaintBoundary(
+          // Pages are transparent: the shell paints the background. Without a
+          // surface of its own, the outgoing page's text shows through the
+          // incoming one mid-slide - two screens printed on top of each other.
+          // Painting it here makes the move read as one page replacing another.
+          child: ColoredBox(
+            color: m3.Theme.of(context).scaffoldBackgroundColor,
+            child: child,
           ),
         ),
       ),

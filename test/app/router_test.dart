@@ -278,8 +278,6 @@ void main() {
     // wrapper's fade instead of this one.
     final enter = AnimationController(vsync: const TestVSync());
     addTearDown(enter.dispose);
-    final exit = AnimationController(vsync: const TestVSync());
-    addTearDown(exit.dispose);
 
     await tester.pumpWidget(
       Directionality(
@@ -288,7 +286,6 @@ void main() {
           motion: Motion.full,
           child: PageSlideTransition(
             animation: enter,
-            secondaryAnimation: exit,
             child: const Text('page'),
           ),
         ),
