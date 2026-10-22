@@ -22,12 +22,21 @@ class ShellDestination {
 
 /// The destinations, in rail order.
 ///
-/// **The instance grid is home, and there is no Launch tab.** Every card already
-/// carries the two things a launch page would offer - the version and a Play
-/// button - so a Launch tab was a second door to the same room. `/launch` remains
-/// a route: it is the running view a Play navigates to, with the log, the stop
-/// button and version settings.
+/// **启动 is a destination, and it is the first one.**
+///
+/// It was removed once, on the theory that the instance grid already carried a
+/// Play button per card. That is true and beside the point: the launch page is
+/// where a *running* session lives - its console and its stop button - so without
+/// a tab there was no way back to the page that owns the session. A destination
+/// is not a duplicate door when it is the only door to one room.
+///
+/// Order is PCL's: 启动 / 实例 / 下载 / 日志 / 设置.
 List<ShellDestination> destinationsFor(AppLocalizations l10n) => [
+  ShellDestination(
+    location: Routes.launch,
+    label: (l) => l.navLaunch,
+    icon: ShellIcons.forRoute(Routes.launch),
+  ),
   ShellDestination(
     location: Routes.instances,
     label: (l) => l.navInstances,

@@ -43,6 +43,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get launching => '正在启动…';
 
   @override
+  String get launchRunning => '运行中';
+
+  @override
+  String get launchStarting => '启动中';
+
+  @override
   String get noInstanceSelected => '未选择实例';
 
   @override

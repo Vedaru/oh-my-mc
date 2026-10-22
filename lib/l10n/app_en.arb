@@ -41,6 +41,14 @@
     "description": "Stops the running game."
   },
   "launching": "Launching…",
+  "launchRunning": "Running",
+  "launchStarting": "Starting",
+  "@launchStarting": {
+    "description": "Session state chip while the launcher is preparing a launch."
+  },
+  "@launchRunning": {
+    "description": "Session state chip on the launch page while a game is up."
+  },
   "@launching": {
     "description": "Shown while the game process starts."
   },

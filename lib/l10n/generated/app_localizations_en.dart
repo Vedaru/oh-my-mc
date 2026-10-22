@@ -43,6 +43,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get launching => 'Launching…';
 
   @override
+  String get launchRunning => 'Running';
+
+  @override
+  String get launchStarting => 'Starting';
+
+  @override
   String get noInstanceSelected => 'No instance selected';
 
   @override

@@ -36,6 +36,7 @@ class LaunchScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final list = ref.watch(instanceListProvider);
     final session = ref.watch(launchControllerProvider);
     final controller = ref.read(launchControllerProvider.notifier);
@@ -64,6 +65,12 @@ class LaunchScreen extends ConsumerWidget {
           if (selected == null)
             const Expanded(child: _NothingSelected())
           else ...[
+            // The same page frame as every other tab: a title, then content. The
+            // version card is the page's subject, not its heading.
+            PageTitle(
+              l10n.navLaunch,
+              trailing: _SessionState(session: session),
+            ),
             _VersionPicker(
               selected: selected,
               instances: all,
@@ -269,6 +276,58 @@ class _JavaOfferArea extends ConsumerWidget {
 /// management screen (which is where creation lives, exactly like PCL's version
 /// list dialog). The selection goes through [instanceListProvider] so the choice
 /// survives a restart and every screen agrees on it.
+/// What the session is doing, in the title's trailing slot.
+///
+/// Silent when idle: "not running" is the default and saying it on every visit is
+/// noise. While a game is up it is the one fact the page is about, so it shows as
+/// a dot plus the uptime.
+class _SessionState extends StatelessWidget {
+  const _SessionState({required this.session});
+
+  final LaunchSession session;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!session.isBusy && !session.canStop) return const m3.SizedBox.shrink();
+    final scheme = m3.Theme.of(context).colorScheme;
+    final l10n = context.l10n;
+    final running = session.canStop;
+
+    return m3.Row(
+      mainAxisSize: m3.MainAxisSize.min,
+      children: [
+        m3.SizedBox(
+          width: 8,
+          height: 8,
+          child: m3.DecoratedBox(
+            decoration: m3.BoxDecoration(
+              color: running
+                  ? AppTheme.status(context).success
+                  : scheme.onSurfaceVariant,
+              shape: m3.BoxShape.circle,
+            ),
+          ),
+        ),
+        const m3.SizedBox(width: 8),
+        m3.Text(
+          running
+              ? '${l10n.launchRunning} · ${_uptime(session.uptime)}'
+              : l10n.launchStarting,
+          style: AppTheme.caption(context)
+              .copyWith(color: scheme.onSurfaceVariant),
+        ),
+      ],
+    );
+  }
+
+  static String _uptime(Duration d) {
+    final hours = d.inHours;
+    final minutes = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final seconds = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return hours > 0 ? '$hours:$minutes:$seconds' : '$minutes:$seconds';
+  }
+}
+
 /// The version card - PCL's launch page subject.
 ///
 /// The card is the selector: clicking it opens [VersionListDialog] (versions,

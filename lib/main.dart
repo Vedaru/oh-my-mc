@@ -184,6 +184,7 @@ class OhMyMcApp extends StatelessWidget {
       Routes.logs => const LogsScreen(),
       _ when detailId != null && mods => InstanceModsScreen(id: detailId),
       _ when detailId != null => InstanceDetailScreen(id: detailId),
+      Routes.launch => const LaunchScreen(),
       _ => const LaunchScreen(),
     };
   }

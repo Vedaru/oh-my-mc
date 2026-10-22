@@ -164,6 +164,18 @@ abstract class AppLocalizations {
   /// **'Launching…'**
   String get launching;
 
+  /// Session state chip on the launch page while a game is up.
+  ///
+  /// In en, this message translates to:
+  /// **'Running'**
+  String get launchRunning;
+
+  /// Session state chip while the launcher is preparing a launch.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting'**
+  String get launchStarting;
+
   /// Placeholder when the instance list is empty.
   ///
   /// In en, this message translates to:

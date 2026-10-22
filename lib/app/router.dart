@@ -2,7 +2,6 @@ import 'package:animations/animations.dart';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
-import '../l10n/l10n.dart';
 import '../ui/motion/motion.dart';
 import '../ui/shell/app_shell.dart';
 
@@ -42,13 +41,13 @@ abstract final class Routes {
 /// [initialLocation] exists for tests and for restoring the last screen.
 GoRouter createRouter({
   required Widget Function(BuildContext context, GoRouterState state) screens,
-  String initialLocation = Routes.instances,
+  String initialLocation = Routes.launch,
 }) {
   return GoRouter(
     initialLocation: initialLocation,
     // An unknown location is a deep link from a stale bookmark or a typo, never a
     // crash: drop the user on the launch screen, which is always valid.
-    onException: (context, state, router) => router.go(Routes.instances),
+    onException: (context, state, router) => router.go(Routes.launch),
     routes: [
       // The rail belongs to the *shell*, not to the page.
       //
@@ -127,19 +126,4 @@ Page<void> appPage(
           child: child,
         ),
   );
-}
-
-/// Title for the current route, for the window/title bar.
-///
-/// Returns a localized label so the shell never hardcodes a screen name.
-String routeTitle(AppLocalizations l10n, String location) {
-  final path = Uri.parse(location).path;
-  return switch (path) {
-    Routes.instances => l10n.navInstances,
-    Routes.download => l10n.navDownload,
-    Routes.setup => l10n.navSetup,
-    Routes.logs => l10n.navLogs,
-    _ when path.startsWith(Routes.instances) => l10n.navInstances,
-    _ => l10n.navLaunch,
-  };
 }

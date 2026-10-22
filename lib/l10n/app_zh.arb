@@ -11,6 +11,8 @@
   "playButton": "启动游戏",
   "stopButton": "停止",
   "launching": "正在启动…",
+  "launchRunning": "运行中",
+  "launchStarting": "启动中",
   "noInstanceSelected": "未选择实例",
   "launchEmptyHint": "先在「实例」页新建一个，再回到这里启动。",
   "launchVersionListTitle": "版本列表",
