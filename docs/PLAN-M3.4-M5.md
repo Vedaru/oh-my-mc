@@ -135,6 +135,28 @@ below can proceed independently and is what I can do without deciding how anythi
 Acceptance: route table test green; reduced-motion transition test green; `NavigationView`
 selection follows a programmatic `go()`; no screen imports `go_router` to build its own page.
 
+**Status: 3.4.1-3.4.4 done** (`9e631db`). 33 tests across `test/app/router_test.dart`,
+`test/app/app_root_test.dart` and `test/data/settings_test.dart`. Notes that changed the design:
+
+- 3.4.1 ships **5 routes, not 8**. The plan's 8 included `/settings`, `/about` and `/accounts`,
+  which have no task behind them yet; inventing them would have meant placeholder pages that
+  rot. They get added with their screens.
+- The router is built in `_AppState`, **not** as a provider. A provider would have been
+  rebuilt on every settings change (theme, locale, motion all live in settings), silently
+  resetting navigation to `/launch`. Only a changed screen builder or initial location
+  rebuilds it now, and a test pins that.
+- Reduced motion is a **zero duration** in the single `appPage` helper, not a different page
+  class, so both settings and the OS accessibility flag share one code path.
+- Language, theme and motion are read in `AppRoot` **only**. This is what forced two existing
+  l10n tests to switch language through the notifier instead of re-pumping with a `locale:`
+  argument; the constructor route no longer exists.
+- `SettingsStore` is injectable so tests never touch `shared_preferences`
+  (`MemorySettingsStore`). Stored values are enum **names**, not indices, and a corrupt value
+  falls back per field.
+
+Still open before 3.4.5: nothing structural. 3.4.5-3.4.7 remain blocked on your visual
+decisions for the title bar, nav pane and splash.
+
 ### M3.5 — Installer glue (pure Dart, no UI) ← the real M2 completion
 
 The milestone that makes the launcher capable of installing something.
