@@ -154,6 +154,36 @@ re-add it. `arch_compat` only has to handle the macOS-arm64 case below.
 - Runtime choice prefers an **exact** major match over a newer one: mods assume the declared
   Java, and "Java 21 instead of 17" is a common source of confusing mod failures.
 
+### Mojang runtime catalog (verified against the live JSON, not assumed)
+
+Source: `https://launchermeta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json`
+→ per-platform component list → a per-runtime **manifest** URL with ~420 entries.
+`version_json.javaVersion.component` is already exactly the catalog key (`jre-legacy`,
+`java-runtime-gamma`, …), so no heuristic mapping is needed.
+
+- **Platform keys are `linux`, `linux-i386`, `windows-x64`, `windows-x86`, `windows-arm64`,
+  `mac-os`, `mac-os-arm64`, `gamecore`.** Note `mac-os`, not `osx` — do not build the key from
+  `HostOs.mcName`.
+- **arm64 has real gaps:** `mac-os-arm64` and `windows-arm64` list `java-runtime-alpha`,
+  `-beta`, `jre-legacy` as **empty arrays** (`-delta`/`-gamma`/`-epsilon` are present). An
+  arm64 Mac + a pre-1.13 version is therefore a genuine refusal, not a downloadable case.
+- **`downloads.lzma` exists for 126 of 133 files** (all except `lib/modules` and friends).
+  Using it cuts the transfer from 95.2 MB to ~67.8 MB. Windows manifests have **no `link`
+  entries**; Linux/macOS have 208, all under `legal/`, with `..`-relative targets.
+- **The LZMA-alone header's 8-byte size field is `-1`.** The decompressed length must come from
+  `downloads.raw.size`; `archive`'s `LzmaDecoder.decode` needs an explicit length and returns
+  an empty buffer if it is not supplied. Decode via
+  `reset(positionBits: props~/9~/5, literalPositionBits: props~/9%5, literalContextBits: props%9, resetDictionary: true)`
+  then `decode(InputMemoryStream(bytes.sublist(13)), rawSize)`.
+- **macOS manifests root the tree at `jre.bundle/Contents/Home/`** — resolve the executable
+  from the manifest, never assume `<root>/bin/java`.
+- Measured decode/hash throughput (aarch64, 34 MB sample set): Dart `archive` LZMA ~30 MB/s;
+  pure-Rust `lzma-rs` ~32 MB/s (**1.08×**, i.e. no reason to add Rust); Rust+C `liblzma`
+  ~55 MB/s (1.9×, needs a C dependency). Dart `crypto` SHA-1 is 78 MB/s vs Rust 552 MB/s — but
+  hash off the UI isolate (`Isolate.run`) before reaching for FFI, and `HashCache` already skips
+  unchanged files. Ship targets are windows-x64/linux-x64/macos-arm64, so native code would mean
+  three unbuildable-here artifacts.
+
 ## Test-environment facts
 
 - **This sandbox has no Java at all** (`java: command not found`, no `/usr/lib/jvm`). Java
