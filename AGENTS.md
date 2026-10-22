@@ -286,6 +286,12 @@ the current gap table and the ordered backlog. Two rules from it bind new code:
   dropped into an instance tree by hand is not an install and will not launch.
 - **The instance grid is home**; there is no Launch tab. `/launch` is the running
   view (log, stop, version settings) that a Play navigates to.
+- **An install that cannot be watched reads as a broken button.** The download
+  panel shows one phase at a time and only exists while the install runs, so a
+  resume started elsewhere had no feedback at all. `InstallLog` keeps a ring of
+  timestamped lines (phase changes plus every 10% of bytes) in memory and appends
+  them to `<data>/logs/install.log`; the panel renders the tail and the launch
+  page's repair button jumps to that panel instead of running an invisible install.
 - **An install is not finished because its JSON exists.** `versions/<id>/<id>.json`
   is written before the libraries, so a killed install looks complete to every
   "is it installed" check. `InstallJournal` writes `versions/<id>/.installing`

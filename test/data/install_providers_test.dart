@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oh_my_mc/core/install/install_journal.dart';
+import 'package:oh_my_mc/core/install/install_log.dart';
 import 'package:oh_my_mc/core/net/progress.dart';
 import 'package:oh_my_mc/core/install/version_installer.dart';
 import 'package:oh_my_mc/data/install_providers.dart';
@@ -147,6 +148,47 @@ void main() {
       expect(ready.instances.single.versionId, '1.20.1');
       expect(ready.instances.single.name, '1.20.1');
       expect(ready.selectedId, ready.instances.single.id);
+    });
+
+    test('an install writes its log, and the log is on disk', () async {
+      await world.publishVersion('1.20.1');
+      final c = container();
+
+      await c
+          .read(installControllerProvider.notifier)
+          .install('1.20.1', includeAssets: false);
+
+      final log = c.read(installLogProvider);
+      expect(log.first, contains('install started: 1.20.1'));
+      expect(log.last, contains('install done'));
+      // Phase lines, not just the two ends: "what did it actually do".
+      expect(log.any((l) => l.contains('manifest')), isTrue);
+
+      // The same lines are on disk: the panel is gone after a restart, the file
+      // is not.
+      final file = File('${paths.data.path}/logs/install.log');
+      expect(file.existsSync(), isTrue);
+      expect(
+        InstallLog.readTail(file).join('\n'),
+        contains('install started: 1.20.1'),
+      );
+    });
+
+    test('a resume logs that it resumed, not that it started over', () async {
+      await world.publishVersion('1.20.1');
+      // The state an interrupted install leaves behind.
+      final dir = Directory(paths.gamePaths.versionDir('1.20.1'))
+        ..createSync(recursive: true);
+      await File('${dir.path}/1.20.1.json').writeAsString('{}');
+      await InstallJournal.begin(paths.gamePaths, '1.20.1');
+
+      final c = container();
+      await c.read(installControllerProvider.notifier).repair('1.20.1');
+
+      final log = c.read(installLogProvider);
+      expect(log.first, contains('resume started: 1.20.1'));
+      expect(log.last, contains('resume done'));
+      expect(log.any((l) => l.contains('install started')), isFalse);
     });
 
     test('progress is reported while the install runs', () async {

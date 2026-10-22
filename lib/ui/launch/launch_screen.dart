@@ -187,10 +187,22 @@ class _RepairOfferArea extends ConsumerWidget {
             : () {
                 if (noVersion) {
                   context.go(Routes.download);
-                } else {
-                  ref
-                      .read(installControllerProvider.notifier)
-                      .repair(instance.versionId);
+                  return;
+                }
+                ref
+                    .read(installControllerProvider.notifier)
+                    .repair(instance.versionId);
+                // The progress bar, the byte counter and the install log live on
+                // the download page - it is where an install is started, so it is
+                // where one is watched. Running a repair here left the user on a
+                // page with no feedback at all, which reads as "the button did
+                // nothing".
+                //
+                // Guarded because the page can be mounted without a router (a
+                // widget test, or any future embedded use): the repair still runs,
+                // and only the jump is skipped.
+                if (GoRouter.maybeOf(context) != null) {
+                  context.go(Routes.download);
                 }
               },
       ),

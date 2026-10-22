@@ -111,25 +111,32 @@ class _DownloadScreenState extends ConsumerState<DownloadScreen> {
               VersionListFailed(:final message) => _ListFailure(
                 message: message,
               ),
-              VersionListReady(:final manifest, :final fromCache) =>
-                _VersionList(
-                  versions: [
-                    for (final v in manifest.versions)
-                      if (VersionRowData.of(v)
-                          .visible(showSnapshots: _snapshots, query: query))
-                        VersionRowData.of(v),
-                  ],
-                  query: query,
-                  installed: installed,
-                  incomplete: incomplete,
-                  stale: fromCache,
-                  // A second install while one is running would race on the same
-                  // `libraries/` tree; the rows are inert until it finishes.
-                  busy: install is InstallRunning,
-                  onInstall: (id) => ref
-                      .read(installControllerProvider.notifier)
-                      .install(id, loader: _loader),
-                ),
+              VersionListReady(:final manifest, :final fromCache) => _VersionList(
+                versions: [
+                  for (final v in manifest.versions)
+                    if (VersionRowData.of(v)
+                        .visible(showSnapshots: _snapshots, query: query))
+                      VersionRowData.of(v),
+                ],
+                query: query,
+                installed: installed,
+                incomplete: incomplete,
+                stale: fromCache,
+                // A second install while one is running would race on the same
+                // `libraries/` tree; the rows are inert until it finishes.
+                busy: install is InstallRunning,
+                onInstall: (id) {
+                  final notifier = ref.read(installControllerProvider.notifier);
+                  // An interrupted install is resumed, not restarted: a restart
+                  // would re-run a loader installer (minutes, and a JVM) to
+                  // replace libraries that are simply missing.
+                  if (incomplete.contains(id)) {
+                    notifier.repair(id);
+                  } else {
+                    notifier.install(id, loader: _loader);
+                  }
+                },
+              ),
             },
           ),
         ],
@@ -473,6 +480,50 @@ class _InstallPanel extends ConsumerWidget {
   }
 }
 
+/// The last few install-log lines, in the console face.
+///
+/// The phase label answers "what is it doing now"; this answers "did it start, and
+/// where did it stop" - which is the question a resumed install raises, because the
+/// panel that shows a phase only exists while the install is running.
+class _InstallTail extends ConsumerWidget {
+  const _InstallTail({this.lines = 4});
+
+  final int lines;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final log = ref.watch(installLogProvider);
+    if (log.isEmpty) return const m3.SizedBox.shrink();
+    final scheme = m3.Theme.of(context).colorScheme;
+    final tail = log.length <= lines ? log : log.sublist(log.length - lines);
+
+    return m3.Container(
+      key: const m3.ValueKey('install-log-tail'),
+      width: double.infinity,
+      margin: const m3.EdgeInsets.only(top: 8),
+      padding: const m3.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: m3.BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: m3.BorderRadius.circular(8),
+      ),
+      child: m3.Column(
+        crossAxisAlignment: m3.CrossAxisAlignment.stretch,
+        mainAxisSize: m3.MainAxisSize.min,
+        children: [
+          for (final line in tail)
+            m3.Text(
+              line,
+              maxLines: 1,
+              overflow: m3.TextOverflow.ellipsis,
+              style: AppTheme.mono(context)
+                  .copyWith(color: scheme.onSurfaceVariant),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 class _Running extends ConsumerWidget {
   const _Running({required this.state});
 
@@ -563,6 +614,9 @@ class _Running extends ConsumerWidget {
             ],
           ],
         ),
+        // What the install has actually done, not only where it is now: a resumed
+        // install is otherwise indistinguishable from one that did nothing.
+        const _InstallTail(),
       ],
     );
   }
@@ -675,6 +729,7 @@ class _Failure extends StatelessWidget {
               // The installer's own text, unlocalized on purpose: it names the
               // actual cause, and a generic message would hide it.
               m3.SelectableText(message, style: AppTheme.caption(context)),
+              const _InstallTail(lines: 3),
             ],
           ),
         ),

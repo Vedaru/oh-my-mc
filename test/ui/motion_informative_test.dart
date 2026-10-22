@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,6 +9,7 @@ import 'package:oh_my_mc/core/net/progress.dart';
 import 'package:oh_my_mc/core/net/version_manifest.dart';
 import 'package:oh_my_mc/core/instance/instance.dart';
 import 'package:oh_my_mc/data/install_providers.dart';
+import 'package:oh_my_mc/data/launch_factory.dart';
 import 'package:oh_my_mc/ui/components/skeleton_block.dart';
 import 'package:oh_my_mc/ui/download/download_screen.dart';
 import 'package:oh_my_mc/ui/motion/motion.dart';
@@ -240,6 +243,15 @@ void main() {
           versionListProvider.overrideWith(_ReadyVersions.new),
           installControllerProvider.overrideWith(() => installs),
           installedVersionsProvider.overrideWith(_NoInstalled.new),
+          // The panel renders the install log, and the log lives under `<data>`.
+          launcherPathsProvider.overrideWith((ref) {
+            final data = Directory.systemTemp.createTempSync('motion-install');
+            ref.onDispose(() => data.deleteSync(recursive: true));
+            return LauncherPaths(
+              data: data,
+              game: Directory('${data.path}/game'),
+            );
+          }),
         ],
       );
       addTearDown(container.dispose);

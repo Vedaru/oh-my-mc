@@ -11,6 +11,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:oh_my_mc/core/instance/instance.dart';
 import 'package:oh_my_mc/core/mc/game_folders.dart';
 import 'package:oh_my_mc/core/mods/mod_scanner.dart';
+import 'package:oh_my_mc/data/install_providers.dart';
+import 'package:oh_my_mc/core/install/version_installer.dart';
+import 'package:oh_my_mc/core/net/progress.dart';
 import 'package:oh_my_mc/data/instance_providers.dart';
 import 'package:oh_my_mc/data/mods_providers.dart';
 import 'package:oh_my_mc/data/instance_store.dart';
@@ -39,6 +42,19 @@ Future<void> _loadFonts() async {
     final loader = FontLoader(family)
       ..addFont(Future.value(ByteData.sublistView(bytes)));
     await loader.load();
+  }
+
+  // The console faces (`AppTheme.mono`) are separate families: without one loaded,
+  // every log line and path in the shots renders as boxes, which is how the install
+  // log tail looked before this. `SHOT_MONO=<path>` wins, then a bundled face.
+  final mono = _findMono();
+  if (mono != null) {
+    final monoBytes = File(mono).readAsBytesSync();
+    for (final family in ['JetBrains Mono', 'Consolas', 'DejaVu Sans Mono']) {
+      final loader = FontLoader(family)
+        ..addFont(Future.value(ByteData.sublistView(monoBytes)));
+      await loader.load();
+    }
   }
 
   // Material's own glyph font ships with the SDK, not with this package, and a
@@ -75,6 +91,19 @@ String? _findIconFont() {
     if (candidate.existsSync()) return candidate.path;
     if (dir.parent.path == dir.path) break;
     dir = dir.parent;
+  }
+  return null;
+}
+
+/// A monospace face for the console text, or `null`.
+String? _findMono() {
+  final fromEnv = Platform.environment['SHOT_MONO'];
+  if (fromEnv != null && File(fromEnv).existsSync()) return fromEnv;
+  for (final candidate in const [
+    '/workspace/fonts/JetBrainsMono-Regular.ttf',
+    '/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf',
+  ]) {
+    if (File(candidate).existsSync()) return candidate;
   }
   return null;
 }
@@ -256,6 +285,18 @@ void main() {
     );
   });
 
+  testWidgets('download installing', (tester) async {
+    await shoot(
+      tester,
+      '/download',
+      'download-installing',
+      overrides: [
+        installControllerProvider.overrideWith(_ShotInstall.new),
+        installLogProvider.overrideWith(_ShotInstallLog.new),
+      ],
+    );
+  });
+
   testWidgets('download', (tester) async {
     await shoot(tester, '/download', 'download');
   });
@@ -364,4 +405,38 @@ class _ShotMods implements ModsRepository {
 
   @override
   Future<void> delete(ModEntry mod) async {}
+}
+
+/// A download in progress, for the screenshot: the panel is only visible while an
+/// install runs, so it cannot be captured from a cold page.
+class _ShotInstall extends InstallController {
+  @override
+  InstallState build() => InstallRunning(
+    versionId: '1.20.1',
+    progress: const InstallProgress(
+      phase: InstallPhase.download,
+      step: 6,
+      steps: 9,
+      detail: '1.20.1',
+      download: DownloadProgress(
+        filesDone: 12,
+        filesTotal: 67,
+        bytesDone: 5 * 1024 * 1024,
+        bytesTotal: 20 * 1024 * 1024,
+        bytesPerSecond: 1024 * 1024,
+        currentFile: 'lz4-java-1.10.1.jar',
+      ),
+    ),
+    bytesPerSecond: 1024 * 1024,
+  );
+}
+
+class _ShotInstallLog extends InstallLogNotifier {
+  @override
+  List<String> build() => const [
+    '21:04:51  install started: 1.20.1',
+    '21:04:52  manifest [1/9]',
+    '21:04:53  versionJson [2/9] 1.20.1',
+    '21:04:55  download [6/9] 12/67 files 5.0/20.0 MB',
+  ];
 }

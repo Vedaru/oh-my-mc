@@ -9,6 +9,7 @@ import 'package:oh_my_mc/core/net/progress.dart';
 import 'package:oh_my_mc/core/net/version_manifest.dart';
 import 'package:oh_my_mc/core/instance/instance.dart';
 import 'package:oh_my_mc/data/install_providers.dart';
+import 'package:oh_my_mc/data/launch_factory.dart';
 import 'package:oh_my_mc/ui/download/download_screen.dart';
 import 'package:oh_my_mc/ui/motion/motion.dart';
 
@@ -54,6 +55,10 @@ VersionManifest _manifest() => VersionManifest.fromJson({
 class ScriptedInstallController extends InstallController {
   final installedCalled = <String>[];
 
+  /// Resumes, which are a different action from an install: an interrupted
+  /// version must not be reinstalled from scratch.
+  final repaired = <String>[];
+
   /// Which loader each call asked for; `LoaderKind.vanilla` when none was given.
   final loaders = <LoaderKind>[];
   int cancelCalls = 0;
@@ -96,6 +101,19 @@ class ScriptedInstallController extends InstallController {
   }
 
   @override
+  Future<void> repair(String versionId) async {
+    repaired.add(versionId);
+    state = InstallRunning(
+      versionId: versionId,
+      progress: const InstallProgress(
+        phase: InstallPhase.manifest,
+        step: 1,
+        steps: 9,
+      ),
+    );
+  }
+
+  @override
   void cancel() {
     cancelCalls++;
     state = InstallCancelled(versionId: (state as InstallRunning).versionId);
@@ -126,6 +144,15 @@ class ScriptedVersionList extends VersionListController {
 
   @override
   VersionListState build() => state0;
+}
+
+class ScriptedInstallLog extends InstallLogNotifier {
+  ScriptedInstallLog(this.lines0);
+
+  final List<String> lines0;
+
+  @override
+  List<String> build() => lines0;
 }
 
 class ScriptedInstalled extends InstalledVersions {
@@ -164,6 +191,7 @@ void main() {
     VersionListState? list,
     Set<String> installed = const {},
     Set<String> incomplete = const {},
+    List<String> logLines = const [],
   }) async {
     final container = ProviderContainer(
       overrides: [
@@ -176,6 +204,14 @@ void main() {
         ),
         incompleteInstallsProvider.overrideWith(
           () => ScriptedIncomplete(incomplete),
+        ),
+        // The install log writes to `<data>/logs`, and the panel renders it.
+        installLogProvider.overrideWith(() => ScriptedInstallLog(logLines)),
+        launcherPathsProvider.overrideWithValue(
+          LauncherPaths(
+            data: tmp,
+            game: Directory('${tmp.path}/game')..createSync(recursive: true),
+          ),
         ),
       ],
     );
@@ -292,7 +328,9 @@ void main() {
     await tester.tap(find.text('1.20.1').first);
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(installs.installedCalled, ['1.20.1']);
+    // Resumed, not reinstalled: the resume only has to fetch the missing files.
+    expect(installs.repaired, ['1.20.1']);
+    expect(installs.installedCalled, isEmpty);
   });
 
   testWidgets('the loader chosen in the toolbar is what gets installed', (
@@ -361,6 +399,30 @@ void main() {
       expect(width(), atVanilla, reason: '$label must not resize the switcher');
     }
   });
+
+  testWidgets(
+    'a resumed install shows what it has done, not only where it is',
+    (tester) async {
+      // The phase label is one line that is replaced as the install moves; the log
+      // tail is what tells a user who pressed "resume" that anything started.
+      installs.stall = true;
+      await pump(
+        tester,
+        incomplete: {'1.20.1'},
+        logLines: [
+          '21:04:51  install started: 1.20.1',
+          '21:04:53  download [6/9] 12/67 files',
+          '21:05:10  resume started: 1.20.1',
+        ],
+      );
+
+      await tester.tap(find.text('1.20.1').first);
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.byKey(const ValueKey('install-log-tail')), findsOneWidget);
+      expect(find.textContaining('resume started: 1.20.1'), findsOneWidget);
+    },
+  );
 
   testWidgets('a running install shows phase, bytes, speed and a cancel', (
     tester,

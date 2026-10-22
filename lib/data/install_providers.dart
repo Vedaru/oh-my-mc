@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/install/version_installer.dart';
 import '../core/instance/instance.dart';
 import '../core/install/install_journal.dart';
+import '../core/install/install_log.dart';
 import '../core/mc/forge_install.dart';
 import '../core/mc/loader_meta.dart';
 import '../core/mc/local_host.dart';
@@ -14,6 +15,38 @@ import '../core/net/version_manifest.dart';
 import 'instance_providers.dart';
 import 'java_providers.dart';
 import 'launch_factory.dart';
+
+/// The install log the panel renders and the controller writes.
+///
+/// State is a list of lines so the panel rebuilds on every append; the same lines
+/// are appended to `<data>/logs/install.log`, which is what makes an install that
+/// was killed mid-flight explainable after a restart.
+class InstallLogNotifier extends Notifier<List<String>> {
+  late final InstallLog _log;
+
+  @override
+  List<String> build() {
+    final paths = ref.read(launcherPathsProvider);
+    _log = InstallLog(file: File('${paths.data.path}/logs/install.log'));
+    return const [];
+  }
+
+  void add(String message) {
+    _log.add(message);
+    // A fresh list each time: `List.unmodifiable` keeps its identity otherwise and
+    // the panel would never rebuild.
+    state = List.unmodifiable(_log.lines);
+  }
+
+  void clear() {
+    _log.clear();
+    state = const [];
+  }
+}
+
+final installLogProvider = NotifierProvider<InstallLogNotifier, List<String>>(
+  InstallLogNotifier.new,
+);
 
 /// Runs one install at a time and exposes its progress.
 ///
@@ -114,6 +147,58 @@ class InstallController extends Notifier<InstallState> {
 
   bool get isBusy => state is InstallRunning;
 
+  String? _loggedPhase;
+  int _loggedPercent = -10;
+
+  /// Publishes progress to the UI and appends to the install log at a human rate.
+  ///
+  /// Not every event: a 3000-asset install emits thousands per second, and the
+  /// interesting lines are always the last few. One line per phase, plus one every
+  /// 10% while bytes are moving.
+  void _publish(
+    CancelToken cancel,
+    String versionId,
+    InstallProgress progress,
+  ) {
+    if (cancel.isCancelled || !ref.mounted) return;
+    state = InstallRunning(
+      versionId: versionId,
+      progress: progress,
+      bytesPerSecond: progress.download?.bytesPerSecond,
+    );
+
+    final phase = progress.phase.name;
+    final download = progress.download;
+    final percent = download == null || download.bytesTotal == 0
+        ? -1
+        : download.bytesDone * 100 ~/ download.bytesTotal;
+    final phaseChanged = phase != _loggedPhase;
+    if (phaseChanged) {
+      _loggedPhase = phase;
+      // A new phase has a new byte total; the old percentage means nothing.
+      _loggedPercent = percent;
+    }
+    final stepped = percent >= 0 && percent - _loggedPercent >= 10;
+    if (!phaseChanged && !stepped) return;
+    if (stepped) _loggedPercent = percent;
+
+    ref
+        .read(installLogProvider.notifier)
+        .add(
+          InstallLog.describePhase(
+            phase,
+            detail: progress.detail,
+            step: progress.step == 0 ? null : progress.step,
+            steps: progress.steps == 0 ? null : progress.steps,
+            bytesDone: download?.bytesDone,
+            bytesTotal: download?.bytesTotal,
+          ),
+        );
+  }
+
+  void _log(String message) =>
+      ref.read(installLogProvider.notifier).add(message);
+
   /// Installs [versionId] into the shared game tree.
   ///
   /// Installation deliberately happens against the *shared* tree even when the
@@ -144,6 +229,13 @@ class InstallController extends Notifier<InstallState> {
         : null;
     final forgeMeta = byInstaller ? ForgeMeta() : null;
 
+    _loggedPhase = null;
+    _loggedPercent = -10;
+    _log(
+      kind == LoaderKind.vanilla
+          ? 'install started: $versionId'
+          : 'install started: $versionId · ${kind.label}',
+    );
     state = InstallRunning(
       versionId: versionId,
       progress: const InstallProgress(phase: InstallPhase.manifest, step: 1),
@@ -166,6 +258,7 @@ class InstallController extends Notifier<InstallState> {
           );
         }
         resolvedLoaderVersion = version;
+        _log('${kind.label} build: $version');
         state = InstallRunning(
           versionId: versionId,
           progress: InstallProgress(
@@ -183,14 +276,7 @@ class InstallController extends Notifier<InstallState> {
           host: localRuleContext(),
           includeAssets: includeAssets,
           cancel: cancel,
-          onProgress: (progress) {
-            if (cancel.isCancelled || !ref.mounted) return;
-            state = InstallRunning(
-              versionId: versionId,
-              progress: progress,
-              bytesPerSecond: progress.download?.bytesPerSecond,
-            );
-          },
+          onProgress: (progress) => _publish(cancel, versionId, progress),
         );
 
         final runner = ForgeInstaller(meta: forge);
@@ -226,14 +312,7 @@ class InstallController extends Notifier<InstallState> {
           host: localRuleContext(),
           includeAssets: false,
           cancel: cancel,
-          onProgress: (progress) {
-            if (cancel.isCancelled || !ref.mounted) return;
-            state = InstallRunning(
-              versionId: versionId,
-              progress: progress,
-              bytesPerSecond: progress.download?.bytesPerSecond,
-            );
-          },
+          onProgress: (progress) => _publish(cancel, versionId, progress),
         );
         if (!ref.mounted) return;
         state = InstallDone(
@@ -269,6 +348,7 @@ class InstallController extends Notifier<InstallState> {
           version = available.first;
         }
         resolvedLoaderVersion = version;
+        _log('${kind.label} build: $version');
         state = InstallRunning(
           versionId: versionId,
           progress: InstallProgress(
@@ -292,19 +372,17 @@ class InstallController extends Notifier<InstallState> {
         host: localRuleContext(),
         includeAssets: includeAssets,
         cancel: cancel,
-        onProgress: (progress) {
-          // A cancelled install keeps emitting for as long as the downloader
-          // takes to notice; dropping those keeps the UI from showing progress
-          // for work the user already stopped.
-          if (cancel.isCancelled || !ref.mounted) return;
-          state = InstallRunning(
-            versionId: versionId,
-            progress: progress,
-            bytesPerSecond: progress.download?.bytesPerSecond,
-          );
-        },
+        // Also writes the install log: the phase history is the only trace left
+        // once the panel is closed or the app restarted.
+        onProgress: (progress) => _publish(cancel, versionId, progress),
       );
       if (!ref.mounted) return;
+      _log(
+        result.verification.problems.isEmpty
+            ? 'install done: $installId (${result.verification.checkedFiles} files verified)'
+            : 'install finished with ${result.verification.problems.length} '
+                  'missing file(s): $installId',
+      );
       state = InstallDone(
         versionId: versionId,
         problemCount: result.verification.problems.length,
@@ -327,8 +405,11 @@ class InstallController extends Notifier<InstallState> {
                 : '$versionId · ${kind.label}',
           );
     } on CancelledException {
+      _log('install cancelled: $versionId');
       if (ref.mounted) state = InstallCancelled(versionId: versionId);
     } catch (e) {
+      // The log is the only place a post-mortem exists once the panel is closed.
+      _log('install failed: ${_describe(e)}');
       if (ref.mounted) {
         state = InstallFailed(versionId: versionId, message: _describe(e));
       }
@@ -375,6 +456,9 @@ class InstallController extends Notifier<InstallState> {
     _cancel = cancel;
     final installer = ref.read(installerFactoryProvider)();
     _installer = installer;
+    _loggedPhase = null;
+    _loggedPercent = -10;
+    _log('resume started: $versionId');
     state = InstallRunning(
       versionId: versionId,
       progress: const InstallProgress(phase: InstallPhase.manifest, step: 1),
@@ -385,16 +469,15 @@ class InstallController extends Notifier<InstallState> {
         paths: paths.gamePaths,
         host: localRuleContext(),
         cancel: cancel,
-        onProgress: (progress) {
-          if (cancel.isCancelled || !ref.mounted) return;
-          state = InstallRunning(
-            versionId: versionId,
-            progress: progress,
-            bytesPerSecond: progress.download?.bytesPerSecond,
-          );
-        },
+        onProgress: (progress) => _publish(cancel, versionId, progress),
       );
       if (!ref.mounted) return;
+      _log(
+        result.verification.problems.isEmpty
+            ? 'resume done: $versionId (${result.verification.checkedFiles} files verified)'
+            : 'resume finished with ${result.verification.problems.length} '
+                  'missing file(s): $versionId',
+      );
       state = InstallDone(
         versionId: versionId,
         problemCount: result.verification.problems.length,
@@ -403,8 +486,10 @@ class InstallController extends Notifier<InstallState> {
       await ref.read(installedVersionsProvider.notifier).refresh();
       await ref.read(instanceListProvider.notifier).ensureForVersion(versionId);
     } on CancelledException {
+      _log('resume cancelled: $versionId');
       if (ref.mounted) state = InstallCancelled(versionId: versionId);
     } catch (e) {
+      _log('resume failed: ${_describe(e)}');
       if (ref.mounted) {
         state = InstallFailed(versionId: versionId, message: _describe(e));
       }
