@@ -14,6 +14,8 @@ import 'package:oh_my_mc/core/mods/mod_scanner.dart';
 import 'package:oh_my_mc/data/install_providers.dart';
 import 'package:oh_my_mc/core/install/version_installer.dart';
 import 'package:oh_my_mc/core/net/progress.dart';
+import 'package:oh_my_mc/core/logs/log_files.dart';
+import 'package:oh_my_mc/data/log_providers.dart';
 import 'package:oh_my_mc/data/launch_providers.dart';
 import 'package:oh_my_mc/core/launch/launch_handle.dart';
 import 'package:oh_my_mc/data/instance_providers.dart';
@@ -353,6 +355,51 @@ void main() {
     await shoot(tester, '/download', 'download');
   });
 
+  testWidgets('logs sessions', (tester) async {
+    await shoot(
+      tester,
+      '/logs',
+      'logs-sessions',
+      overrides: [
+        launchControllerProvider.overrideWith(_ShotNoSession.new),
+        logFilesProvider.overrideWith(
+          (ref) async => [
+            LogFile(
+              file: File('/logs/launch-2026-10-22T23-58-14-26.3.log'),
+              label: '26.3 · 23:58',
+              modified: DateTime(2026, 10, 22, 23, 58),
+              isInstall: false,
+            ),
+            LogFile(
+              file: File('/logs/launch-2026-10-20T18-04-00-1.19.2.log'),
+              label: '1.19.2 · 18:04',
+              modified: DateTime(2026, 10, 20, 18, 4),
+              isInstall: false,
+            ),
+          ],
+        ),
+        logTailProvider.overrideWith(
+          (ref, path) async => const [
+            LogEntry('[23:58:14] [Render thread/INFO]: Setting user: Vedaru'),
+            LogEntry(
+              '[23:58:14] [Render thread/INFO]: Backend library: LWJGL 3.4.3',
+            ),
+            LogEntry(
+              '[23:58:15] [Download-2/ERROR]: Failed to fetch user properties',
+            ),
+            LogEntry(
+              'com.mojang.authlib.exceptions.InvalidCredentialsException',
+              isStderr: true,
+            ),
+            LogEntry(
+              '[23:58:16] [Render thread/INFO]: Reloading ResourceManager',
+            ),
+          ],
+        ),
+      ],
+    );
+  });
+
   testWidgets('setup', (tester) async {
     await shoot(tester, '/setup', 'setup');
   });
@@ -542,4 +589,11 @@ class _ShotRunning extends LaunchController {
       LogLine('[Worker-Main-5/INFO]: Loaded 1283 recipes', LogChannel.stdout),
     ],
   );
+}
+
+/// A launch page with no session log, so the screenshots of other pages are not
+/// affected by whatever ran last.
+class _ShotNoSession extends LaunchController {
+  @override
+  LaunchSession build() => const LaunchSession.idle();
 }

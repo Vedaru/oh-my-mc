@@ -66,6 +66,7 @@ wrong: installing wrote files, and nothing pointed the launcher at them.
 | UI: language, theme, accent colour | **done** | `/setup` |
 | 版本设置 → Mod 管理: read `fabric.mod.json`/`quilt.mod.json`/`mods.toml`/`mcmod.info`, enable/disable by rename, delete, filter | **done** | `lib/core/mods/mod_scanner.dart`, `/instances/:id/mods` |
 | Interrupted installs: journal, resume from the download row and from a refused launch | **done** | `lib/core/install/install_journal.dart`, `InstallController.repair` |
+| 日志: current session **and** every saved session, from disk, with filter/search/copy | **done** | `lib/core/logs/log_files.dart`, `logs/` page, `logs/launch-*.log` |
 | **Mod search/install** (Modrinth/CurseForge, dependencies) | **missing** | - |
 | **Modpack import/export** (`.zip`, `.mrpack`) | **missing** | - |
 | **Instance import/export/clone** | **missing** (ARB strings only) | `instanceImport`, `instanceExport`, `instanceClone` |

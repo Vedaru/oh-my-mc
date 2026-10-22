@@ -363,6 +363,31 @@
     "description": "Placeholder in the log search box."
   },
   "logsOnlyErrors": "Errors only",
+  "logsSessionCurrent": "Current session",
+  "logsLineCount": "{count} lines",
+  "@logsLineCount": {
+    "description": "Supporting text of the live session entry.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@logsSessionCurrent": {
+    "description": "Entry in the log list for the running session."
+  },
+  "logsSessionHistory": "Saved sessions",
+  "@logsSessionHistory": {
+    "description": "Heading over the logs written by earlier launches."
+  },
+  "logsSessionEmpty": "No saved sessions yet.",
+  "@logsSessionEmpty": {
+    "description": "Shown when no log file exists on disk."
+  },
+  "logsOpenFolder": "Open log folder",
+  "@logsOpenFolder": {
+    "description": "Opens the directory the launcher writes logs to."
+  },
   "@logsOnlyErrors": {
     "description": "Toggle that hides ordinary log lines and keeps failures."
   },

@@ -277,6 +277,23 @@ class AppLocalizationsZh extends AppLocalizations {
   String get logsOnlyErrors => '仅错误';
 
   @override
+  String get logsSessionCurrent => '当前会话';
+
+  @override
+  String logsLineCount(int count) {
+    return '$count 行';
+  }
+
+  @override
+  String get logsSessionHistory => '历史会话';
+
+  @override
+  String get logsSessionEmpty => '还没有保存的会话日志。';
+
+  @override
+  String get logsOpenFolder => '打开日志文件夹';
+
+  @override
   String get logsNoMatches => '没有符合筛选条件的日志。';
 
   @override

@@ -313,6 +313,12 @@ the current gap table and the ordered backlog. Two rules from it bind new code:
   off the screen. One line goes to the console (`launch: java · N classpath
   entries · main`), the exact command line goes to `<data>/logs/launch-*.log`
   with `--accessToken` masked.
+- **Logs are files, and the page reads them.** `ProcessLaunchHandle` writes every
+  console line to `<data>/logs/launch-<timestamp>-<version>.log` (stderr prefixed
+  with `! ` so the errors filter survives a restart) and the full argv too; the
+  Logs page lists those files newest-first and opens the newest when nothing is
+  live. A console that only exists in memory cannot answer "why did it crash
+  yesterday", which is the only reason a log page exists.
 - **One console, one surface.** The launch page is card → actions → console, and
   the console is the page's body (`Expanded`, not content-sized): a bordered box
   inside a card is two frames for one panel, and a console that grows its first

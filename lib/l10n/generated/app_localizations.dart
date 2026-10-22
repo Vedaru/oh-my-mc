@@ -596,6 +596,36 @@ abstract class AppLocalizations {
   /// **'Errors only'**
   String get logsOnlyErrors;
 
+  /// Entry in the log list for the running session.
+  ///
+  /// In en, this message translates to:
+  /// **'Current session'**
+  String get logsSessionCurrent;
+
+  /// Supporting text of the live session entry.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} lines'**
+  String logsLineCount(int count);
+
+  /// Heading over the logs written by earlier launches.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved sessions'**
+  String get logsSessionHistory;
+
+  /// Shown when no log file exists on disk.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved sessions yet.'**
+  String get logsSessionEmpty;
+
+  /// Opens the directory the launcher writes logs to.
+  ///
+  /// In en, this message translates to:
+  /// **'Open log folder'**
+  String get logsOpenFolder;
+
   /// Shown when the log has lines but the search or filter hides them all.
   ///
   /// In en, this message translates to:

@@ -284,6 +284,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logsOnlyErrors => 'Errors only';
 
   @override
+  String get logsSessionCurrent => 'Current session';
+
+  @override
+  String logsLineCount(int count) {
+    return '$count lines';
+  }
+
+  @override
+  String get logsSessionHistory => 'Saved sessions';
+
+  @override
+  String get logsSessionEmpty => 'No saved sessions yet.';
+
+  @override
+  String get logsOpenFolder => 'Open log folder';
+
+  @override
   String get logsNoMatches => 'No lines match the filter.';
 
   @override

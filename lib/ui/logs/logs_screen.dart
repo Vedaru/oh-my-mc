@@ -5,8 +5,11 @@ import 'package:material_ui/material_ui.dart' as m3;
 import 'package:oh_my_mc/ui/components/app_button.dart';
 
 import '../../core/launch/launch_handle.dart';
+import '../../core/logs/log_files.dart';
 import '../../data/launch_providers.dart';
+import '../../data/log_providers.dart';
 import '../../l10n/l10n.dart';
+import '../components/list_row.dart';
 import '../components/page_body.dart';
 import '../motion/motion.dart';
 import '../shell/shell_icons.dart';
@@ -53,6 +56,9 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
   final _search = TextEditingController();
   var _filter = LogFilter.all;
 
+  /// The file being read, or `null` for the live session.
+  String? _openPath;
+
   @override
   void dispose() {
     _search.dispose();
@@ -66,7 +72,34 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
     final session = ref.watch(launchControllerProvider);
 
     final needle = _search.text.trim().toLowerCase();
-    final visible = session.log
+    final filesAsync = ref.watch(logFilesProvider);
+    final files = filesAsync.value ?? const <LogFile>[];
+
+    // The live session wins when it exists: it is the one that is still being
+    // written, and it is what the user came here for after a launch.
+    final live = session.log;
+    // With no live session and nothing chosen, open the newest saved one. A list
+    // on the left and an empty console on the right makes the page look broken
+    // when the only useful thing on it is one click away.
+    final openPath =
+        _openPath ??
+        (live.isEmpty && files.isNotEmpty ? files.first.file.path : null);
+    final showingLive = openPath == null;
+    final stored = showingLive
+        ? const <LogEntry>[]
+        : (ref.watch(logTailProvider(openPath)).value ?? const <LogEntry>[]);
+
+    final source = showingLive
+        ? live
+        : [
+            for (final entry in stored)
+              LogLine(
+                entry.text,
+                entry.isStderr ? LogChannel.stderr : LogChannel.stdout,
+              ),
+          ];
+
+    final visible = source
         .where(_filter.accepts)
         .where(
           (line) => needle.isEmpty || line.text.toLowerCase().contains(needle),
@@ -75,63 +108,90 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
 
     return PageBody(
       scrollable: false,
-      child: MotionEntrance(
+      child: m3.Column(
+        crossAxisAlignment: m3.CrossAxisAlignment.stretch,
         children: [
           PageTitle(
             l10n.logsTitle,
-            trailing: session.log.isNotEmpty
-                ? AppButton(
-                    key: const m3.ValueKey('logs-copy'),
-                    onPressed: () => _copy(context, session.log),
-                    style: AppButtonStyle.outlined,
-                    size: AppButtonSize.sm,
-                    icon: const m3.Icon(ShellIcons.copy, size: 14),
-                    label: m3.Text(l10n.logsCopy),
-                  )
-                : null,
-          ),
-          m3.Padding(
-            padding: const m3.EdgeInsets.only(bottom: 12),
-            child: m3.Row(
-              children: [
-                m3.SizedBox(
-                  // Fixed, not `Expanded` + `ConstrainedBox`: an Expanded hands
-                  // down tight constraints, which silently override a maxWidth -
-                  // that is how this field used to stretch across the page.
-                  width: 380,
-                  child: AppTextField(
-                    key: const m3.ValueKey('logs-search'),
-                    controller: _search,
-                    hint: l10n.logsSearchHint,
-                    leading: const m3.Icon(ShellIcons.search, size: 15),
-                    onChanged: (_) => setState(() {}),
-                  ),
-                ),
-                const m3.SizedBox(width: 12),
-                AppSwitch(
-                  value: _filter == LogFilter.errors,
-                  onChanged: (errors) => setState(() {
-                    _filter = errors ? LogFilter.errors : LogFilter.all;
-                  }),
-                  label: l10n.logsOnlyErrors,
-                ),
-                const m3.SizedBox(width: 8),
-                m3.Text(
-                  l10n.logsOnlyErrors,
-                  style: AppTheme.body(context)
-                      .copyWith(color: scheme.onSurfaceVariant),
-                ),
-              ],
+            trailing: AppButton(
+              key: const m3.ValueKey('logs-copy'),
+              onPressed: source.isEmpty ? null : () => _copy(context, source),
+              style: AppButtonStyle.outlined,
+              size: AppButtonSize.sm,
+              icon: const m3.Icon(ShellIcons.copy, size: 14),
+              label: m3.Text(l10n.logsCopy),
             ),
           ),
           m3.Expanded(
-            child: _Lines(
-              lines: visible,
-              // Distinguishes "nothing has run" from "your filter hides
-              // everything", which are the same empty box otherwise.
-              emptyText: session.log.isEmpty
-                  ? l10n.logsEmpty
-                  : l10n.logsNoMatches,
+            child: m3.Row(
+              crossAxisAlignment: m3.CrossAxisAlignment.stretch,
+              children: [
+                // The sessions, newest first. PCL keeps this list because the
+                // question "why did it crash yesterday" cannot be answered by a
+                // console that only holds the last run.
+                m3.SizedBox(
+                  width: 240,
+                  child: _Sessions(
+                    files: files,
+                    loading: filesAsync.isLoading,
+                    liveLines: live.length,
+                    selectedPath: openPath,
+                    onSelect: (path) => setState(() => _openPath = path),
+                  ),
+                ),
+                const m3.SizedBox(width: 16),
+                m3.Expanded(
+                  child: m3.Column(
+                    crossAxisAlignment: m3.CrossAxisAlignment.stretch,
+                    children: [
+                      m3.Padding(
+                        padding: const m3.EdgeInsets.only(bottom: 12),
+                        child: m3.Row(
+                          children: [
+                            m3.SizedBox(
+                              width: 380,
+                              child: AppTextField(
+                                key: const m3.ValueKey('logs-search'),
+                                controller: _search,
+                                hint: l10n.logsSearchHint,
+                                leading: const m3.Icon(
+                                  ShellIcons.search,
+                                  size: 15,
+                                ),
+                                onChanged: (_) => setState(() {}),
+                              ),
+                            ),
+                            const m3.SizedBox(width: 12),
+                            AppSwitch(
+                              value: _filter == LogFilter.errors,
+                              onChanged: (errors) => setState(() {
+                                _filter = errors
+                                    ? LogFilter.errors
+                                    : LogFilter.all;
+                              }),
+                              label: l10n.logsOnlyErrors,
+                            ),
+                            const m3.SizedBox(width: 8),
+                            m3.Text(
+                              l10n.logsOnlyErrors,
+                              style: AppTheme.body(context)
+                                  .copyWith(color: scheme.onSurfaceVariant),
+                            ),
+                          ],
+                        ),
+                      ),
+                      m3.Expanded(
+                        child: _Lines(
+                          lines: visible,
+                          emptyText: source.isEmpty
+                              ? l10n.logsEmpty
+                              : l10n.logsNoMatches,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -291,18 +351,26 @@ class _LinesState extends State<_Lines> {
           final line = _shown[index];
           return m3.SizeTransition(
             sizeFactor: animation,
-            alignment: m3.Alignment.topCenter,
+            // topLeft, not topCenter: a `SizeTransition` wraps its child in an
+            // `Align`, so the default centred alignment laid every log line out
+            // in the middle of the row, ragged on both edges. Logs are read from
+            // the left gutter.
+            alignment: m3.Alignment.topLeft,
             child: m3.FadeTransition(
               opacity: animation,
               child: AppendHighlight(
                 enabled: _fresh.contains(line),
                 tint: warning,
-                child: m3.Text(
-                  line.text,
-                  style: AppTheme.mono(context).copyWith(
-                    color: line.channel == LogChannel.stderr
-                        ? scheme.error
-                        : scheme.onSurface,
+                child: m3.SizedBox(
+                  width: double.infinity,
+                  child: m3.Text(
+                    line.text,
+                    textAlign: m3.TextAlign.left,
+                    style: AppTheme.mono(context).copyWith(
+                      color: line.channel == LogChannel.stderr
+                          ? scheme.error
+                          : scheme.onSurface,
+                    ),
                   ),
                 ),
               ),
@@ -311,5 +379,112 @@ class _LinesState extends State<_Lines> {
         },
       ),
     );
+  }
+}
+
+/// The session list on the left of the log console.
+///
+/// One entry per launch, plus the live session when there is one. PCL keeps this
+/// list for the same reason: the console only ever holds the current run, and the
+/// reason a game failed is usually in a run that already ended.
+class _Sessions extends StatelessWidget {
+  const _Sessions({
+    required this.files,
+    required this.loading,
+    required this.liveLines,
+    required this.selectedPath,
+    required this.onSelect,
+  });
+
+  final List<LogFile> files;
+  final bool loading;
+  final int liveLines;
+  final String? selectedPath;
+  final void Function(String? path) onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final scheme = m3.Theme.of(context).colorScheme;
+
+    return m3.Container(
+      decoration: m3.BoxDecoration(
+        color: scheme.surfaceContainerLow,
+        borderRadius: m3.BorderRadius.circular(16),
+      ),
+      padding: const m3.EdgeInsets.symmetric(vertical: 8),
+      child: m3.Column(
+        crossAxisAlignment: m3.CrossAxisAlignment.stretch,
+        children: [
+          m3.Padding(
+            padding: const m3.EdgeInsets.fromLTRB(14, 4, 14, 8),
+            child: m3.Text(
+              l10n.logsSessionHistory,
+              style: AppTheme.label(context),
+            ),
+          ),
+          m3.Expanded(
+            child: m3.ListView(
+              padding: m3.EdgeInsets.zero,
+              children: [
+                // The live session is listed only while it has output: an empty
+                // "current session" entry would be a button that shows an empty
+                // console.
+                if (liveLines > 0)
+                  ListRow(
+                    key: const m3.ValueKey('logs-session-live'),
+                    leadingIcon: selectedPath == null
+                        ? ShellIcons.check
+                        : ShellIcons.play,
+                    label: l10n.logsSessionCurrent,
+                    supporting: l10n.logsLineCount(liveLines),
+                    trailingText: selectedPath == null ? null : '',
+                    onPressed: () => onSelect(null),
+                  ),
+                if (loading)
+                  const m3.Padding(
+                    padding: m3.EdgeInsets.all(14),
+                    child: m3.CircularProgressIndicator(),
+                  )
+                else if (files.isEmpty)
+                  m3.Padding(
+                    padding: const m3.EdgeInsets.all(14),
+                    child: m3.Text(
+                      l10n.logsSessionEmpty,
+                      style: AppTheme.caption(context)
+                          .copyWith(color: scheme.onSurfaceVariant),
+                    ),
+                  )
+                else
+                  for (final file in files)
+                    ListRow(
+                      key: m3.ValueKey('logs-session-${file.file.path}'),
+                      // The check is the only selection mark a `ListRow` can
+                      // carry, and without it the list gives no sign of which
+                      // session the console belongs to.
+                      leadingIcon: selectedPath == file.file.path
+                          ? ShellIcons.check
+                          : file.isInstall
+                          ? ShellIcons.download
+                          : ShellIcons.document,
+                      label: file.isInstall
+                          ? l10n.downloadPhaseDownload
+                          : file.label,
+                      supporting: _when(file.modified),
+                      onPressed: () => onSelect(file.file.path),
+                    ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _when(DateTime time) {
+    final local = time.toLocal();
+    String two(int v) => v.toString().padLeft(2, '0');
+    return '${local.year}-${two(local.month)}-${two(local.day)} '
+        '${two(local.hour)}:${two(local.minute)}';
   }
 }

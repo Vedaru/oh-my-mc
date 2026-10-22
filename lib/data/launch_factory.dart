@@ -75,9 +75,11 @@ LaunchHandle Function(Instance) realLaunchHandleFactory(Ref ref) {
       // dies with the window, so a crash two restarts ago is only diagnosable from
       // disk.
       logFile: File(
+        // `launch-<timestamp>-<version>.log`: the Logs page lists these, and the
+        // version in the name is what makes a session identifiable a week later.
         '${paths.data.path}/logs/launch-'
         '${DateTime.now().toIso8601String().replaceAll(':', '-').substring(0, 19)}'
-        '.log',
+        '-${instance.versionId.replaceAll(RegExp(r'[/\\:]'), '_')}.log',
       ),
       prepare: () => prepareInstanceLaunch(
         instance: instance,
