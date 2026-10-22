@@ -233,35 +233,6 @@ void main() {
     );
   });
 
-  group('missingLaunchFiles', () {
-    test('reports the client jar and every absent classpath entry', () {
-      final version = loadVersion('1.20.1');
-      final graph = buildLibraryGraph(version, _linux);
-      final missing = missingLaunchFiles(
-        version: version,
-        classpath: graph.classpathPaths,
-        paths: _paths,
-        exists: (_) => false,
-      );
-      expect(missing, hasLength(graph.classpath.length + 1));
-      expect(missing.first, '/mc/versions/1.20.1/1.20.1.jar');
-    });
-
-    test('reports nothing when everything exists', () {
-      final version = loadVersion('1.20.1');
-      final graph = buildLibraryGraph(version, _linux);
-      expect(
-        missingLaunchFiles(
-          version: version,
-          classpath: graph.classpathPaths,
-          paths: _paths,
-          exists: (_) => true,
-        ),
-        isEmpty,
-      );
-    });
-  });
-
   group('directoryResolver', () {
     test('returns null for a version that is not installed', () {
       final tmp = Directory.systemTemp.createTempSync('resolver_test');

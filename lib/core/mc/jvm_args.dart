@@ -115,27 +115,3 @@ List<String> renderArguments(
       expandPlaceholders(token, vars),
   ];
 }
-
-/// The memory/GC block a modern version suggests, purely for pre-filling the
-/// settings UI. Returns `[]` for versions that do not declare one.
-List<String> suggestedJvmDefaults(VersionJson version, RuleContext host) => [
-  for (final entry in version.arguments.defaultUserJvm)
-    if (ruleAllows(entry.rules, host))
-      for (final v in entry.value)
-        expandPlaceholders(
-          v,
-          const LaunchVariables(
-            authPlayerName: '',
-            versionName: '',
-            gameDirectory: '',
-            assetsRoot: '',
-            assetIndexName: '',
-            authUuid: '',
-            authAccessToken: '',
-            userType: '',
-            versionType: '',
-            nativesDirectory: '',
-            classpath: '',
-          ),
-        ),
-];

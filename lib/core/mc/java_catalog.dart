@@ -22,8 +22,6 @@ const javaCatalogUri =
 /// The largest single runtime file we will accept, as a guard against a
 /// manifest that inflates `raw.size` to make us allocate. The biggest real
 /// entry is `lib/modules` at ~55 MB; `assets` are governed separately.
-const maxJavaRuntimeFileBytes = 512 * 1024 * 1024;
-
 /// The catalog calls macOS `mac-os`, not `osx`, and distinguishes 32-bit Linux.
 /// Building this from `HostOs.mcName` would silently produce `osx`.
 String javaPlatformKey(HostOs os, HostArch arch) => switch ((os, arch)) {
@@ -297,13 +295,6 @@ class JavaCatalog {
 
   Map<String, List<JavaCatalogBuild>> componentsFor(String platform) =>
       platforms[platform] ?? const {};
-
-  /// Components that actually have a build on [platform], newest release kind
-  /// first is *not* assumed — the caller picks by major version.
-  Iterable<String> availableComponents(String platform) =>
-      componentsFor(platform).entries
-          .where((e) => e.value.isNotEmpty)
-          .map((e) => e.key);
 }
 
 /// Which JRE a Minecraft version wants.
@@ -453,24 +444,4 @@ JavaRuntimeChoice chooseJavaRuntime({
   });
 
   return usable.first;
-}
-
-/// The component a bare major version maps to, for metadata with no
-/// `javaVersion` block (everything pre-1.13, which needs Java 8).
-String componentForMajor(int major) {
-  var best = 'jre-legacy';
-  var bestMajor = 8;
-  for (final entry in javaComponentMajors.entries) {
-    final m = entry.value;
-    final closer = (m - major).abs() < (bestMajor - major).abs();
-    final tieBreak =
-        (m - major).abs() == (bestMajor - major).abs() &&
-        _componentPreference.indexOf(entry.key) <
-            _componentPreference.indexOf(best);
-    if (closer || tieBreak) {
-      best = entry.key;
-      bestMajor = m;
-    }
-  }
-  return best;
 }

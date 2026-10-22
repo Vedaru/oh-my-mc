@@ -233,6 +233,22 @@ fact the user could not otherwise read, and is the only kind a screen may add on
 | `MotionRespectingProgressBar` | "working, length unknown" | an indeterminate phase |
 | `StaggerItem`/`StaggerList`/`MotionEntrance` | "this is a list, that is a page" | entrance only |
 
+### Releases
+
+- **Windows ships an installer, not a zip.** `packaging/windows/oh-my-mc.iss`
+  (Inno Setup) turns the Flutter release folder into
+  `oh-my-mc-<version>-windows-x64-setup.exe`: double-click, choose a directory,
+  done, with a stable `AppId` so an upgrade replaces the previous install.
+- **It is built on GitHub's Windows runner.** Flutter cannot cross-compile to
+  Windows from Linux, and this instance has no Windows host, so
+  `.github/workflows/release-windows.yml` is GitHub-only; the Forgejo runner cannot
+  do it. Push a `v*` tag (or run it by hand) and the .exe is attached to the
+  release.
+- The Windows release path is `build/windows/x64/runner/Release` and the binary is
+  `oh_my_mc.exe` (`windows/CMakeLists.txt`'s `BINARY_NAME`); the Inno script and
+  the workflow both hardcode those, and the workflow fails early if the exe is
+  missing rather than inside ISCC.
+
 ### Lists
 
 A list is scanned, not read: Material's list anatomy fixes the slots and asks for

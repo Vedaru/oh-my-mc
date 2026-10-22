@@ -206,25 +206,6 @@ InstallPlan planInstall({
   );
 }
 
-/// Files that must exist for a launch, independent of downloading.
-///
-/// Checked right before spawning the JVM so a partial install produces
-/// "3 files missing" instead of a cryptic Java error.
-List<String> missingLaunchFiles({
-  required VersionJson version,
-  required List<String> classpath,
-  required GamePaths paths,
-  required bool Function(String path) exists,
-}) {
-  final missing = <String>[];
-  final jar = paths.versionJar(version.jar ?? version.id);
-  if (!exists(jar)) missing.add(jar);
-  for (final f in classpath) {
-    if (!exists(f)) missing.add(f);
-  }
-  return missing;
-}
-
 /// Builds a resolver callback backed by the versions directory, for
 /// `inheritsFrom`.
 ///

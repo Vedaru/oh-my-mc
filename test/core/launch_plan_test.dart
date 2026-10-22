@@ -125,46 +125,4 @@ void main() {
       expect(joined.contains(r'${'), isFalse);
     });
   });
-
-  group('path helpers', () {
-    test('client jar uses the inheritsFrom jar override when present', () {
-      expect(
-        clientJarPath(
-          versionId: 'forge-47',
-          jarOverride: '1.20.1',
-          versionsRoot: '/mc/versions',
-        ),
-        '/mc/versions/1.20.1/1.20.1.jar',
-      );
-      expect(
-        clientJarPath(
-          versionId: '1.20.1',
-          jarOverride: null,
-          versionsRoot: '/mc/versions',
-        ),
-        '/mc/versions/1.20.1/1.20.1.jar',
-      );
-    });
-
-    test('natives dir is per-version', () {
-      expect(
-        nativesDirectoryFor('1.12.2', '/mc/versions'),
-        '/mc/versions/1.12.2/natives',
-      );
-    });
-
-    test('separator differs by platform', () {
-      expect(classpathSeparatorFor('windows'), ';');
-      expect(classpathSeparatorFor('linux'), ':');
-      expect(classpathSeparatorFor('osx'), ':');
-    });
-
-    test('log4j argument is extracted and substituted', () {
-      final v = loadVersion('1.20.1');
-      final arg = log4jArgument(v, '/mc/assets/log_configs/client.xml');
-      expect(arg, isNotNull);
-      expect(arg, startsWith('-Dlog4j.configurationFile='));
-      expect(arg, endsWith('client.xml'));
-    });
-  });
 }

@@ -362,7 +362,6 @@ void main() {
       chain.markFailed(DownloadSource.official);
       expect(chain.candidates(url).length, 2, reason: 'one failure stays');
       chain.markFailed(DownloadSource.official);
-      expect(chain.isTripped(DownloadSource.official), isTrue);
       expect(chain.candidates(url).length, 1);
       expect(chain.candidates(url).single.host, contains('bangbang93'));
     });
@@ -372,7 +371,6 @@ void main() {
       chain.markFailed(DownloadSource.bmclapi);
       chain.markSucceeded(DownloadSource.bmclapi);
       chain.markFailed(DownloadSource.bmclapi);
-      expect(chain.isTripped(DownloadSource.bmclapi), isFalse);
     });
 
     test('preferring a source reorders candidates', () {

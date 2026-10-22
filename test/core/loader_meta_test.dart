@@ -111,14 +111,6 @@ void main() {
         'quilt-loader-0.24.0-1.20.1',
       );
     });
-
-    test('parse back to the game version', () {
-      expect(LoaderMeta.gameVersionOf('fabric-loader-0.16.9-1.20.1'), '1.20.1');
-      // A snapshot id contains dashes of its own, and must survive.
-      expect(LoaderMeta.gameVersionOf('fabric-loader-0.16.9-24w14a'), '24w14a');
-      expect(LoaderMeta.gameVersionOf('1.20.1'), isNull);
-      expect(LoaderMeta.gameVersionOf('not-a-loader'), isNull);
-    });
   });
 
   test('loader versions are listed newest first', () async {

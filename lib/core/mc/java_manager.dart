@@ -473,10 +473,6 @@ class JavaManager {
     _runtimes.sort((a, b) => a.majorVersion.compareTo(b.majorVersion));
   }
 
-  /// Best runtime for [requiredMajor], or `null` if the user must install one.
-  JavaRuntime? bestFor(int requiredMajor) =>
-      selectRuntime(_runtimes, requiredMajor);
-
   /// Every distinct major version present, for the settings screen.
   List<int> get majors =>
       _runtimes.map((r) => r.majorVersion).toSet().toList()..sort();

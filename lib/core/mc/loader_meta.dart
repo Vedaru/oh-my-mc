@@ -38,21 +38,6 @@ class LoaderMeta {
     String loaderVersion,
   ) => '${kind.name}-loader-$loaderVersion-$gameVersion';
 
-  /// The game version a loader profile id was built for, or `null` when the id is
-  /// not one of ours. Used to show "1.20.1 · Fabric 0.16.9" instead of the raw
-  /// directory name.
-  static String? gameVersionOf(String versionId) {
-    for (final kind in [LoaderKind.fabric, LoaderKind.quilt]) {
-      final prefix = '${kind.name}-loader-';
-      if (!versionId.startsWith(prefix)) continue;
-      final rest = versionId.substring(prefix.length);
-      final dash = rest.indexOf('-');
-      if (dash <= 0 || dash == rest.length - 1) return null;
-      return rest.substring(dash + 1);
-    }
-    return null;
-  }
-
   /// Newest first. Empty when the service has no loader for [gameVersion], which
   /// is normal for a brand-new or very old snapshot.
   Future<List<String>> loaderVersions(

@@ -78,13 +78,6 @@ class MirrorChain {
     _tripped.remove(source);
   }
 
-  bool isTripped(DownloadSource source) => _tripped.contains(source);
-
-  void resetHealth() {
-    _consecutiveFailures.clear();
-    _tripped.clear();
-  }
-
   /// Which source a candidate URL belongs to. Used to attribute failures.
   static DownloadSource sourceOf(Uri uri) => uri.host.contains('bangbang93')
       ? DownloadSource.bmclapi
@@ -143,13 +136,6 @@ class MirrorChain {
     }
   }
 }
-
-/// True when [uri] points at a host we can attribute to a known source.
-bool isKnownHost(Uri uri) =>
-    uri.host.endsWith('mojang.com') || uri.host.contains('bangbang93');
-
-/// Convenience for tests and diagnostics.
-String describeSource(Uri uri) => MirrorChain.sourceOf(uri).id;
 
 /// Guard for absurd responses; a version JSON is ~30-60 KB, assets cap at a few
 /// hundred MB. Anything past this is a captive portal or a mirror error page.

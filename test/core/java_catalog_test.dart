@@ -56,7 +56,7 @@ void main() {
 
     test('lists components per platform', () {
       expect(
-        catalog.availableComponents('linux'),
+        catalog.componentsFor('linux').keys,
         containsAll([
           'jre-legacy',
           'java-runtime-alpha',
@@ -69,11 +69,9 @@ void main() {
 
     test('a component published as an empty array is not available', () {
       // This is the real arm64 shape: the key exists, the list is empty.
+      // The key exists with an empty list - the caller must look at the builds,
+      // and that is exactly what `chooseJavaRuntime` does.
       expect(catalog.builds('mac-os-arm64', 'jre-legacy'), isEmpty);
-      expect(
-        catalog.availableComponents('mac-os-arm64'),
-        isNot(contains('jre-legacy')),
-      );
       expect(
         catalog.builds('mac-os-arm64', 'java-runtime-gamma'),
         hasLength(1),
@@ -263,22 +261,6 @@ void main() {
         requiredMajor: 17,
       );
       expect(choice.component, isNot('minecraft-java-exe'));
-    });
-  });
-
-  group('componentForMajor', () {
-    test('maps the majors MineCraft actually declares', () {
-      expect(componentForMajor(8), 'jre-legacy');
-      expect(componentForMajor(16), 'java-runtime-alpha');
-      expect(componentForMajor(17), 'java-runtime-gamma');
-      expect(componentForMajor(21), 'java-runtime-delta');
-      expect(componentForMajor(25), 'java-runtime-epsilon');
-    });
-
-    test('prefers the shipping build over a snapshot that declares the same major', () {
-      // beta, gamma and gamma-snapshot all declare 17; gamma is the one Mojang
-      // ships and the one the game metadata names.
-      expect(componentForMajor(17), 'java-runtime-gamma');
     });
   });
 

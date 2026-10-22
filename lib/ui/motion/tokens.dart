@@ -97,14 +97,4 @@ class StaggerConfig {
 
   /// Whether the item at [index] participates in the entrance at all.
   bool animates(int index) => index >= 0 && index < maxAnimatedIndex;
-
-  /// The worst-case time from first paint to the last item at rest. This is what
-  /// stays bounded regardless of list length.
-  Duration totalFor(int itemCount) {
-    final animated = itemCount < maxAnimatedIndex
-        ? itemCount
-        : maxAnimatedIndex;
-    if (animated <= 0) return Duration.zero;
-    return delayFor(animated - 1, itemCount: itemCount) + itemDuration;
-  }
 }

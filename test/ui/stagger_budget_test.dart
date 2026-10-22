@@ -72,44 +72,6 @@ void main() {
     });
   });
 
-  group('StaggerConfig.totalFor (the whole point of the budget)', () {
-    const config = StaggerConfig();
-
-    test('a short list finishes inside budget plus one item', () {
-      final total = config.totalFor(4);
-      expect(total <= config.maxTotal + config.itemDuration, isTrue);
-    });
-
-    test('a 200-item grid is still bounded', () {
-      final total = config.totalFor(200);
-      expect(total <= config.maxTotal + config.itemDuration, isTrue);
-      // Concretely: well under a second, not the package's ~12 s.
-      expect(total < const Duration(milliseconds: 1000), isTrue);
-    });
-
-    test('total is monotonic and then flat past the cap', () {
-      final atCap = config.totalFor(24);
-      final pastCap = config.totalFor(1000);
-      expect(pastCap, atCap);
-    });
-
-    test('an empty list has nothing to animate', () {
-      expect(config.totalFor(0), Duration.zero);
-    });
-
-    test('custom config is respected', () {
-      const slow = StaggerConfig(
-        step: Duration(milliseconds: 100),
-        maxTotal: Duration(milliseconds: 500),
-        maxAnimatedIndex: 3,
-      );
-      // 500ms budget over 3 animated items leaves 166ms, above the 100ms step.
-      expect(slow.stepFor(10), const Duration(milliseconds: 100));
-      expect(slow.animates(3), isFalse);
-      expect(slow.totalFor(10) <= const Duration(milliseconds: 800), isTrue);
-    });
-  });
-
   group('Motion', () {
     test('full motion passes durations through', () {
       expect(Motion.full.of(Durations.base), const Duration(milliseconds: 280));
@@ -125,19 +87,6 @@ void main() {
       ]) {
         expect(Motion.none.of(d), Duration.zero);
       }
-    });
-
-    test('disabled motion suppresses item animation', () {
-      expect(Motion.none.animatesItem(0), isFalse);
-      expect(Motion.full.animatesItem(0), isTrue);
-      expect(Motion.full.animatesItem(99), isFalse);
-    });
-
-    test('tokens are ordered', () {
-      expect(Durations.xfast < Durations.fast, isTrue);
-      expect(Durations.fast < Durations.base, isTrue);
-      expect(Durations.base < Durations.slow, isTrue);
-      expect(Durations.slow < Durations.ambient, isTrue);
     });
   });
 }

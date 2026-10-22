@@ -40,7 +40,7 @@ Future<(ProviderContainer, _Probe)> _pump(
           // would pass even if the theme failed to resolve.
           probe.brightness = m3.Theme.of(context).brightness;
           probe.locale = Localizations.localeOf(context);
-          probe.motionEnabled = MotionScope.enabledOf(context);
+          probe.motionEnabled = MotionScope.of(context).enabled;
           return const SizedBox.shrink();
         },
       ),
@@ -150,7 +150,7 @@ void main() {
           child: AppRoot(
             overrideMotion: Motion.full,
             screens: (context, state) {
-              seen = MotionScope.enabledOf(context);
+              seen = MotionScope.of(context).enabled;
               return const SizedBox.shrink();
             },
           ),

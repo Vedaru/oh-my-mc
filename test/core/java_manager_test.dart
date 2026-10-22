@@ -341,8 +341,12 @@ void main() {
           ),
         );
         await manager.scan(environment: {'JAVA_HOME': '/opt/jdk8'});
-        expect(manager.bestFor(17), isNull);
-        expect(manager.bestFor(8), isNotNull);
+        expect(
+          manager.runtimes.where((r) => r.majorVersion >= 17),
+          isEmpty,
+          reason: 'only an 8 was found',
+        );
+        expect(manager.majors, contains(8));
       },
     );
 

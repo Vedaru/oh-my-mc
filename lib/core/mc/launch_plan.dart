@@ -70,19 +70,6 @@ String classpathSeparatorFor(String osName) => osName == 'windows' ? ';' : ':';
 /// do not need `dart:io`.
 String classpathSeparator = ':';
 
-/// The client jar to hand to the JVM for [version].
-///
-/// Forge/Fabric set `jar` to point at the vanilla client of their parent, so an
-/// instance's own client jar is not always the one to use.
-String clientJarPath({
-  required String versionId,
-  required String? jarOverride,
-  required String versionsRoot,
-}) {
-  final id = jarOverride ?? versionId;
-  return '$versionsRoot/$id/$id.jar';
-}
-
 /// Where natives are unpacked for [versionId].
 String nativesDirectoryFor(String versionId, String versionsRoot) =>
     '$versionsRoot/$versionId/natives';

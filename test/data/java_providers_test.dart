@@ -303,7 +303,7 @@ void main() {
           JavaSource.managed,
           reason: 'a downloaded runtime must be deletable as ours',
         );
-        expect(manager.bestFor(17)?.path, isNotNull);
+        expect(manager.runtimes.any((r) => r.majorVersion == 17), isTrue);
       },
     );
   });

@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:archive/archive.dart';
 import 'package:path/path.dart' as p;
+
+import 'zip_entry_reader.dart';
 
 /// Which mod loader a jar was built for.
 ///
@@ -91,6 +92,8 @@ Future<List<ModEntry>> scanMods(String modsDir) async {
   return entries;
 }
 
+String _text(List<int> bytes) => utf8.decode(bytes, allowMalformed: true);
+
 /// `foo.jar` and `foo.jar.disabled` are mods; `foo.zip` is not.
 bool isModFileName(String name) {
   final lower = name.toLowerCase();
@@ -107,85 +110,65 @@ Future<ModEntry> readMod(String path) async {
   final size = await file.length();
   final enabled = !path.toLowerCase().endsWith(disabledSuffix);
 
-  final bytes = await file.readAsBytes();
-  // A zip starts with "PK". Checked before decoding because `ZipDecoder` reads
-  // arbitrary bytes as an *empty* archive instead of failing, which would report a
-  // renamed text file as "a jar with no metadata" - misleading, since the file is
-  // not a jar at all.
-  if (bytes.length < 4 || bytes[0] != 0x50 || bytes[1] != 0x4b) {
-    return ModEntry(
-      path: path,
-      enabled: enabled,
-      sizeBytes: size,
-      loader: ModLoaderKind.unknown,
-      problem: 'not a jar (no zip signature)',
-    );
-  }
-
-  Archive archive;
-  try {
-    archive = ZipDecoder().decodeBytes(bytes);
-  } on Object catch (e) {
-    return ModEntry(
-      path: path,
-      enabled: enabled,
-      sizeBytes: size,
-      loader: ModLoaderKind.unknown,
-      problem: 'not a readable jar ($e)',
-    );
-  }
-  if (archive.files.isEmpty) {
-    return ModEntry(
-      path: path,
-      enabled: enabled,
-      sizeBytes: size,
-      loader: ModLoaderKind.unknown,
-      problem: 'empty jar',
-    );
-  }
-
-  String? text(String name) {
-    final entry = archive.files.firstWhere(
-      (f) => f.name == name,
-      orElse: () => ArchiveFile(name, 0, const <int>[]),
-    );
-    final bytes = entry.readBytes();
-    if (bytes == null || bytes.isEmpty) return null;
-    return utf8.decode(bytes, allowMalformed: true);
-  }
-
-  // Order matters: a jar can contain more than one descriptor (a Quilt mod may
-  // ship `fabric.mod.json` too), and the most specific format wins.
-  final quilt = text('quilt.mod.json');
-  if (quilt != null) {
-    return _fromQuilt(path, size, enabled, quilt);
-  }
-  final fabric = text('fabric.mod.json');
-  if (fabric != null) {
-    return _fromFabric(path, size, enabled, fabric);
-  }
-  final neo = text('META-INF/neoforge.mods.toml');
-  if (neo != null) {
-    return _fromToml(path, size, enabled, neo, ModLoaderKind.neoforge);
-  }
-  final forge = text('META-INF/mods.toml');
-  if (forge != null) {
-    return _fromToml(path, size, enabled, forge, ModLoaderKind.forge);
-  }
-  final legacy = text('mcmod.info');
-  if (legacy != null) {
-    return _fromLegacy(path, size, enabled, legacy);
-  }
-
-  // A jar with none of the descriptors: a library shipped inside `mods/`, or a
-  // mod whose metadata lives elsewhere. Named, not hidden.
-  return ModEntry(
+  ModEntry unreadable(String problem) => ModEntry(
     path: path,
     enabled: enabled,
     sizeBytes: size,
     loader: ModLoaderKind.unknown,
-    problem: 'no mod metadata in the jar',
+    problem: problem,
   );
+
+  // A zip starts with "PK". Four bytes, and it distinguishes "not a jar" from "a
+  // jar with no metadata" - two very different things for the user.
+  try {
+    final signature = await file.openRead(0, 4).first;
+    if (signature.length < 4 || signature[0] != 0x50 || signature[1] != 0x4b) {
+      return unreadable('not a jar (no zip signature)');
+    }
+  } on FileSystemException catch (e) {
+    return unreadable('could not read the file (${e.osError?.message ?? e})');
+  }
+
+  ZipEntryReader reader;
+  try {
+    reader = await ZipEntryReader.open(file);
+  } on FileSystemException catch (e) {
+    return unreadable('could not open the jar (${e.osError?.message ?? e})');
+  }
+
+  try {
+    // The descriptors, most specific first: a Quilt mod may also ship
+    // `fabric.mod.json`, and Forge's newer file can coexist with the older one.
+    final quilt = await reader.read('quilt.mod.json');
+    if (quilt != null) {
+      return _fromQuilt(path, size, enabled, _text(quilt));
+    }
+    final fabric = await reader.read('fabric.mod.json');
+    if (fabric != null) {
+      return _fromFabric(path, size, enabled, _text(fabric));
+    }
+    final neo = await reader.read('META-INF/neoforge.mods.toml');
+    if (neo != null) {
+      return _fromToml(path, size, enabled, _text(neo), ModLoaderKind.neoforge);
+    }
+    final forge = await reader.read('META-INF/mods.toml');
+    if (forge != null) {
+      return _fromToml(path, size, enabled, _text(forge), ModLoaderKind.forge);
+    }
+    final legacy = await reader.read('mcmod.info');
+    if (legacy != null) {
+      return _fromLegacy(path, size, enabled, _text(legacy));
+    }
+  } on Object catch (e) {
+    // A truncated or hand-edited zip: reported on the row, not thrown.
+    return unreadable('unreadable jar ($e)');
+  } finally {
+    await reader.close();
+  }
+
+  // A jar with none of the descriptors: a library shipped inside `mods/`, or a mod
+  // whose metadata lives elsewhere. Named, not hidden.
+  return unreadable('no mod metadata in the jar');
 }
 
 ModEntry _fromFabric(String path, int size, bool enabled, String json) {

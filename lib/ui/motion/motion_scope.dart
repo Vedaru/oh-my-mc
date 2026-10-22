@@ -44,11 +44,6 @@ class Motion {
 
   /// The stagger configuration in force, already disabled when motion is off.
   StaggerConfig get effectiveStagger => stagger;
-
-  /// Whether an item at [index] should animate, accounting for both the
-  /// stagger cap and the global switch.
-  bool animatesItem(int index) => enabled && stagger.animates(index);
-
   Motion copyWith({bool? enabled, StaggerConfig? stagger}) => Motion(
     curve: curve,
     enabled: enabled ?? this.enabled,
@@ -98,9 +93,6 @@ class MotionScope extends InheritedWidget {
     }
     return motion;
   }
-
-  /// Whether motion should run in [context]. Cheaper than [of] for a boolean.
-  static bool enabledOf(BuildContext context) => of(context).enabled;
 
   @override
   bool updateShouldNotify(MotionScope oldWidget) => oldWidget.motion != motion;

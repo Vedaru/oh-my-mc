@@ -161,9 +161,10 @@ void main() {
         managedRoots: managedJavaExecutables(data),
       );
 
-      final chosen = manager.bestFor(17);
-      expect(chosen, isNotNull);
-      expect(chosen!.source, JavaSource.managed);
+      final chosen = manager.runtimes.where(
+        (r) => r.majorVersion == 17 && r.source == JavaSource.managed,
+      );
+      expect(chosen, isNotEmpty);
     });
 
     test(

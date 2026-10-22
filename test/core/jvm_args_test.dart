@@ -5,16 +5,6 @@ import 'package:oh_my_mc/core/mc/jvm_args.dart';
 import 'fixtures.dart';
 
 const _linux = RuleContext(os: HostOs.linux, arch: HostArch.x86_64);
-const _win11 = RuleContext(
-  os: HostOs.windows,
-  arch: HostArch.x86_64,
-  osVersion: '10.0.22631',
-);
-const _win7 = RuleContext(
-  os: HostOs.windows,
-  arch: HostArch.x86_64,
-  osVersion: '6.1.7601',
-);
 const _mac = RuleContext(os: HostOs.osx, arch: HostArch.arm64);
 
 const _vars = LaunchVariables(
@@ -104,23 +94,6 @@ void main() {
       );
       expect(args, isNot(contains('-Xmx4G')));
       expect(args, isNot(contains('-Xms2G')));
-    });
-
-    test('suggested defaults are exposed for the settings UI instead', () {
-      final suggested = suggestedJvmDefaults(loadVersion('26.3'), _linux);
-      expect(suggested, contains('-Xmx4G'));
-      // Linux gets ZGC; the G1 block is the Windows-before-17134 branch.
-      expect(suggested, contains('-XX:+UseZGC'));
-      expect(suggested, isNot(contains('-XX:+UseG1GC')));
-    });
-
-    test('suggestion branches follow the Windows version range', () {
-      final win11 = suggestedJvmDefaults(loadVersion('26.3'), _win11);
-      expect(win11, contains('-XX:+UseZGC'));
-
-      final win7 = suggestedJvmDefaults(loadVersion('26.3'), _win7);
-      expect(win7, contains('-XX:+UseG1GC'));
-      expect(win7, isNot(contains('-XX:+UseZGC')));
     });
   });
 

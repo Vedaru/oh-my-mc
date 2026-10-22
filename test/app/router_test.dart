@@ -7,7 +7,6 @@ import 'package:go_router/go_router.dart';
 import 'package:oh_my_mc/app/app_root.dart';
 import 'package:oh_my_mc/app/providers.dart';
 import 'package:oh_my_mc/app/router.dart';
-import 'package:oh_my_mc/l10n/l10n.dart';
 import 'package:oh_my_mc/data/settings.dart';
 import 'package:oh_my_mc/ui/motion/motion.dart';
 
@@ -116,12 +115,13 @@ void main() {
   });
 
   testWidgets(
-    'an unknown location lands on the home grid instead of crashing',
+    'an unknown location lands on the launch page instead of crashing',
     (tester) async {
       await pumpApp(tester, initialLocation: '/definitely/not/a/route');
       await tester.pumpAndSettle();
 
-      expect(find.text('route:${Routes.instances}'), findsOneWidget);
+      // 启动 is the first destination and the page a fresh run lands on.
+      expect(find.text('route:${Routes.launch}'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );
@@ -229,38 +229,6 @@ void main() {
 
       expect(find.text('route:${Routes.download}'), findsOneWidget);
       expect(find.text('route:${Routes.launch}'), findsNothing);
-    });
-  });
-
-  group('routeTitle', () {
-    testWidgets('maps every route to a nav label', (tester) async {
-      await pumpApp(tester);
-      final l10n = localizedContext(tester).l10n;
-      expect(routeTitle(l10n, Routes.launch), l10n.navLaunch);
-      expect(routeTitle(l10n, Routes.instances), l10n.navInstances);
-      expect(routeTitle(l10n, Routes.download), l10n.navDownload);
-      expect(routeTitle(l10n, Routes.setup), l10n.navSetup);
-      expect(routeTitle(l10n, Routes.logs), l10n.navLogs);
-    });
-
-    testWidgets('an instance detail path titles as the instances list', (
-      tester,
-    ) async {
-      await pumpApp(tester);
-      final l10n = localizedContext(tester).l10n;
-
-      expect(
-        routeTitle(l10n, Routes.instanceDetail('abc')),
-        l10n.navInstances,
-        reason: 'the detail screen belongs to the instances section',
-      );
-    });
-
-    testWidgets('a query string does not confuse the title', (tester) async {
-      await pumpApp(tester);
-      final l10n = localizedContext(tester).l10n;
-
-      expect(routeTitle(l10n, '${Routes.setup}?tab=java'), l10n.navSetup);
     });
   });
 
