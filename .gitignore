@@ -50,3 +50,9 @@ app.*.map.json
 # CI packaging output (tool/ci)
 /dist/
 /stage/
+
+# Golden diff debris and the local screenshot harness output are artifacts, not
+# source. A committed failure image makes a real regression indistinguishable
+# from old noise.
+test/**/failures/
+test/shots/

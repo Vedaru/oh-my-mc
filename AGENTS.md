@@ -54,7 +54,28 @@ Gotcha: if a build fails with `file INSTALL cannot copy ... to "/usr/local/oh_my
 `build/linux/**/CMakeCache.txt` pinned `CMAKE_INSTALL_PREFIX=/usr/local`. Fix: `rm -rf build/linux`. Do not
 put `--install-prefix=/usr/local`.
 
-No `DISPLAY` → no windowed runs here. Visual verification is the user's job, or CI screenshots.
+No `DISPLAY` → no windowed runs here. Visual verification goes through the
+screenshot harness instead:
+
+```
+flutter test test/dbg_shots_test.dart --run-skipped --update-goldens
+```
+
+Writes 1440×900 PNGs of every screen to `test/shots/` in ~3 s (git-ignored).
+The harness is tagged `shots` and `dart_test.yaml` skips it by default, because
+its goldens are text-bearing pages laid out with host fonts: comparing them on
+Windows or macOS diffs every pixel and proves nothing. `--run-skipped` is what
+opts back in.
+
+Two traps that made the harness look like it "hung forever" (it did):
+
+- **`await Directory.systemTemp.createTemp()` inside `testWidgets` never
+  returns.** The body runs in a fake-async zone where real I/O futures are never
+  advanced, so the test stalls with no output until the runner times out. Every
+  real filesystem or network await needs `await tester.runAsync(() => ...)` —
+  which returns a nullable, hence the `(await ...)!`.
+- Only `pump`/`pumpAndSettle` are legal outside `runAsync`; do not try to move the
+  `expectLater(matchesGoldenFile)` into it or the frame is not the one captured.
 
 ## CI
 
@@ -77,8 +98,28 @@ needs `build <5.0.0` → unsatisfiable. Don't "upgrade" it.
 
 `docs/PLAN.md` (product scope, targets, §7 screens), `docs/PLAN-M1-M4.md` (§0 package traps and
 the motion architecture — still the rationale of record), `docs/PLAN-M3.4-M5.md` (audits the older
-plan against the code), and `docs/PLAN-M4.2-M9.md` (**current status and next steps**: M5–M9, with
-the defect list this milestone found).
+plan against the code), `docs/PLAN-M4.2-M9.md` (up to M5.5, plus the defect list that milestone
+found), and `docs/PLAN-M6-M9.md` (**current status and next steps**: M6→M9, and the only plan whose
+§0 measurements are current).
+
+## Widget-test trap: a page taller than the test viewport
+
+`ListView` does not build off-screen children, so a `find.text(...)` for a row
+below 600 px finds **nothing** and reads as "the widget is broken" while the
+widget is fine. `setup_screen_test.dart` now sets `tester.view.physicalSize`
+(1400×2600) for exactly this reason. Prefer a tall viewport over
+`scrollUntilVisible` unless the scroll behaviour is what is under test — a
+scrolled-to assertion cannot tell "renders late" from "never renders".
+
+## Uncommitted-defect queue (as of `PLAN-M6-M9.md` §0.3)
+
+Still open, do not assume otherwise: instance delete does not remove its
+directory; `ManagedJavaRuntime.majorVersion` hardcodes `HostArch.x86_64`; the
+heap clamp is 16384 in the UI but 65536 in `settings.dart`; `jvmArgs`/`gameArgs`
+have no editor; instance creation hardcodes `1.20.1` + vanilla; `window_manager`
+is never initialised and `flutter_acrylic` is never imported. (The committed
+golden-diff PNGs that used to sit under `test/ui/failures/` are gone: that
+directory and `test/shots/` are now git-ignored.)
 
 ## App shell traps (M3.4)
 

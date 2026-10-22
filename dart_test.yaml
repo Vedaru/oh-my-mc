@@ -1,0 +1,9 @@
+# The screenshot harness (test/dbg_shots_test.dart) is a visual-inspection tool,
+# not an assertion: its goldens are text-bearing pages rendered with host fonts,
+# so a run on Windows or macOS diffs every pixel and proves nothing.
+#
+# Default runs skip it; to regenerate or eyeball the shots:
+#   flutter test test/dbg_shots_test.dart --run-skipped --update-goldens
+tags:
+  shots:
+    skip: "visual harness — run with --run-skipped"
