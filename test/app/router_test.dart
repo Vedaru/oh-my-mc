@@ -152,6 +152,36 @@ void main() {
       expect(find.text('route:${Routes.launch}'), findsNothing);
     });
 
+    testWidgets('the rail is outside the transition, so it never fades', (
+      tester,
+    ) async {
+      // The shell used to be wrapped around each screen, so the page transition
+      // owned the tab bar too: switching tabs faded and slid the whole window.
+      // A `ShellRoute` builds the rail once, above the transition. Two signals
+      // pin that: one rail exists mid-flight (there used to be one per page),
+      // and no transition widget is above it.
+      await pumpApp(tester, motion: Motion.full);
+      liveRouter(tester).go(Routes.download);
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(
+        find.text('route:${Routes.launch}'),
+        findsOneWidget,
+        reason: 'the page itself must still animate',
+      );
+      expect(find.byType(m3.NavigationRail), findsOneWidget);
+      expect(
+        find.ancestor(
+          of: find.byType(m3.NavigationRail),
+          matching: find.byType(SharedAxisTransition),
+        ),
+        findsNothing,
+        reason: 'the rail must not be animated by the page transition',
+      );
+    });
+
     testWidgets('reduced motion settles in one frame, with no transition', (
       tester,
     ) async {

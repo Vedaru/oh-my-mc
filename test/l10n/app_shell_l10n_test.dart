@@ -34,8 +34,8 @@ Future<void> _setLanguage(
 void main() {
   testWidgets('the app resolves English and shows it', (tester) async {
     await _pumpApp(tester, locale: const Locale('en'));
-    // The header shows the current screen, not the product name: "Instances" is
-    // the rail's first item and the header title on the home route.
+    // The rail shows the destinations, not the product name: "Instances" is its
+    // first item and the label the home route resolves to.
     expect(find.text('Instances'), findsWidgets);
   });
 

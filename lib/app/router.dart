@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../l10n/l10n.dart';
 import '../ui/motion/motion.dart';
+import '../ui/shell/app_shell.dart';
 
 /// The app's routes.
 ///
@@ -42,14 +43,27 @@ GoRouter createRouter({
     // crash: drop the user on the launch screen, which is always valid.
     onException: (context, state, router) => router.go(Routes.instances),
     routes: [
-      _route(Routes.launch, screens),
-      // The detail route is a *relative* child (`:id`), which is what makes
-      // `/instances/<id>` resolve. A child repeating its parent's segment would
-      // be a second, competing table.
-      _route(Routes.instances, screens, routes: [_route(':id', screens)]),
-      _route(Routes.download, screens),
-      _route(Routes.setup, screens),
-      _route(Routes.logs, screens),
+      // The rail belongs to the *shell*, not to the page.
+      //
+      // It used to be wrapped around each screen's widget, which meant the page
+      // transition owned it too: switching tabs faded and slid the whole
+      // window, tab bar included, because `SharedAxisTransition` was animated
+      // above it. A `ShellRoute` builds the rail once and hands the router only
+      // the content, so a transition moves the page and nothing else.
+      ShellRoute(
+        builder: (context, state, child) =>
+            AppShell(location: state.uri.path, child: child),
+        routes: [
+          _route(Routes.launch, screens),
+          // The detail route is a *relative* child (`:id`), which is what makes
+          // `/instances/<id>` resolve. A child repeating its parent's segment
+          // would be a second, competing table.
+          _route(Routes.instances, screens, routes: [_route(':id', screens)]),
+          _route(Routes.download, screens),
+          _route(Routes.setup, screens),
+          _route(Routes.logs, screens),
+        ],
+      ),
     ],
   );
 }

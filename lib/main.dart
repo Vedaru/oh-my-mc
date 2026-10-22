@@ -27,7 +27,6 @@ import 'ui/setup/setup_screen.dart';
 import 'ui/instances/instance_detail_screen.dart';
 import 'ui/instances/instances_screen.dart';
 import 'ui/launch/launch_screen.dart';
-import 'ui/shell/app_shell.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -57,21 +56,27 @@ Future<void> main() async {
 /// supply), so the compositor's own decoration is what makes dragging, snapping
 /// and double-click-maximise work natively. `window_manager` is used here only
 /// for sizing, which is the one thing Flutter cannot do for a desktop window.
+///
+/// **Why not `waitUntilReadyToShow`.** That helper asks the window
+/// `isMaximized()` and, if the answer is "yes", calls `unmaximize()` before
+/// sizing it. On Linux that question is `gtk_window_is_maximized()`, which
+/// answers *yes* for a window GTK has not mapped yet. GTK then sends
+/// `xdg_toplevel.unset_maximized` for a window that was never maximized, and a
+/// compositor that honours the state change (Hyprland does) promotes the window
+/// to a full-screen tile - the app then ignores later resize requests and looks
+/// like it is fighting the window manager. Setting the same properties directly
+/// skips the query, and the window stays an ordinary, resizable tile.
 Future<void> _initWindow() async {
   if (!_isDesktop) return;
   await windowManager.ensureInitialized();
-  const options = WindowOptions(
-    // Below roughly this width the rail plus a three-column instance grid stops
-    // fitting, so the limit is a layout fact rather than a preference.
-    minimumSize: Size(940, 620),
-    size: Size(1200, 780),
-    center: true,
-    title: 'oh my mc',
-  );
-  await windowManager.waitUntilReadyToShow(options, () async {
-    await windowManager.show();
-    await windowManager.focus();
-  });
+  // Below roughly this width the rail plus a three-column instance grid stops
+  // fitting, so the limit is a layout fact rather than a preference.
+  await windowManager.setMinimumSize(const Size(940, 620));
+  await windowManager.setSize(const Size(1200, 780));
+  await windowManager.center();
+  await windowManager.setTitle('oh my mc');
+  await windowManager.show();
+  await windowManager.focus();
 }
 
 bool get _isDesktop =>
@@ -163,7 +168,7 @@ class OhMyMcApp extends StatelessWidget {
     // which is exactly what "Open settings does nothing" looked like. The route
     // parameter is the thing that says which screen this is.
     final detailId = state.pathParameters['id'];
-    final child = switch (state.uri.path) {
+    return switch (state.uri.path) {
       Routes.instances => const InstancesScreen(),
       Routes.download => const DownloadScreen(),
       Routes.setup => const SetupScreen(),
@@ -171,7 +176,6 @@ class OhMyMcApp extends StatelessWidget {
       _ when detailId != null => InstanceDetailScreen(id: detailId),
       _ => const LaunchScreen(),
     };
-    return AppShell(location: state.uri.path, child: child);
   }
 
   /// Production replaces this override with [realLaunchHandleFactory]; a test
