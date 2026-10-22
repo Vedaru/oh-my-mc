@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/instance/instance.dart';
 import '../../core/launch/launch_handle.dart';
+import '../../core/mc/arch_compat.dart';
 import 'instance_providers.dart';
 
 /// Builds a handle for [instance]. Overridden at startup with the real
@@ -82,7 +83,12 @@ class LaunchController extends Notifier<LaunchSession> {
           instanceId: current.instanceId,
           exitCode: current.exitCode,
         );
-      case LaunchEnded(:final exitCode, :final uptime, :final failure):
+      case LaunchEnded(
+        :final exitCode,
+        :final uptime,
+        :final failure,
+        :final blockers,
+      ):
         final current = state;
         // The playtime comes from the process's own uptime, not from when the
         // launcher noticed: a stalled frame must not add minutes to the total.
@@ -93,6 +99,7 @@ class LaunchController extends Notifier<LaunchSession> {
           instanceId: current.instanceId,
           exitCode: exitCode,
           failure: failure,
+          blockers: blockers,
           uptime: session,
           endedSession: session,
         );
@@ -130,6 +137,7 @@ class LaunchSession {
     this.instanceId,
     this.exitCode,
     this.failure,
+    this.blockers = const [],
     this.uptime = Duration.zero,
     this.endedSession,
   });
@@ -140,6 +148,7 @@ class LaunchSession {
       instanceId = null,
       exitCode = null,
       failure = null,
+      blockers = const [],
       uptime = Duration.zero,
       endedSession = null;
 
@@ -148,6 +157,12 @@ class LaunchSession {
   final String? instanceId;
   final int? exitCode;
   final LaunchFailure? failure;
+
+  /// Why the launch was refused, when [failure] is [LaunchFailure.refused].
+  ///
+  /// Kept so the play screen can offer the fix (download Java, reinstall) rather
+  /// than only reporting that it did not work.
+  final List<LaunchBlocker> blockers;
 
   /// How long the last session ran. Zero while running.
   final Duration uptime;

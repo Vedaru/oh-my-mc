@@ -19,6 +19,7 @@ import 'data/prefs_settings_store.dart';
 import 'data/settings.dart';
 import 'l10n/l10n.dart';
 import 'ui/download/download_screen.dart';
+import 'ui/setup/setup_screen.dart';
 import 'ui/instances/instances_screen.dart';
 import 'ui/launch/launch_screen.dart';
 import 'ui/shell/app_shell.dart';
@@ -127,7 +128,7 @@ class OhMyMcApp extends StatelessWidget {
       Routes.instances ||
       Routes.instanceDetailPattern => const InstancesScreen(),
       Routes.download => const DownloadScreen(),
-      Routes.setup ||
+      Routes.setup => const SetupScreen(),
       Routes.logs => _Pending(icon: ShellIcons.forRoute(state.uri.path)),
       _ => const LaunchScreen(),
     };

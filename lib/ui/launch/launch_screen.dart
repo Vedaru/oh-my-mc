@@ -4,10 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/instance/instance.dart';
 import '../../core/launch/launch_handle.dart';
 import '../../data/instance_providers.dart';
+import '../../core/mc/arch_compat.dart';
+import '../../data/java_providers.dart';
 import '../../data/launch_providers.dart';
 import '../../l10n/l10n.dart';
 import '../motion/motion.dart';
 import '../instances/instance_card.dart';
+import '../setup/java_panel.dart';
 import '../shell/shell_icons.dart';
 
 /// The launch screen: which instance is selected, a big play button, and the
@@ -47,8 +50,50 @@ class LaunchScreen extends ConsumerWidget {
               : () => controller.launch(selected),
           onStop: session.canStop ? controller.stop : null,
         ),
+        // The refusal is the useful moment to offer Java: it explains itself in
+        // place, and a settings deep link at that point is a round trip the user
+        // will not take.
+        if (selected != null)
+          _JavaOfferArea(instance: selected, session: session),
         Expanded(child: _LogTail(lines: session.log)),
       ],
+    );
+  }
+}
+
+/// Shows the Java panel when the last attempt was refused for want of a JVM.
+///
+/// Watches the requirement lazily: resolving it opens the version JSON and scans
+/// for JVMs, which is wasted work for a launch that never mentioned Java.
+class _JavaOfferArea extends ConsumerWidget {
+  const _JavaOfferArea({required this.instance, required this.session});
+
+  final Instance instance;
+  final LaunchSession session;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final needsJava = session.blockers.any(
+      (b) =>
+          b.code == BlockerCode.noRuntime || b.code == BlockerCode.javaTooOld,
+    );
+    if (!needsJava) return const SizedBox.shrink();
+
+    final requirement = ref.watch(javaRequirementProvider(instance.versionId));
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: requirement.when(
+        loading: () => const SizedBox.shrink(),
+        // A version file that cannot be read is not something the panel can
+        // fix, so it reports the same "install it first" as a missing version
+        // rather than leaking the exception text into the UI.
+        error: (error, _) => const JavaPanel(
+          requirement: JavaRequirementUnavailable(
+            JavaUnavailableReason.versionNotInstalled,
+          ),
+        ),
+        data: (value) => JavaPanel(requirement: value),
+      ),
     );
   }
 }

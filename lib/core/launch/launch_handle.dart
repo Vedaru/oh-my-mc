@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import '../mc/arch_compat.dart';
 import '../mc/launch_service.dart';
 
 /// Where a line of output came from.
@@ -53,7 +54,16 @@ class LaunchEnded extends LaunchEvent {
     required this.exitCode,
     required this.uptime,
     this.failure,
+    this.blockers = const [],
   });
+
+  /// Why a refused launch was refused, in the order the checks produced them.
+  ///
+  /// Carried on the event rather than left in the log because the log is a
+  /// string: the UI cannot turn `noRuntime: No Java runtime...` back into a
+  /// button that downloads Java. Empty unless [failure] is
+  /// [LaunchFailure.refused].
+  final List<LaunchBlocker> blockers;
 
   /// The process exit code, or `null` when no process ever ran.
   final int? exitCode;
@@ -196,10 +206,21 @@ class ProcessLaunchHandle implements LaunchHandle {
     _emit(LaunchStateChanged(next));
   }
 
-  void _fail(LaunchFailure failure, String detail) {
+  void _fail(
+    LaunchFailure failure,
+    String detail, {
+    List<LaunchBlocker> blockers = const [],
+  }) {
     _emit(LaunchLog(detail, channel: LogChannel.launcher));
     _setState(LaunchState.exited);
-    _emit(LaunchEnded(exitCode: null, uptime: Duration.zero, failure: failure));
+    _emit(
+      LaunchEnded(
+        exitCode: null,
+        uptime: Duration.zero,
+        failure: failure,
+        blockers: blockers,
+      ),
+    );
   }
 
   @override
@@ -236,6 +257,7 @@ class ProcessLaunchHandle implements LaunchHandle {
       _fail(
         LaunchFailure.refused,
         'launch refused by ${blockers.length} blocker(s)',
+        blockers: blockers,
       );
       _starting = false;
       return;

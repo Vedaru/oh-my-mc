@@ -181,7 +181,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get launchFailedRefused =>
-      'Launch refused: an instance is already running.';
+      'Launch refused. See the log for the reason.';
 
   @override
   String get launchFailedPrepare =>
@@ -281,4 +281,101 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get downloadRetry => 'Reload';
+
+  @override
+  String javaDownloadTitle(int major) {
+    return 'Java $major is required';
+  }
+
+  @override
+  String javaDownloadWhy(int major) {
+    return 'This version needs Java $major, and it was not found on this computer.';
+  }
+
+  @override
+  String javaDownloadAction(int major) {
+    return 'Download and install';
+  }
+
+  @override
+  String javaDownloadProgress(String done, String total) {
+    return '$done / $total';
+  }
+
+  @override
+  String get javaDownloadExtracting => 'Unpacking…';
+
+  @override
+  String javaDownloadDone(int major) {
+    return 'Java $major is ready';
+  }
+
+  @override
+  String get javaUnavailableVersionMissing =>
+      'Install this version first; the launcher needs its version file to know which Java it asks for.';
+
+  @override
+  String get javaUnavailableNoCatalog =>
+      'Could not reach the Java runtime catalogue. Check the connection, then try again.';
+
+  @override
+  String javaUnavailableNoBuild(int major, String platform) {
+    return 'No Java $major build is published for this system ($platform). Install one manually.';
+  }
+
+  @override
+  String get javaManagedTitle => 'Downloaded Java runtimes';
+
+  @override
+  String get javaManagedEmpty => 'No Java runtimes downloaded yet.';
+
+  @override
+  String javaManagedItem(int major, String version) {
+    return 'Java $major ($version)';
+  }
+
+  @override
+  String javaManagedDiskUse(String size) {
+    return '$size on disk';
+  }
+
+  @override
+  String get javaDelete => 'Delete';
+
+  @override
+  String javaDeleteConfirm(int major) {
+    return 'Delete Java $major? Instances that need it will not start until it is downloaded again.';
+  }
+
+  @override
+  String get javaDeleteConfirmAction => 'Delete';
+
+  @override
+  String get javaRefresh => 'Refresh';
+
+  @override
+  String get javaCancel => 'Cancel';
+
+  @override
+  String get javaDownloadCancelled => 'Java download cancelled';
+
+  @override
+  String javaDownloadFailed(String reason) {
+    return 'Java could not be downloaded: $reason';
+  }
+
+  @override
+  String javaUseExisting(int major) {
+    return 'Java $major found on this computer';
+  }
+
+  @override
+  String javaUnavailableOnPlatform(int major) {
+    return 'Java $major is not available for this platform.';
+  }
+
+  @override
+  String javaUnavailableDetail(int major, String platform) {
+    return 'No Java $major build is published for $platform. You can install one yourself and point the instance at it.';
+  }
 }

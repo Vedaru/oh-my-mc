@@ -178,7 +178,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get launchFailedSpawn => '无法启动 Java，请检查 Java 设置。';
 
   @override
-  String get launchFailedRefused => '启动被拒绝：已有实例在运行。';
+  String get launchFailedRefused => '启动被拒绝，原因见日志。';
 
   @override
   String get launchFailedPrepare => '无法准备启动，请查看日志。';
@@ -276,4 +276,100 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get downloadRetry => '重新加载';
+
+  @override
+  String javaDownloadTitle(int major) {
+    return '需要 Java $major';
+  }
+
+  @override
+  String javaDownloadWhy(int major) {
+    return '该版本需要 Java $major，但本机没有找到。';
+  }
+
+  @override
+  String javaDownloadAction(int major) {
+    return '下载并安装';
+  }
+
+  @override
+  String javaDownloadProgress(String done, String total) {
+    return '$done（共 $total）';
+  }
+
+  @override
+  String get javaDownloadExtracting => '正在解压…';
+
+  @override
+  String javaDownloadDone(int major) {
+    return 'Java $major 已就绪';
+  }
+
+  @override
+  String get javaUnavailableVersionMissing =>
+      '请先安装该版本，启动器需要它的版本文件来判断所需的 Java 版本。';
+
+  @override
+  String get javaUnavailableNoCatalog => '无法获取 Java 运行时目录，请检查网络后重试。';
+
+  @override
+  String javaUnavailableNoBuild(int major, String platform) {
+    return '本系统（$platform）没有发布可用的 Java $major 版本，请手动安装。';
+  }
+
+  @override
+  String get javaManagedTitle => '已下载的 Java 运行时';
+
+  @override
+  String get javaManagedEmpty => '尚未下载任何 Java 运行时。';
+
+  @override
+  String javaManagedItem(int major, String version) {
+    return 'Java $major（$version）';
+  }
+
+  @override
+  String javaManagedDiskUse(String size) {
+    return '占用 $size';
+  }
+
+  @override
+  String get javaDelete => '删除';
+
+  @override
+  String javaDeleteConfirm(int major) {
+    return '删除 Java $major？需要它的实例将无法启动，直到重新下载。';
+  }
+
+  @override
+  String get javaDeleteConfirmAction => '删除';
+
+  @override
+  String get javaRefresh => '刷新';
+
+  @override
+  String get javaCancel => '取消';
+
+  @override
+  String get javaDownloadCancelled => '已取消 Java 下载';
+
+  @override
+  String javaDownloadFailed(String reason) {
+    return 'Java 下载失败：$reason';
+  }
+
+  @override
+  String javaUseExisting(int major) {
+    return '已在本机找到 Java $major';
+  }
+
+  @override
+  String javaUnavailableOnPlatform(int major) {
+    return '此平台没有可用的 Java $major。';
+  }
+
+  @override
+  String javaUnavailableDetail(int major, String platform) {
+    return 'Mojang 没有为 $platform 发布 Java $major。你可以自行安装，并在实例设置中指向它。';
+  }
 }

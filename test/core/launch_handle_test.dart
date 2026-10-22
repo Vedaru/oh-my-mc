@@ -143,6 +143,10 @@ void main() {
       final ended = events.whereType<LaunchEnded>().single;
       expect(ended.failure, LaunchFailure.refused);
       expect(ended.exitCode, isNull);
+      // The blockers travel as data, not only as log text: `noRuntime` is what
+      // turns the play screen into a Java download offer, and a string in the
+      // console cannot be parsed back into a button.
+      expect(ended.blockers.single.code, BlockerCode.noRuntime);
       expect(
         events.whereType<LaunchLog>().any((l) => l.text.contains('no java')),
         isTrue,

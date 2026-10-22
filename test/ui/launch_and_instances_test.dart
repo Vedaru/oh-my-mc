@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:oh_my_mc/app/providers.dart';
 import 'package:oh_my_mc/core/instance/instance.dart';
 import 'package:oh_my_mc/core/launch/launch_handle.dart';
+import 'package:oh_my_mc/core/mc/arch_compat.dart';
 import 'package:oh_my_mc/core/mc/launch_service.dart';
 import 'package:oh_my_mc/data/instance_providers.dart';
 import 'package:oh_my_mc/data/instance_store.dart';
@@ -24,13 +25,17 @@ import 'package:oh_my_mc/ui/motion/motion.dart';
 /// subscribes to it exactly as it does in production, which is where the
 /// subscription-lifetime bugs live.
 class FakeLaunchHandle implements LaunchHandle {
-  FakeLaunchHandle({this.prepareOutcome});
+  FakeLaunchHandle({this.prepareOutcome, this.failPreparation = false});
 
   final _controller = StreamController<LaunchEvent>.broadcast();
   LaunchState _state = LaunchState.idle;
 
   /// Emitted by [start] before it reports `running`; `null` starts successfully.
   final LaunchOutcome? prepareOutcome;
+
+  /// Reports a thrown prepare step, which is a different failure from a
+  /// refusal: nothing about the plan was wrong, the launcher could not build it.
+  final bool failPreparation;
 
   /// Emitted by [stop].
   int stopCalls = 0;
@@ -61,12 +66,28 @@ class FakeLaunchHandle implements LaunchHandle {
   @override
   Future<void> start() async {
     _set(LaunchState.preparing);
-    if (prepareOutcome is LaunchRefused) {
+    if (failPreparation) {
       _controller.add(
         LaunchEnded(
           exitCode: null,
           uptime: Duration.zero,
           failure: LaunchFailure.prepareFailed,
+        ),
+      );
+      _set(LaunchState.exited);
+      if (!_started.isCompleted) _started.complete();
+      return;
+    }
+    if (prepareOutcome case final LaunchRefused refused) {
+      // Mirrors `ProcessLaunchHandle`: a refusal is `refused` *with* its
+      // blockers, not a prepare failure. Reporting the wrong failure here would
+      // let the screen's blocker handling rot untested.
+      _controller.add(
+        LaunchEnded(
+          exitCode: null,
+          uptime: Duration.zero,
+          failure: LaunchFailure.refused,
+          blockers: refused.blockers,
         ),
       );
       _set(LaunchState.exited);
@@ -585,7 +606,7 @@ void main() {
     testWidgets('a prepare failure is reported, not silently dropped', (
       tester,
     ) async {
-      final handle = FakeLaunchHandle(prepareOutcome: const LaunchRefused([]));
+      final handle = FakeLaunchHandle(failPreparation: true);
       await pumpScreen(
         tester,
         const LaunchScreen(),
@@ -628,6 +649,73 @@ void main() {
       ) as InstanceListReady).instances.single;
       expect(instance.totalPlaytime, const Duration(minutes: 25));
       expect(instance.lastPlayedAt, isNotNull);
+      await handle.dispose();
+    });
+
+    testWidgets('a launch refused for want of Java offers the download', (
+      tester,
+    ) async {
+      // End to end through the controller: the blocker is produced by the
+      // launch service in production, carried on the event, kept on the
+      // session, and only then read by the screen.
+      final handle = FakeLaunchHandle(
+        prepareOutcome: const LaunchRefused([
+          LaunchBlocker(
+            code: BlockerCode.noRuntime,
+            message: 'No Java runtime is available to start this version.',
+            remedy: 'Install Java, or let the launcher download one.',
+          ),
+        ]),
+      );
+      await pumpScreen(
+        tester,
+        const LaunchScreen(),
+        instances: [sample()],
+        handle: () => handle,
+      );
+
+      // Before any attempt there is nothing to fix.
+      expect(find.byKey(const ValueKey('java-panel')), findsNothing);
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Play'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 150));
+      await tester.pumpAndSettle();
+
+      // The panel is keyed, so this asserts on the fix being offered rather
+      // than on whatever text it happens to show.
+      expect(find.byKey(const ValueKey('java-panel')), findsOneWidget);
+      await handle.dispose();
+    });
+
+    testWidgets('a refused launch for another reason offers no Java download', (
+      tester,
+    ) async {
+      // `missingFiles` is fixed by reinstalling the version, not by Java; an
+      // offer here would send the user to a 96 MB download that changes nothing.
+      final handle = FakeLaunchHandle(
+        prepareOutcome: const LaunchRefused([
+          LaunchBlocker(
+            code: BlockerCode.missingFiles,
+            message: '3 files are missing from the install.',
+            remedy: 'Install the version again.',
+          ),
+        ]),
+      );
+      await pumpScreen(
+        tester,
+        const LaunchScreen(),
+        instances: [sample()],
+        handle: () => handle,
+      );
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Play'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 150));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('java-panel')), findsNothing);
+      expect(find.textContaining('Launch refused'), findsOneWidget);
       await handle.dispose();
     });
 

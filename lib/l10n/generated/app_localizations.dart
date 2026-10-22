@@ -398,10 +398,10 @@ abstract class AppLocalizations {
   /// **'Could not start Java. Check the Java setting.'**
   String get launchFailedSpawn;
 
-  /// A second launch was attempted while one was running.
+  /// A launch was refused before any process started, e.g. no Java runtime or missing files. The specific reason is in the log and, when it is fixable, in the panel above.
   ///
   /// In en, this message translates to:
-  /// **'Launch refused: an instance is already running.'**
+  /// **'Launch refused. See the log for the reason.'**
   String get launchFailedRefused;
 
   /// Preparing the command line failed; details are in the log.
@@ -565,6 +565,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reload'**
   String get downloadRetry;
+
+  /// Title of the panel that offers to download a Java runtime. {major} is the Java major version, e.g. 17.
+  ///
+  /// In en, this message translates to:
+  /// **'Java {major} is required'**
+  String javaDownloadTitle(int major);
+
+  /// Explains why a Java download is being offered. {major} is the Java major version.
+  ///
+  /// In en, this message translates to:
+  /// **'This version needs Java {major}, and it was not found on this computer.'**
+  String javaDownloadWhy(int major);
+
+  /// Button that starts downloading and installing a Java runtime. {major} is the Java major version.
+  ///
+  /// In en, this message translates to:
+  /// **'Download and install'**
+  String javaDownloadAction(int major);
+
+  /// Progress line while downloading a Java runtime. {done} and {total} are already-formatted byte amounts, e.g. "12 MB".
+  ///
+  /// In en, this message translates to:
+  /// **'{done} / {total}'**
+  String javaDownloadProgress(String done, String total);
+
+  /// Shown while a downloaded Java runtime is being extracted.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpacking…'**
+  String get javaDownloadExtracting;
+
+  /// Shown after a Java runtime was installed successfully. {major} is the Java major version.
+  ///
+  /// In en, this message translates to:
+  /// **'Java {major} is ready'**
+  String javaDownloadDone(int major);
+
+  /// Shown when a Java runtime cannot be resolved because the version is not installed.
+  ///
+  /// In en, this message translates to:
+  /// **'Install this version first; the launcher needs its version file to know which Java it asks for.'**
+  String get javaUnavailableVersionMissing;
+
+  /// Shown when the Java runtime catalogue could not be downloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not reach the Java runtime catalogue. Check the connection, then try again.'**
+  String get javaUnavailableNoCatalog;
+
+  /// Shown when the catalogue has no runtime this platform can run. {major} is the Java major version; {platform} is the platform key such as mac-os-arm64.
+  ///
+  /// In en, this message translates to:
+  /// **'No Java {major} build is published for this system ({platform}). Install one manually.'**
+  String javaUnavailableNoBuild(int major, String platform);
+
+  /// Heading of the list of Java runtimes the launcher downloaded itself.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded Java runtimes'**
+  String get javaManagedTitle;
+
+  /// Shown when the launcher has downloaded no Java runtimes.
+  ///
+  /// In en, this message translates to:
+  /// **'No Java runtimes downloaded yet.'**
+  String get javaManagedEmpty;
+
+  /// One downloaded runtime. {major} is the Java major version; {version} is the vendor build string, e.g. 17.0.15.
+  ///
+  /// In en, this message translates to:
+  /// **'Java {major} ({version})'**
+  String javaManagedItem(int major, String version);
+
+  /// Disk usage of one downloaded runtime. {size} is an already-formatted byte amount.
+  ///
+  /// In en, this message translates to:
+  /// **'{size} on disk'**
+  String javaManagedDiskUse(String size);
+
+  /// Button that deletes a downloaded Java runtime.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get javaDelete;
+
+  /// Confirmation before deleting a downloaded runtime. {major} is the Java major version.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Java {major}? Instances that need it will not start until it is downloaded again.'**
+  String javaDeleteConfirm(int major);
+
+  /// Confirms deleting a downloaded Java runtime.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get javaDeleteConfirmAction;
+
+  /// Button that rescans for installed Java runtimes.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get javaRefresh;
+
+  /// Generic cancel button.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get javaCancel;
+
+  /// Shown after the user cancels a Java runtime download.
+  ///
+  /// In en, this message translates to:
+  /// **'Java download cancelled'**
+  String get javaDownloadCancelled;
+
+  /// Shown when installing a Java runtime failed. {reason} is the error message.
+  ///
+  /// In en, this message translates to:
+  /// **'Java could not be downloaded: {reason}'**
+  String javaDownloadFailed(String reason);
+
+  /// Shown when a suitable Java is already installed, so no download is offered. {major} is the Java major version.
+  ///
+  /// In en, this message translates to:
+  /// **'Java {major} found on this computer'**
+  String javaUseExisting(int major);
+
+  /// Shown when Mojang publishes no runtime that can run this version on this computer. {major} is the Java major version.
+  ///
+  /// In en, this message translates to:
+  /// **'Java {major} is not available for this platform.'**
+  String javaUnavailableOnPlatform(int major);
+
+  /// Explains a platform gap, e.g. Java 8 on Apple Silicon. {major} is the Java major version; {platform} is an OS name.
+  ///
+  /// In en, this message translates to:
+  /// **'No Java {major} build is published for {platform}. You can install one yourself and point the instance at it.'**
+  String javaUnavailableDetail(int major, String platform);
 }
 
 class _AppLocalizationsDelegate
