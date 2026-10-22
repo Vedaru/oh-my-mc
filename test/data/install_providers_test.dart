@@ -286,7 +286,10 @@ void main() {
 
       final c = container();
       c.read(installedVersionsProvider);
-      await pumpEventQueue();
+      // Awaited, not `pumpEventQueue()`: the scan is real file IO, and draining
+      // microtasks only waits for it when the IO happens to beat the timer - which
+      // passed locally and failed on the CI runner.
+      await c.read(installedVersionsProvider.notifier).refresh();
 
       expect(c.read(installedVersionsProvider), isEmpty);
       expect(c.read(incompleteInstallsProvider), {'26.3'});
@@ -301,7 +304,7 @@ void main() {
 
       final c = container();
       c.read(installedVersionsProvider);
-      await pumpEventQueue();
+      await c.read(installedVersionsProvider.notifier).refresh();
 
       expect(c.read(installedVersionsProvider), {'26.3'});
       expect(c.read(incompleteInstallsProvider), isEmpty);
