@@ -614,17 +614,41 @@ abstract class AppLocalizations {
   /// **'Saves'**
   String get instanceFolderSaves;
 
-  /// Shown instead of a count when a content folder has nothing in it.
-  ///
-  /// In en, this message translates to:
-  /// **'Empty'**
-  String get instanceFolderEmpty;
-
   /// Detail page section: game folder and playtime.
   ///
   /// In en, this message translates to:
   /// **'Files'**
   String get instanceSectionFiles;
+
+  /// Description under the Files section heading.
+  ///
+  /// In en, this message translates to:
+  /// **'The version folder and its four content folders. Select a row to open it.'**
+  String get instanceFilesHint;
+
+  /// Trailing count of one content folder.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Empty} =1{1 item} other{{count} items}}'**
+  String instanceFolderItems(int count);
+
+  /// Tooltip of the trailing action that opens a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Open folder'**
+  String get instanceOpenFolderTooltip;
+
+  /// Tooltip of the action that copies the game folder path.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy path'**
+  String get instanceCopyPath;
+
+  /// Confirmation shown after copying the game folder path.
+  ///
+  /// In en, this message translates to:
+  /// **'Path copied'**
+  String get instancePathCopied;
 
   /// Detail page section: extra JVM and game arguments.
   ///
@@ -817,12 +841,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Game folder'**
   String get instancePathLabel;
-
-  /// Opens the game folder in the file manager.
-  ///
-  /// In en, this message translates to:
-  /// **'Open folder'**
-  String get instanceOpenFolder;
 
   /// Shown when no file manager could be launched.
   ///

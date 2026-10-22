@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:material_ui/material_ui.dart' as m3;
 import 'package:go_router/go_router.dart';
 import 'package:path/path.dart' as p;
@@ -110,6 +111,7 @@ class OhMyMcApp extends StatelessWidget {
     this.locale,
     this.themeMode,
     this.initialLocation = Routes.instances,
+    this.overrides = const [],
   });
 
   final SettingsStore? store;
@@ -124,6 +126,10 @@ class OhMyMcApp extends StatelessWidget {
   final Locale? locale;
   final m3.ThemeMode? themeMode;
   final String initialLocation;
+
+  /// Extra provider overrides. The screenshot harness uses this to answer scans
+  /// that would otherwise hit the disk; the app itself passes none.
+  final List<Override> overrides;
 
   @override
   Widget build(BuildContext context) {
@@ -148,6 +154,7 @@ class OhMyMcApp extends StatelessWidget {
                   ? _noLauncher
                   : realLaunchHandleFactory(ref)),
         ),
+        ...overrides,
       ],
       child: AppRoot(
         initialLocation: initialLocation,

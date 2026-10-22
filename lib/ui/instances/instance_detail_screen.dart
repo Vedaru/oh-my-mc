@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart' as m3;
@@ -16,6 +17,7 @@ import '../../data/java_providers.dart';
 import '../../data/launch_factory.dart';
 import '../../l10n/l10n.dart';
 import '../components/app_banner.dart';
+import '../components/list_row.dart';
 import '../motion/motion.dart';
 import '../shell/shell_icons.dart';
 import '../theme/app_theme.dart';
@@ -247,31 +249,14 @@ class InstanceDetailScreen extends ConsumerWidget {
               const SizedBox(height: 12),
               _Section(
                 title: l10n.instanceSectionFiles,
+                description: l10n.instanceFilesHint,
                 children: [
-                  _ReadOnlyRow(
-                    label: l10n.instancePathLabel,
-                    value: ref
-                        .read(launcherPathsProvider)
-                        .gamePathsFor(instance)
-                        .root,
-                    monospace: true,
-                  ),
-                  _PlaytimeRow(instance: instance),
-                  _ContentFolders(
+                  _FilesList(
                     instance: instance,
-                    onOpen: (folder) =>
+                    onOpenFolder: (folder) =>
                         _openFolder(context, ref, instance!, folder: folder),
-                  ),
-                  m3.Align(
-                    alignment: m3.AlignmentDirectional.centerStart,
-                    child: AppButton(
-                      key: const m3.ValueKey('instance-open-folder'),
-                      onPressed: () => _openFolder(context, ref, instance!),
-                      style: AppButtonStyle.outlined,
-                      size: AppButtonSize.sm,
-                      icon: const m3.Icon(ShellIcons.folder, size: 14),
-                      label: m3.Text(l10n.instanceOpenFolder),
-                    ),
+                    onOpenRoot: () => _openFolder(context, ref, instance!),
+                    onCopyPath: (path) => _copyPath(context, path),
                   ),
                 ],
               ),
@@ -287,6 +272,20 @@ class InstanceDetailScreen extends ConsumerWidget {
   /// The directory is created first: for a never-launched instance it does not
   /// exist yet, and "open folder" silently doing nothing is worse than making an
   /// empty one.
+  Future<void> _copyPath(BuildContext context, String path) async {
+    await Clipboard.setData(ClipboardData(text: path));
+    if (!context.mounted) return;
+    m3.ScaffoldMessenger.maybeOf(context)
+      ?..hideCurrentSnackBar()
+      ..showSnackBar(
+        m3.SnackBar(
+          content: m3.Text(context.l10n.instancePathCopied),
+          behavior: m3.SnackBarBehavior.floating,
+          width: 200,
+        ),
+      );
+  }
+
   Future<void> _openFolder(
     BuildContext context,
     WidgetRef ref,
@@ -386,25 +385,44 @@ class InstanceDetailScreen extends ConsumerWidget {
 }
 
 class _Section extends StatelessWidget {
-  const _Section({required this.title, required this.children});
+  const _Section({
+    required this.title,
+    required this.children,
+    this.description,
+  });
 
   final String title;
   final List<Widget> children;
+
+  /// One line under the heading saying what the section is for. M3 puts an
+  /// optional description in the header block, not in a tooltip or a footnote:
+  /// the reader meets it before the content.
+  final String? description;
 
   @override
   Widget build(BuildContext context) {
     final scheme = m3.Theme.of(context).colorScheme;
     return m3.Container(
       padding: const m3.EdgeInsets.all(14),
+      // A filled container, not an outlined one: M3 cards earn their grouping
+      // from a tonal surface, and a hairline around every section draws a grid of
+      // lines across the page that competes with the content.
       decoration: m3.BoxDecoration(
         color: scheme.surfaceContainerLow,
-        borderRadius: m3.BorderRadius.circular(14),
-        border: m3.Border.all(color: scheme.outlineVariant),
+        borderRadius: m3.BorderRadius.circular(16),
       ),
       child: m3.Column(
         crossAxisAlignment: m3.CrossAxisAlignment.stretch,
         children: [
           m3.Text(title, style: AppTheme.label(context)),
+          if (description != null) ...[
+            const m3.SizedBox(height: 2),
+            m3.Text(
+              description!,
+              style: AppTheme.caption(context)
+                  .copyWith(color: scheme.onSurfaceVariant),
+            ),
+          ],
           const m3.SizedBox(height: 10),
           for (final child in children) ...[
             child,
@@ -459,15 +477,10 @@ class _Row extends StatelessWidget {
 }
 
 class _ReadOnlyRow extends StatelessWidget {
-  const _ReadOnlyRow({
-    required this.label,
-    required this.value,
-    this.monospace = false,
-  });
+  const _ReadOnlyRow({required this.label, required this.value});
 
   final String label;
   final String value;
-  final bool monospace;
 
   @override
   Widget build(BuildContext context) {
@@ -478,7 +491,7 @@ class _ReadOnlyRow extends StatelessWidget {
         padding: const m3.EdgeInsets.only(top: 6),
         child: m3.SelectableText(
           value,
-          style: (monospace ? AppTheme.mono(context) : AppTheme.body(context))
+          style: AppTheme.body(context)
               .copyWith(color: scheme.onSurfaceVariant),
         ),
       ),
@@ -851,34 +864,143 @@ class _JavaRowState extends ConsumerState<_JavaRow> {
   }
 }
 
-class _PlaytimeRow extends StatelessWidget {
-  const _PlaytimeRow({required this.instance});
+/// The Files section, assembled as one list.
+///
+/// M3's list guidance is that a list is *scanned*: the same slots in every row, one
+/// action per row, supplementary actions trailing. The previous arrangement broke
+/// all three - a key/value path row, four identical "open folder" buttons, a
+/// floating count in the middle, and one more button underneath - so nothing lined
+/// up and every row read as a control instead of an item. Here they share one
+/// skeleton:
+///
+///   [icon] Game folder   /path/to/version          [copy]
+///   [icon] Mods          mods/            2 items  [open]
+///   [icon] Playtime      2h 14m
+class _FilesList extends StatefulWidget {
+  const _FilesList({
+    required this.instance,
+    required this.onOpenFolder,
+    required this.onOpenRoot,
+    required this.onCopyPath,
+  });
 
   final Instance instance;
+  final void Function(GameFolderKind folder) onOpenFolder;
+  final VoidCallback onOpenRoot;
+  final void Function(String path) onCopyPath;
+
+  @override
+  State<_FilesList> createState() => _FilesListState();
+}
+
+class _FilesListState extends State<_FilesList> {
+  Future<List<GameFolder>>? _folders;
+  String? _root;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final container = ProviderScope.containerOf(context);
+    final root = container
+        .read(launcherPathsProvider)
+        .gamePathsFor(widget.instance)
+        .root;
+    if (_root != root) {
+      _root = root;
+      _folders = container.read(gameFolderScannerProvider)(root);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final last = instance.lastPlayedAt;
-    return _ReadOnlyRow(
-      label: l10n.instancePlaytimeLabel,
-      value: last == null
-          ? l10n.instanceNeverPlayed
-          : l10n.instancePlaytimeValue(
-              formatPlaytime(instance.totalPlaytime),
-              '${last.year}-${_two(last.month)}-${_two(last.day)}',
-            ),
+    final root = _root ?? '';
+
+    return m3.Column(
+      crossAxisAlignment: m3.CrossAxisAlignment.stretch,
+      mainAxisSize: m3.MainAxisSize.min,
+      children: [
+        ListRow(
+          leadingIcon: ShellIcons.folder,
+          label: l10n.instancePathLabel,
+          supporting: root,
+          trailingIcon: ShellIcons.copy,
+          trailingTooltip: l10n.instanceCopyPath,
+          onPressed: widget.onOpenRoot,
+          onTrailingPressed: () => widget.onCopyPath(root),
+        ),
+        FutureBuilder<List<GameFolder>>(
+          future: _folders,
+          builder: (context, snapshot) {
+            final folders = snapshot.data ?? const <GameFolder>[];
+            return m3.Column(
+              crossAxisAlignment: m3.CrossAxisAlignment.stretch,
+              mainAxisSize: m3.MainAxisSize.min,
+              children: [
+                for (final folder in folders)
+                  ListRow(
+                    key: m3.ValueKey(
+                      'instance-folder-${folder.kind.directoryName}',
+                    ),
+                    leadingIcon: _folderIcon(folder.kind),
+                    label: _folderLabel(l10n, folder.kind),
+                    supporting: '${folder.kind.directoryName}/',
+                    trailingText: l10n.instanceFolderItems(folder.entries),
+                    trailingTextKey: m3.ValueKey(
+                      'instance-folder-count-${folder.kind.name}',
+                    ),
+                    trailingIcon: ShellIcons.openExternal,
+                    trailingTooltip: l10n.instanceOpenFolderTooltip,
+                    onPressed: () => widget.onOpenFolder(folder.kind),
+                    onTrailingPressed: () => widget.onOpenFolder(folder.kind),
+                  ),
+              ],
+            );
+          },
+        ),
+        ListRow(
+          leadingIcon: ShellIcons.clock,
+          label: l10n.instancePlaytimeLabel,
+          trailingText: _playtime(l10n, widget.instance),
+        ),
+      ],
     );
   }
 
-  static String _two(int v) => v.toString().padLeft(2, '0');
+  static String _playtime(AppLocalizations l10n, Instance instance) {
+    final last = instance.lastPlayedAt;
+    if (last == null) return l10n.instanceNeverPlayed;
+    return l10n.instancePlaytimeValue(
+      formatPlaytime(instance.totalPlaytime),
+      '${last.year}-${_two(last.month)}-${_two(last.day)}',
+    );
+  }
+
+  static String _two(int value) => value.toString().padLeft(2, '0');
+
+  /// A different cue per folder. M3 asks the leading icon to relate to the label;
+  /// four identical puzzle pieces would be decoration, not a cue.
+  static m3.IconData _folderIcon(GameFolderKind kind) => switch (kind) {
+    GameFolderKind.mods => ShellIcons.mods,
+    GameFolderKind.resourcePacks => ShellIcons.resourcePacks,
+    GameFolderKind.shaderPacks => ShellIcons.shaderPacks,
+    GameFolderKind.saves => ShellIcons.saves,
+  };
+
+  static String _folderLabel(AppLocalizations l10n, GameFolderKind kind) =>
+      switch (kind) {
+        GameFolderKind.mods => l10n.instanceFolderMods,
+        GameFolderKind.resourcePacks => l10n.instanceFolderResourcePacks,
+        GameFolderKind.shaderPacks => l10n.instanceFolderShaderPacks,
+        GameFolderKind.saves => l10n.instanceFolderSaves,
+      };
 }
 
 /// Window width/height and the fullscreen switch.
 ///
-/// Kept as text fields rather than a slider: users copy window sizes from a
-/// screenshot or a config, and 854x480 is a real answer. Both fields or neither —
-/// half a pair is a typo, and the game rejects it.
+/// Text fields rather than a slider: users copy a size out of a screenshot or a
+/// config, and 854x480 is a real answer. Both dimensions or neither - half a pair
+/// is a typo the game rejects.
 class _WindowRow extends StatefulWidget {
   const _WindowRow({
     required this.instance,
@@ -972,103 +1094,4 @@ class _WindowRowState extends State<_WindowRow> {
       ],
     );
   }
-}
-
-/// The four content folders, with how much is in each.
-///
-/// This is the answer to "where do I put my mods": the folder is named in the UI,
-/// the count says whether the game will see anything, and one click opens it. The
-/// scan is cached per game root so a rebuild does not hit the filesystem again.
-class _ContentFolders extends StatefulWidget {
-  const _ContentFolders({required this.instance, required this.onOpen});
-
-  final Instance instance;
-  final void Function(GameFolderKind folder) onOpen;
-
-  @override
-  State<_ContentFolders> createState() => _ContentFoldersState();
-}
-
-class _ContentFoldersState extends State<_ContentFolders> {
-  Future<List<GameFolder>>? _folders;
-  String? _root;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final container = ProviderScope.containerOf(context);
-    final root = container
-        .read(launcherPathsProvider)
-        .gamePathsFor(widget.instance)
-        .root;
-    if (_root != root) {
-      _root = root;
-      _folders = container.read(gameFolderScannerProvider)(root);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final scheme = m3.Theme.of(context).colorScheme;
-
-    return FutureBuilder<List<GameFolder>>(
-      future: _folders,
-      builder: (context, snapshot) {
-        final folders = snapshot.data;
-        if (folders == null) {
-          return const m3.SizedBox(height: 8);
-        }
-        return m3.Column(
-          mainAxisSize: m3.MainAxisSize.min,
-          children: [
-            for (final folder in folders)
-              m3.Padding(
-                padding: const m3.EdgeInsets.only(bottom: 4),
-                child: m3.Row(
-                  children: [
-                    m3.Icon(ShellIcons.folder, size: 15, color: scheme.primary),
-                    const m3.SizedBox(width: 8),
-                    m3.Expanded(
-                      child: m3.Text(
-                        _folderLabel(l10n, folder.kind),
-                        style: AppTheme.body(context),
-                      ),
-                    ),
-                    m3.Text(
-                      folder.entries == 0
-                          ? l10n.instanceFolderEmpty
-                          : '${folder.entries}',
-                      key: m3.ValueKey(
-                        'instance-folder-count-${folder.kind.name}',
-                      ),
-                      style: AppTheme.caption(context)
-                          .copyWith(color: scheme.onSurfaceVariant),
-                    ),
-                    const m3.SizedBox(width: 8),
-                    AppButton(
-                      key: m3.ValueKey(
-                        'instance-open-${folder.kind.directoryName}',
-                      ),
-                      onPressed: () => widget.onOpen(folder.kind),
-                      style: AppButtonStyle.text,
-                      size: AppButtonSize.sm,
-                      label: m3.Text(l10n.instanceOpenFolder),
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        );
-      },
-    );
-  }
-
-  static String _folderLabel(AppLocalizations l10n, GameFolderKind kind) =>
-      switch (kind) {
-        GameFolderKind.mods => l10n.instanceFolderMods,
-        GameFolderKind.resourcePacks => l10n.instanceFolderResourcePacks,
-        GameFolderKind.shaderPacks => l10n.instanceFolderShaderPacks,
-        GameFolderKind.saves => l10n.instanceFolderSaves,
-      };
 }

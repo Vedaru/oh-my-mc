@@ -5,8 +5,12 @@ import 'dart:io';
 
 import 'package:material_ui/material_ui.dart' as m3;
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart' as w;
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oh_my_mc/core/instance/instance.dart';
+import 'package:oh_my_mc/core/mc/game_folders.dart';
+import 'package:oh_my_mc/data/instance_providers.dart';
 import 'package:oh_my_mc/data/instance_store.dart';
 import 'package:oh_my_mc/data/launch_factory.dart';
 import 'package:oh_my_mc/data/settings.dart';
@@ -107,6 +111,8 @@ void main() {
     String file, {
     List<Instance> instances = const [],
     AppSettings settings = AppSettings.defaults,
+    double scrollDown = 0,
+    List<Override> overrides = const [],
   }) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
@@ -128,11 +134,23 @@ void main() {
           game: Directory(p.join(data.path, 'minecraft')),
         ),
         initialLocation: route,
+        overrides: overrides,
       ),
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 600));
     await tester.pump(const Duration(milliseconds: 600));
+
+    if (scrollDown > 0) {
+      // A page taller than the window: the lower sections only exist once the
+      // scroll view has built them.
+      await tester.drag(
+        find.byType(w.Scrollable).first,
+        Offset(0, -scrollDown),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
+    }
 
     await expectLater(
       find.byType(m3.MaterialApp),
@@ -173,12 +191,53 @@ void main() {
     await shoot(tester, '/instances', 'instances-empty');
   });
 
+  // A fixed answer for the content-folder scan: the shot exists to review the
+  // arrangement of the section, not to race the filesystem.
+  Override foldersOverride({
+    int mods = 0,
+    int resourcePacks = 0,
+    int shaderPacks = 0,
+    int saves = 0,
+  }) => gameFolderScannerProvider.overrideWithValue(
+    (root) async => [
+      GameFolder(kind: GameFolderKind.mods, path: '$root/mods', entries: mods),
+      GameFolder(
+        kind: GameFolderKind.resourcePacks,
+        path: '$root/resourcepacks',
+        entries: resourcePacks,
+      ),
+      GameFolder(
+        kind: GameFolderKind.shaderPacks,
+        path: '$root/shaderpacks',
+        entries: shaderPacks,
+      ),
+      GameFolder(
+        kind: GameFolderKind.saves,
+        path: '$root/saves',
+        entries: saves,
+      ),
+    ],
+  );
+
   testWidgets('detail', (tester) async {
     await shoot(
       tester,
       '/instances/a',
       'detail',
       instances: [_instance('a', 'Survival', '1.20.1')],
+    );
+  });
+
+  testWidgets('detail files', (tester) async {
+    await shoot(
+      tester,
+      '/instances/a',
+      'detail-files',
+      instances: [_instance('a', 'Survival', '1.20.1')],
+      scrollDown: 900,
+      overrides: [
+        foldersOverride(mods: 14, resourcePacks: 3, shaderPacks: 0, saves: 6),
+      ],
     );
   });
 

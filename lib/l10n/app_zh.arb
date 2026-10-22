@@ -139,8 +139,20 @@
   "instanceFolderResourcePacks": "资源包",
   "instanceFolderShaderPacks": "光影",
   "instanceFolderSaves": "存档",
-  "instanceFolderEmpty": "空",
   "instanceSectionFiles": "文件",
+  "instanceFilesHint": "版本目录和四个内容文件夹，点一行即可打开。",
+  "instanceFolderItems": "{count, plural, =0{空} =1{1 项} other{{count} 项}}",
+  "@instanceFolderItems": {
+    "description": "count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "instanceOpenFolderTooltip": "打开文件夹",
+  "instanceCopyPath": "复制路径",
+  "instancePathCopied": "已复制路径",
   "instanceSectionArguments": "参数",
   "instanceJvmArgsLabel": "JVM 参数",
   "instanceJvmArgsHint": "每行一个，在游戏启动前传给 Java，例如 -XX:+UseG1GC",
@@ -173,7 +185,6 @@
   "instancePlaytimeLabel": "游戏时长",
   "instancePlaytimeValue": "共 {duration}，上次游玩 {date}",
   "instancePathLabel": "游戏目录",
-  "instanceOpenFolder": "打开目录",
   "instanceOpenFolderFailed": "无法打开该目录。",
   "instanceOpen": "打开设置",
   "setupThemeHint": "跟随系统的明暗变化。",

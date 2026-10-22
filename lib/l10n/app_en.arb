@@ -365,14 +365,35 @@
   "@instanceFolderSaves": {
     "description": "The saves folder."
   },
-  "instanceFolderEmpty": "Empty",
-  "@instanceFolderEmpty": {
-    "description": "Shown instead of a count when a content folder has nothing in it."
-  },
   "@instanceSectionRuntime": {
     "description": "Detail page section: heap size and JVM choice."
   },
   "instanceSectionFiles": "Files",
+  "instanceFilesHint": "The version folder and its four content folders. Select a row to open it.",
+  "@instanceFilesHint": {
+    "description": "Description under the Files section heading."
+  },
+  "instanceFolderItems": "{count, plural, =0{Empty} =1{1 item} other{{count} items}}",
+  "@instanceFolderItems": {
+    "description": "Trailing count of one content folder.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "instanceOpenFolderTooltip": "Open folder",
+  "@instanceOpenFolderTooltip": {
+    "description": "Tooltip of the trailing action that opens a folder."
+  },
+  "instanceCopyPath": "Copy path",
+  "@instanceCopyPath": {
+    "description": "Tooltip of the action that copies the game folder path."
+  },
+  "instancePathCopied": "Path copied",
+  "@instancePathCopied": {
+    "description": "Confirmation shown after copying the game folder path."
+  },
   "@instanceSectionFiles": {
     "description": "Detail page section: game folder and playtime."
   },
@@ -547,10 +568,6 @@
   "instancePathLabel": "Game folder",
   "@instancePathLabel": {
     "description": "Label for the instance's directory path."
-  },
-  "instanceOpenFolder": "Open folder",
-  "@instanceOpenFolder": {
-    "description": "Opens the game folder in the file manager."
   },
   "instanceOpenFolderFailed": "Could not open the folder.",
   "@instanceOpenFolderFailed": {

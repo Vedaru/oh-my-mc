@@ -288,10 +288,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get instanceFolderSaves => 'Saves';
 
   @override
-  String get instanceFolderEmpty => 'Empty';
+  String get instanceSectionFiles => 'Files';
 
   @override
-  String get instanceSectionFiles => 'Files';
+  String get instanceFilesHint =>
+      'The version folder and its four content folders. Select a row to open it.';
+
+  @override
+  String instanceFolderItems(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items',
+      one: '1 item',
+      zero: 'Empty',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get instanceOpenFolderTooltip => 'Open folder';
+
+  @override
+  String get instanceCopyPath => 'Copy path';
+
+  @override
+  String get instancePathCopied => 'Path copied';
 
   @override
   String get instanceSectionArguments => 'Arguments';
@@ -416,9 +438,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get instancePathLabel => 'Game folder';
-
-  @override
-  String get instanceOpenFolder => 'Open folder';
 
   @override
   String get instanceOpenFolderFailed => 'Could not open the folder.';

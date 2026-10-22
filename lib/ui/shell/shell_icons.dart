@@ -46,4 +46,9 @@ abstract final class ShellIcons {
   static const refresh = m3.Icons.refresh;
   static const close = m3.Icons.close;
   static const copy = m3.Icons.content_copy;
+  static const openExternal = m3.Icons.open_in_new;
+  static const mods = m3.Icons.extension;
+  static const resourcePacks = m3.Icons.palette;
+  static const shaderPacks = m3.Icons.auto_awesome;
+  static const saves = m3.Icons.map;
 }

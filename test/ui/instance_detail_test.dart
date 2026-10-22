@@ -16,6 +16,7 @@ import 'package:oh_my_mc/data/launch_factory.dart';
 import 'package:oh_my_mc/data/settings.dart';
 import 'package:oh_my_mc/ui/instances/instance_detail_screen.dart';
 import 'package:oh_my_mc/ui/components/app_button.dart';
+import 'package:oh_my_mc/ui/components/list_row.dart';
 
 import '../support/harness.dart';
 
@@ -421,6 +422,40 @@ void main() {
   });
 
   group('content folders', () {
+    testWidgets('the list keeps one anatomy: path, four folders, playtime', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        instances: [sample()],
+        folders: const [
+          GameFolder(kind: GameFolderKind.mods, path: '/g/mods', entries: 0),
+          GameFolder(
+            kind: GameFolderKind.resourcePacks,
+            path: '/g/resourcepacks',
+            entries: 0,
+          ),
+          GameFolder(
+            kind: GameFolderKind.shaderPacks,
+            path: '/g/shaderpacks',
+            entries: 0,
+          ),
+          GameFolder(kind: GameFolderKind.saves, path: '/g/saves', entries: 0),
+        ],
+      );
+      await tester.pumpAndSettle();
+
+      // The path row and the playtime row are list rows too, not key/value pairs:
+      // one layout for the whole section is the point.
+      expect(find.byType(ListRow), findsNWidgets(6));
+      // Every row carries its supporting text - the on-disk name - so the localized
+      // label and the real folder name sit in the same place in each row.
+      expect(find.text('mods/'), findsOneWidget);
+      expect(find.text('resourcepacks/'), findsOneWidget);
+      expect(find.text('shaderpacks/'), findsOneWidget);
+      expect(find.text('saves/'), findsOneWidget);
+    });
+
     testWidgets('each folder shows its count, and an empty one says so', (
       tester,
     ) async {
@@ -456,7 +491,7 @@ void main() {
               find.byKey(const ValueKey('instance-folder-count-mods')),
             )
             .data,
-        '2',
+        '2 items',
       );
       expect(
         tester
@@ -464,7 +499,7 @@ void main() {
               find.byKey(const ValueKey('instance-folder-count-saves')),
             )
             .data,
-        '1',
+        '1 item',
       );
       // Nothing installed yet reads as empty rather than as zero.
       expect(

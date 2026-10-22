@@ -1,0 +1,146 @@
+import 'package:flutter/widgets.dart';
+import 'package:material_ui/material_ui.dart' as m3;
+
+import '../theme/app_theme.dart';
+import 'hover_row.dart';
+
+/// One row of a Material list.
+///
+/// M3 fixes the anatomy rather than leaving it to each screen: a
+/// **leading** slot (icon, avatar or media), a **content** slot (a required label
+/// plus optional supporting text), and a **trailing** slot (text, an icon, a
+/// control). The guidelines are explicit about the two rules that are easy to
+/// break by accident:
+///
+/// * "Place supporting visuals and primary text in the same position in each list
+///   item. Don't vary the position of elements within a list" — so every row here
+///   is the same skeleton, and a caller cannot move the icon or the metadata.
+/// * A row is *one* action. "Place supplementary actions [...] in the trailing
+///   position" — a second action is a trailing icon button, never a second row.
+///
+/// Type roles follow the component tokens: label `labelLarge`, supporting
+/// `bodyMedium` in `onSurfaceVariant`, trailing text `labelSmall`.
+///
+/// The whole row is the hit target (a list item is a single tappable area), which
+/// is also why a bare text button per row is wrong: repeating the same button
+/// label down a list makes every row read as a control instead of an item.
+class ListRow extends StatelessWidget {
+  const ListRow({
+    required this.label,
+    super.key,
+    this.labelKey,
+    this.leadingIcon,
+    this.supporting = '',
+    this.supportingMono = false,
+    this.trailingText,
+    this.trailingTextKey,
+    this.trailingIcon,
+    this.trailingTooltip,
+    this.onPressed,
+    this.onTrailingPressed,
+  });
+
+  /// The one required slot: what this row *is*.
+  final String label;
+
+  /// Key of the label text, for tests that assert a row exists.
+  final Key? labelKey;
+
+  final m3.IconData? leadingIcon;
+
+  /// Optional second line: a path, a status, a description. One line, truncated.
+  final String supporting;
+
+  /// Render [supporting] in the monospace face — paths, ids, argv.
+  final bool supportingMono;
+
+  /// Metadata at the trailing edge: a count, a duration, a size.
+  final String? trailingText;
+  final Key? trailingTextKey;
+
+  final m3.IconData? trailingIcon;
+  final String? trailingTooltip;
+
+  /// The row's primary action. Null renders a read-only row.
+  final VoidCallback? onPressed;
+
+  /// The supplementary action in the trailing slot.
+  final VoidCallback? onTrailingPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = m3.Theme.of(context).colorScheme;
+    final hasTrailingAction = trailingIcon != null;
+
+    return HoverRow(
+      onTap: onPressed,
+      padding: const m3.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      builder: (hovered) => m3.Row(
+        children: [
+          if (leadingIcon != null) ...[
+            const m3.SizedBox(width: 4),
+            m3.Icon(
+              leadingIcon,
+              size: 18,
+              // The leading icon is a cue, so it takes the accent colour only when
+              // the row is a live action; a read-only row stays quiet.
+              color: onPressed != null
+                  ? scheme.primary
+                  : scheme.onSurfaceVariant,
+            ),
+            const m3.SizedBox(width: 12),
+          ],
+          m3.Expanded(
+            child: m3.Column(
+              crossAxisAlignment: m3.CrossAxisAlignment.start,
+              mainAxisSize: m3.MainAxisSize.min,
+              children: [
+                m3.Text(
+                  label,
+                  key: labelKey,
+                  style: AppTheme.label(context).copyWith(
+                    color: scheme.onSurface,
+                    fontWeight: m3.FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: m3.TextOverflow.ellipsis,
+                ),
+                if (supporting.isNotEmpty) ...[
+                  const m3.SizedBox(height: 2),
+                  m3.Text(
+                    supporting,
+                    style:
+                        (supportingMono
+                                ? AppTheme.mono(context)
+                                : AppTheme.caption(context))
+                            .copyWith(color: scheme.onSurfaceVariant),
+                    maxLines: 1,
+                    overflow: m3.TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          if (trailingText != null) ...[
+            const m3.SizedBox(width: 12),
+            m3.Text(
+              trailingText!,
+              key: trailingTextKey,
+              style: AppTheme.caption(context)
+                  .copyWith(color: scheme.onSurfaceVariant),
+              maxLines: 1,
+            ),
+          ],
+          if (hasTrailingAction)
+            m3.IconButton(
+              onPressed: onTrailingPressed,
+              tooltip: trailingTooltip,
+              icon: m3.Icon(trailingIcon, size: 16),
+              color: scheme.onSurfaceVariant,
+              visualDensity: m3.VisualDensity.compact,
+            ),
+        ],
+      ),
+    );
+  }
+}

@@ -214,6 +214,26 @@ fact the user could not otherwise read, and is the only kind a screen may add on
 | `MotionRespectingProgressBar` | "working, length unknown" | an indeterminate phase |
 | `StaggerItem`/`StaggerList`/`MotionEntrance` | "this is a list, that is a page" | entrance only |
 
+### Lists
+
+A list is scanned, not read: Material's list anatomy fixes the slots and asks for
+them to stay put.
+
+- Every row goes through `ListRow` (`lib/ui/components/list_row.dart`): leading
+  icon, label, optional supporting text, optional trailing text, optional trailing
+  action. Do not hand-roll a row - the whole point is that row 7 lines up with row
+  1, and a one-off `Row` is how that stops being true.
+- **One action per row.** The row is the primary action; a second action is the
+  trailing icon button. Never repeat a labelled button down a list: four "open
+  folder" buttons read as four controls, not as four items.
+- The label and the supporting visual sit in the same place in every row. No
+  key/value rows, no floating numbers in the middle, no per-row button chrome.
+- Leading icons are `onSurfaceVariant` and, when several rows are the same kind of
+  thing, each gets its own cue (a palette for resource packs, not four puzzle
+  pieces).
+- A section heading may carry one line of description under it (`_Section`), which
+  is where the reader meets the explanation - not in a tooltip or a footnote.
+
 Rules that are enforced, not stylistic:
 
 - **Skeleton where the shape is known, spinner where it is not.** A spinner above a list that will be

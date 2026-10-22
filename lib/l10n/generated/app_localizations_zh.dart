@@ -282,10 +282,31 @@ class AppLocalizationsZh extends AppLocalizations {
   String get instanceFolderSaves => '存档';
 
   @override
-  String get instanceFolderEmpty => '空';
+  String get instanceSectionFiles => '文件';
 
   @override
-  String get instanceSectionFiles => '文件';
+  String get instanceFilesHint => '版本目录和四个内容文件夹，点一行即可打开。';
+
+  @override
+  String instanceFolderItems(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 项',
+      one: '1 项',
+      zero: '空',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get instanceOpenFolderTooltip => '打开文件夹';
+
+  @override
+  String get instanceCopyPath => '复制路径';
+
+  @override
+  String get instancePathCopied => '已复制路径';
 
   @override
   String get instanceSectionArguments => '参数';
@@ -401,9 +422,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get instancePathLabel => '游戏目录';
-
-  @override
-  String get instanceOpenFolder => '打开目录';
 
   @override
   String get instanceOpenFolderFailed => '无法打开该目录。';
