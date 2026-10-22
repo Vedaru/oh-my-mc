@@ -40,8 +40,25 @@ class InstanceDetailScreen extends ConsumerWidget {
   /// the page can be asserted without a router.
   final VoidCallback? onClose;
 
-  void _close(BuildContext context) =>
-      (onClose ?? () => context.go(Routes.instances))();
+  /// Leaves the page.
+  ///
+  /// `pop` when the page was pushed (the normal path from a card), because the
+  /// card has to still be mounted for the icon to fly back to it; `go` would
+  /// rebuild the stack and the return flight would be a cut. The fallback keeps
+  /// a deep link - which has no page under it - landing on the grid rather than
+  /// on an empty navigator.
+  void _close(BuildContext context) {
+    final close = onClose;
+    if (close != null) {
+      close();
+      return;
+    }
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(Routes.instances);
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

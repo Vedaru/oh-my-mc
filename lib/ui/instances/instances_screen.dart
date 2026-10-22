@@ -90,8 +90,14 @@ class InstancesScreen extends ConsumerWidget {
     await controller.launch(instance);
   }
 
+  /// Opens one instance's settings.
+  ///
+  /// `push`, not `go`: the two pages have to coexist for the duration of the
+  /// transition, because a `Hero` can only fly between routes that are both in
+  /// the navigator. `go` rebuilds the stack, which turns the move into a
+  /// replacement and silently drops the icon's flight into the header.
   void Function(Instance) _defaultOpen(BuildContext context) =>
-      (instance) => context.go(Routes.instanceDetail(instance.id));
+      (instance) => context.push(Routes.instanceDetail(instance.id));
 
   Future<void> _delete(
     BuildContext context,

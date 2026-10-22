@@ -293,6 +293,27 @@ void main() {
     expect(installs.loaders, [LoaderKind.fabric]);
   });
 
+  testWidgets('the loader switcher keeps its width when the choice moves', (
+    tester,
+  ) async {
+    await pump(tester);
+    final control = find.byKey(const ValueKey('download-loader'));
+    double width() => tester.getSize(control).width;
+
+    final atVanilla = width();
+    // `SegmentedButton` sizes segments by intrinsic width and, by default, puts a
+    // check mark in the selected one. Moving the selection therefore resized the
+    // control, and because it sits in a `Wrap` the whole toolbar reflowed - the
+    // "gaps change when I click the switcher" report.
+    for (final label in ['Fabric', 'Quilt', 'Vanilla']) {
+      await tester.tap(
+        find.descendant(of: control, matching: find.text(label)),
+      );
+      await tester.pumpAndSettle();
+      expect(width(), atVanilla, reason: '$label must not resize the switcher');
+    }
+  });
+
   testWidgets('a running install shows phase, bytes, speed and a cancel', (
     tester,
   ) async {

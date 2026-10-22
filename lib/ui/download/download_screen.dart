@@ -190,11 +190,20 @@ class _Toolbar extends StatelessWidget {
           // are the same, only what gets installed around them changes.
           m3.SegmentedButton<LoaderKind>(
             key: const m3.ValueKey('download-loader'),
+            // No selected-icon slot, and the same content on every segment.
+            //
+            // `SegmentedButton` sizes each segment to the widest *intrinsic*
+            // width, so the default check mark on the selected segment made the
+            // whole control change width whenever the selection moved - and here
+            // it sits in a `Wrap`, so that reflowed the toolbar and changed the
+            // gaps the user sees. An icon on the first segment alone had the same
+            // effect. Three text labels keep the geometry identical for every
+            // choice.
+            showSelectedIcon: false,
             segments: [
               m3.ButtonSegment<LoaderKind>(
                 value: LoaderKind.vanilla,
                 label: m3.Text(l10n.loaderVanilla),
-                icon: const m3.Icon(ShellIcons.instance, size: 15),
               ),
               m3.ButtonSegment<LoaderKind>(
                 value: LoaderKind.fabric,
