@@ -1127,11 +1127,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String languageEffective(String language) {
-    return 'This window is showing $language.';
-  }
-
-  @override
   String get modsCheckUpdates => 'Check for updates';
 
   @override
@@ -1149,4 +1144,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get modsUpdateAction => 'Update';
+
+  @override
+  String get setupBackground => 'Background picture';
+
+  @override
+  String get setupBackgroundHint =>
+      'Shown behind every page under a scrim. Leave empty for the plain surface.';
+
+  @override
+  String get setupBackgroundPick => 'Choose picture…';
+
+  @override
+  String get setupBackgroundClear => 'Use none';
+
+  @override
+  String get setupBackgroundFailed => 'Could not use that file.';
+
+  @override
+  String launcherUpdateTitle(String version) {
+    return 'Version $version is available';
+  }
+
+  @override
+  String get launcherUpdateBody =>
+      'Download it from the release page; your instances and settings are kept.';
+
+  @override
+  String get launcherUpdateAction => 'Open release page';
 }

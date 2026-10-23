@@ -35,6 +35,7 @@ class AppSettings {
     this.theme = ThemePreference.system,
     this.language = LanguagePreference.system,
     this.accent = AccentChoice.blue,
+    this.backgroundPath,
     this.playerName = defaultPlayerName,
     this.memoryMb = defaultMemoryMb,
     this.javaDirs = const [],
@@ -61,6 +62,11 @@ class AppSettings {
   /// more: animation is part of the design and only the OS accessibility flag
   /// (OR'd in by `MotionScope`) can turn it off.
   final AccentChoice accent;
+
+  /// A picture behind the shell, or null for the plain surface. The launcher reads it
+  /// from the user's disk, so a path can go stale; [AppShell] falls back to the surface
+  /// when it cannot be loaded.
+  final String? backgroundPath;
 
   /// Offline profile name. Microsoft sign-in is a later milestone; until then a
   /// launch is always offline, which requires a name and nothing else.
@@ -93,6 +99,7 @@ class AppSettings {
     'theme': theme.name,
     'language': language.name,
     'accent': accent.name,
+    'backgroundPath': ?backgroundPath,
     'playerName': playerName,
     'memoryMb': memoryMb,
     // A list, so it is stored as JSON in a single string key: the settings store
@@ -122,6 +129,7 @@ class AppSettings {
         map['accent'],
         AccentChoice.blue,
       ),
+      backgroundPath: _validBackgroundPath(map['backgroundPath']),
       // A blank or implausible name would make the game refuse to start or,
       // worse, start with an empty name; clamp it back to the default instead.
       playerName: _validPlayerName(map['playerName']),
@@ -144,6 +152,8 @@ class AppSettings {
     ThemePreference? theme,
     LanguagePreference? language,
     AccentChoice? accent,
+    String? backgroundPath,
+    bool clearBackground = false,
     String? playerName,
     int? memoryMb,
     List<String>? javaDirs,
@@ -153,6 +163,9 @@ class AppSettings {
     theme: theme ?? this.theme,
     language: language ?? this.language,
     accent: accent ?? this.accent,
+    backgroundPath: clearBackground
+        ? null
+        : backgroundPath ?? this.backgroundPath,
     playerName: playerName ?? this.playerName,
     memoryMb: memoryMb ?? this.memoryMb,
     javaDirs: javaDirs ?? this.javaDirs,
@@ -211,6 +224,14 @@ int _validMemoryMb(Object? raw) {
     return AppSettings.defaultMemoryMb;
   }
   return value;
+}
+
+/// A picture path, or null. An empty string means "cleared", and is stored as absent:
+/// a blank path that renders nothing is a value with no meaning.
+String? _validBackgroundPath(Object? raw) {
+  if (raw is! String) return null;
+  final trimmed = raw.trim();
+  return trimmed.isEmpty ? null : trimmed;
 }
 
 /// Reads the JSON-encoded directory list. Anything unreadable is an empty list:

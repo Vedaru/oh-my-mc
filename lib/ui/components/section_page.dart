@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:material_ui/material_ui.dart' as m3;
 
 import '../components/section_drawer.dart';
+import '../shell/shell_icons.dart';
 
 /// A page whose own navigation is a section list.
 ///
@@ -30,6 +31,8 @@ class SectionPage extends StatelessWidget {
     this.subtitle,
     this.actions,
     this.bodyScrollable = false,
+    this.onBack,
+    this.backLabel,
     this.drawerHeader,
     super.key,
   });
@@ -58,6 +61,16 @@ class SectionPage extends StatelessWidget {
   final int selectedIndex;
   final void Function(int index) onSelected;
 
+  /// Where this page came from. Rendered as the drawer's first row rather than beside
+  /// the heading: a back arrow in the heading pushes the page's mark out of the slot
+  /// every page's section list lines up on, and the drawer's top is the one place that
+  /// costs no alignment.
+  final VoidCallback? onBack;
+
+  /// What the back row says - the destination, not "back": "实例" tells you where you
+  /// are going.
+  final String? backLabel;
+
   /// An optional block above the destinations - a small caption, a total.
   final Widget? drawerHeader;
 
@@ -75,6 +88,51 @@ class SectionPage extends StatelessWidget {
   static const gutter = 24.0;
 
   static const maxWidth = 1200.0;
+
+  Widget? _drawerHeader(BuildContext context, m3.ColorScheme scheme) {
+    final onBack = this.onBack;
+    final header = drawerHeader;
+    if (onBack == null && header == null) return null;
+    return m3.Column(
+      crossAxisAlignment: m3.CrossAxisAlignment.stretch,
+      children: [
+        if (onBack != null)
+          m3.TextButton(
+            key: const m3.ValueKey('section-back'),
+            onPressed: onBack,
+            style: m3.TextButton.styleFrom(
+              alignment: m3.Alignment.centerLeft,
+              padding: const m3.EdgeInsets.symmetric(horizontal: 8),
+            ),
+            child: m3.Row(
+              children: [
+                m3.Icon(
+                  ShellIcons.back,
+                  size: 16,
+                  color: scheme.onSurfaceVariant,
+                ),
+                const m3.SizedBox(width: 8),
+                m3.Text(
+                  backLabel ?? '',
+                  style: m3.Theme.of(context).textTheme.labelLarge
+                      ?.copyWith(color: scheme.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
+        ?header,
+        if (onBack != null || header != null)
+          m3.Padding(
+            padding: const m3.EdgeInsets.only(top: 6, bottom: 4),
+            child: m3.Divider(
+              height: 1,
+              thickness: 1,
+              color: scheme.outlineVariant.withValues(alpha: 0.5),
+            ),
+          ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -142,7 +200,7 @@ class SectionPage extends StatelessWidget {
                       width: drawerWidth,
                       selectedIndex: selectedIndex,
                       onSelected: onSelected,
-                      header: drawerHeader,
+                      header: _drawerHeader(context, scheme),
                       destinations: destinations,
                     ),
                     const m3.SizedBox(width: gutter),

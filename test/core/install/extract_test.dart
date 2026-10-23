@@ -19,9 +19,6 @@ String writeZip(String path, Map<String, List<int>> entries) {
   return path;
 }
 
-String writeBigZip(String path, Map<String, List<int>> entries) =>
-    writeZip(path, entries);
-
 void main() {
   late Directory tmp;
 

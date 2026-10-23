@@ -348,10 +348,17 @@
   "actionRefresh": "刷新",
   "serverOffline": "无响应",
   "languageSystemWith": "跟随系统（{language}）",
-  "languageEffective": "当前界面显示的是{language}。",
   "modsCheckUpdates": "检查更新",
   "modsChecking": "检查中…",
   "modsUpdatesFound": "有 {count} 个可更新",
   "modsUpdateTo": "更新至 {version}",
-  "modsUpdateAction": "更新"
+  "modsUpdateAction": "更新",
+  "setupBackground": "背景图片",
+  "setupBackgroundHint": "显示在所有页面背后，并加一层底色保证文字可读。留空即使用纯色。",
+  "setupBackgroundPick": "选择图片…",
+  "setupBackgroundClear": "不使用",
+  "setupBackgroundFailed": "无法使用这个文件。",
+  "launcherUpdateTitle": "有新版本 {version}",
+  "launcherUpdateBody": "到发布页下载更新，实例和设置都会保留。",
+  "launcherUpdateAction": "打开发布页"
 }

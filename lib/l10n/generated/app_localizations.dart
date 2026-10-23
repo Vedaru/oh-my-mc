@@ -1958,12 +1958,6 @@ abstract class AppLocalizations {
   /// **'Follow system ({language})'**
   String languageSystemWith(String language);
 
-  /// Supporting line under the language choices, naming the language on screen now.
-  ///
-  /// In en, this message translates to:
-  /// **'This window is showing {language}.'**
-  String languageEffective(String language);
-
   /// Button that asks Modrinth which installed mods are out of date.
   ///
   /// In en, this message translates to:
@@ -1993,6 +1987,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Update'**
   String get modsUpdateAction;
+
+  /// Label of the setting that picks a wallpaper image.
+  ///
+  /// In en, this message translates to:
+  /// **'Background picture'**
+  String get setupBackground;
+
+  /// Explains the wallpaper and its scrim.
+  ///
+  /// In en, this message translates to:
+  /// **'Shown behind every page under a scrim. Leave empty for the plain surface.'**
+  String get setupBackgroundHint;
+
+  /// Button that opens a file picker for the wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose picture…'**
+  String get setupBackgroundPick;
+
+  /// Button that removes the wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Use none'**
+  String get setupBackgroundClear;
+
+  /// Reported when the chosen file is not a readable image.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not use that file.'**
+  String get setupBackgroundFailed;
+
+  /// Banner title when a newer launcher release exists.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version} is available'**
+  String launcherUpdateTitle(String version);
+
+  /// Banner line explaining where to get the update.
+  ///
+  /// In en, this message translates to:
+  /// **'Download it from the release page; your instances and settings are kept.'**
+  String get launcherUpdateBody;
+
+  /// Button that opens the release page.
+  ///
+  /// In en, this message translates to:
+  /// **'Open release page'**
+  String get launcherUpdateAction;
 }
 
 class _AppLocalizationsDelegate

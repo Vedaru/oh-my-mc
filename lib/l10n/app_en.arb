@@ -1579,15 +1579,6 @@
       }
     }
   },
-  "languageEffective": "This window is showing {language}.",
-  "@languageEffective": {
-    "description": "Supporting line under the language choices, naming the language on screen now.",
-    "placeholders": {
-      "language": {
-        "type": "String"
-      }
-    }
-  },
   "modsCheckUpdates": "Check for updates",
   "@modsCheckUpdates": {
     "description": "Button that asks Modrinth which installed mods are out of date."
@@ -1617,5 +1608,42 @@
   "modsUpdateAction": "Update",
   "@modsUpdateAction": {
     "description": "Tooltip of the per-row update button."
+  },
+  "setupBackground": "Background picture",
+  "@setupBackground": {
+    "description": "Label of the setting that picks a wallpaper image."
+  },
+  "setupBackgroundHint": "Shown behind every page under a scrim. Leave empty for the plain surface.",
+  "@setupBackgroundHint": {
+    "description": "Explains the wallpaper and its scrim."
+  },
+  "setupBackgroundPick": "Choose picture…",
+  "@setupBackgroundPick": {
+    "description": "Button that opens a file picker for the wallpaper."
+  },
+  "setupBackgroundClear": "Use none",
+  "@setupBackgroundClear": {
+    "description": "Button that removes the wallpaper."
+  },
+  "setupBackgroundFailed": "Could not use that file.",
+  "@setupBackgroundFailed": {
+    "description": "Reported when the chosen file is not a readable image."
+  },
+  "launcherUpdateTitle": "Version {version} is available",
+  "@launcherUpdateTitle": {
+    "description": "Banner title when a newer launcher release exists.",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "launcherUpdateBody": "Download it from the release page; your instances and settings are kept.",
+  "@launcherUpdateBody": {
+    "description": "Banner line explaining where to get the update."
+  },
+  "launcherUpdateAction": "Open release page",
+  "@launcherUpdateAction": {
+    "description": "Button that opens the release page."
   }
 }

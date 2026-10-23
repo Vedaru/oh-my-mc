@@ -1085,11 +1085,6 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String languageEffective(String language) {
-    return '当前界面显示的是$language。';
-  }
-
-  @override
   String get modsCheckUpdates => '检查更新';
 
   @override
@@ -1107,4 +1102,30 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get modsUpdateAction => '更新';
+
+  @override
+  String get setupBackground => '背景图片';
+
+  @override
+  String get setupBackgroundHint => '显示在所有页面背后，并加一层底色保证文字可读。留空即使用纯色。';
+
+  @override
+  String get setupBackgroundPick => '选择图片…';
+
+  @override
+  String get setupBackgroundClear => '不使用';
+
+  @override
+  String get setupBackgroundFailed => '无法使用这个文件。';
+
+  @override
+  String launcherUpdateTitle(String version) {
+    return '有新版本 $version';
+  }
+
+  @override
+  String get launcherUpdateBody => '到发布页下载更新，实例和设置都会保留。';
+
+  @override
+  String get launcherUpdateAction => '打开发布页';
 }

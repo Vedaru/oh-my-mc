@@ -171,6 +171,8 @@ class _InstanceDetailScreenState extends ConsumerState<InstanceDetailScreen> {
         ),
       ),
       title: instance.displayName,
+      onBack: () => _close(context),
+      backLabel: l10n.navInstances,
       subtitle: [
         instance.versionId,
         if (instance.loader.isModded) instance.loader.label,

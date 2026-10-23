@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart' as m3;
 import 'package:oh_my_mc/ui/components/app_button.dart';
@@ -14,6 +15,8 @@ import '../../data/java_providers.dart';
 import '../../core/diagnostics/crash_analyzer.dart';
 import '../../data/launch_providers.dart';
 import '../../l10n/l10n.dart';
+import '../../core/update/launcher_update.dart';
+import '../../data/update_providers.dart';
 import '../components/app_banner.dart';
 import '../components/hover_row.dart';
 import 'version_list_dialog.dart';
@@ -104,6 +107,9 @@ class LaunchScreen extends ConsumerWidget {
             // Java offer because they are the same kind of message: "this is what
             // stopped you, and here is the button that unblocks it".
             _RepairOfferArea(instance: selected, session: session),
+            // The launcher's own update, last of the three: a new version matters less
+            // than the instance in front of the user not starting.
+            const _LauncherUpdateArea(),
             // A crash is the other end of the same idea: the launch was allowed to
             // run and died. Saying "exit code 1" and showing a stack trace makes
             // the user do the reading; the card does it for them.
@@ -715,6 +721,47 @@ class _LogTailState extends State<_LogTail> {
                   ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// "There is a newer launcher" - one line, one button, dismissible.
+///
+/// The check runs once per session in the background and fails silently, so this area
+/// is empty on most launches: no network, no update, or GitHub saying nothing useful all
+/// mean "nothing to tell the user".
+class _LauncherUpdateArea extends ConsumerStatefulWidget {
+  const _LauncherUpdateArea();
+
+  @override
+  ConsumerState<_LauncherUpdateArea> createState() =>
+      _LauncherUpdateAreaState();
+}
+
+class _LauncherUpdateAreaState extends ConsumerState<_LauncherUpdateArea> {
+  var _dismissed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final state = ref.watch(launcherUpdateProvider);
+    final update = state is AsyncData<LauncherUpdate?> ? state.value : null;
+    if (update == null || _dismissed) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: AppBanner(
+        key: const ValueKey('launcher-update'),
+        severity: BannerSeverity.info,
+        title: l10n.launcherUpdateTitle(update.version),
+        message: l10n.launcherUpdateBody,
+        actionLabel: l10n.launcherUpdateAction,
+        onAction: () => launchUrl(
+          Uri.parse(update.url),
+          mode: LaunchMode.externalApplication,
+        ),
+        onDismiss: () => setState(() => _dismissed = true),
       ),
     );
   }

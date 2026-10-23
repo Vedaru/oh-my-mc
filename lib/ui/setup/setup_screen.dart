@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'dart:ui' show PlatformDispatcher;
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart' as m3;
@@ -17,6 +20,7 @@ import 'java_panel.dart';
 import 'about_panel.dart';
 import 'network_panel.dart';
 import '../components/app_accent_picker.dart';
+import '../components/app_button.dart';
 import '../components/app_radio_group.dart';
 import '../components/app_slider.dart';
 import '../components/app_text_field.dart';
@@ -178,6 +182,14 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
             child: AppAccentPicker(
               value: settings.accent,
               onChanged: notifier.setAccent,
+            ),
+          ),
+          _SettingRow(
+            label: l10n.setupBackground,
+            hint: l10n.setupBackgroundHint,
+            child: _BackgroundPicker(
+              path: settings.backgroundPath,
+              onPicked: (path) => notifier.setBackground(path),
             ),
           ),
         ],
@@ -468,6 +480,98 @@ class _GlobalMemoryRowState extends ConsumerState<_GlobalMemoryRow> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Picks the wallpaper, and shows which one is in use.
+///
+/// The preview is the point: a path in a text field tells a user nothing about the
+/// picture they are about to put behind every page.
+class _BackgroundPicker extends StatelessWidget {
+  const _BackgroundPicker({required this.path, required this.onPicked});
+
+  final String? path;
+  final void Function(String? path) onPicked;
+
+  Future<void> _pick(BuildContext context) async {
+    final l10n = context.l10n;
+    final messenger = m3.ScaffoldMessenger.maybeOf(context);
+    final picked = await FilePicker.pickFiles(
+      dialogTitle: l10n.setupBackgroundPick,
+      type: FileType.image,
+    );
+    final chosen = picked.isEmpty ? null : picked.first.path;
+    if (chosen == null) return;
+    // Verify before storing: a path that cannot be decoded would paint nothing, and
+    // "nothing" is exactly what the user did not ask for.
+    try {
+      // Decodes at least the header: a text file renamed to .png is refused here
+      // rather than behind every page.
+      await decodeImageFromList(await File(chosen).readAsBytes());
+    } on Object {
+      messenger
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(
+          m3.SnackBar(
+            content: m3.Text(l10n.setupBackgroundFailed),
+            behavior: m3.SnackBarBehavior.floating,
+          ),
+        );
+      return;
+    }
+    onPicked(chosen);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final scheme = m3.Theme.of(context).colorScheme;
+    final path = this.path;
+
+    return m3.Row(
+      children: [
+        if (path != null) ...[
+          m3.ClipRRect(
+            borderRadius: m3.BorderRadius.circular(8),
+            child: m3.Image.file(
+              File(path),
+              width: 64,
+              height: 40,
+              fit: m3.BoxFit.cover,
+              errorBuilder: (context, error, stack) => m3.Container(
+                width: 64,
+                height: 40,
+                color: scheme.surfaceContainerHighest,
+                child: m3.Icon(
+                  ShellIcons.warning,
+                  size: 16,
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ),
+          const m3.SizedBox(width: 12),
+        ],
+        AppButton(
+          key: const m3.ValueKey('background-pick'),
+          onPressed: () => _pick(context),
+          style: AppButtonStyle.outlined,
+          size: AppButtonSize.sm,
+          icon: const m3.Icon(ShellIcons.folder, size: 14),
+          label: m3.Text(l10n.setupBackgroundPick),
+        ),
+        if (path != null) ...[
+          const m3.SizedBox(width: 8),
+          AppButton(
+            key: const m3.ValueKey('background-clear'),
+            onPressed: () => onPicked(null),
+            style: AppButtonStyle.text,
+            size: AppButtonSize.sm,
+            label: m3.Text(l10n.setupBackgroundClear),
+          ),
+        ],
+      ],
     );
   }
 }
