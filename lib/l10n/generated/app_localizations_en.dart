@@ -28,12 +28,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navLogs => 'Logs';
 
   @override
-  String get navExpand => 'Expand navigation';
-
-  @override
-  String get navCollapse => 'Collapse navigation';
-
-  @override
   String get playButton => 'Play';
 
   @override
@@ -85,12 +79,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'An instance has to point at an installed version. Install one on the Download page first.';
 
   @override
-  String get instanceImport => 'Import';
-
-  @override
-  String get instanceExport => 'Export';
-
-  @override
   String get instanceClone => 'Clone';
 
   @override
@@ -132,13 +120,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get downloadVersions => 'Versions';
 
   @override
-  String get downloadLoaders => 'Loaders';
-
-  @override
   String get loaderVanilla => 'Vanilla';
-
-  @override
-  String get downloadInstall => 'Install';
 
   @override
   String get downloadInstalled => 'Installed';
@@ -181,28 +163,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get downloadSnapshot => 'Snapshot';
 
   @override
-  String get downloadOld => 'Old';
-
-  @override
-  String get queueTitle => 'Install queue';
-
-  @override
-  String get queuePause => 'Pause';
-
-  @override
-  String get queueResume => 'Resume';
-
-  @override
-  String get queueCancel => 'Cancel';
-
-  @override
   String get setupLaunch => 'Launch';
 
   @override
   String get setupJava => 'Java';
-
-  @override
-  String get setupDownload => 'Download';
 
   @override
   String get setupUi => 'Interface';
@@ -303,9 +267,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logsSessionEmpty => 'No saved sessions yet.';
 
   @override
-  String get logsOpenFolder => 'Open log folder';
-
-  @override
   String get logsNoMatches => 'No lines match the filter.';
 
   @override
@@ -355,114 +316,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get instanceFullscreen => 'Fullscreen';
 
   @override
-  String get instanceFolderMods => 'Mods';
-
-  @override
-  String get instanceFolderResourcePacks => 'Resource packs';
-
-  @override
-  String get instanceFolderShaderPacks => 'Shaders';
-
-  @override
-  String get instanceFolderSaves => 'Saves';
-
-  @override
-  String get instanceSectionFiles => 'Files';
-
-  @override
-  String get modsTitle => 'Mods';
-
-  @override
-  String modsCounts(int enabled, int total) {
-    return '$enabled of $total enabled';
-  }
-
-  @override
-  String get modsSearchHint => 'Search Modrinth';
-
-  @override
-  String get modsRefresh => 'Refresh';
-
-  @override
-  String get modsOpenFolder => 'Open folder';
-
-  @override
-  String get modsSearchTitle => 'Install mods';
-
-  @override
-  String get modsSearchEmpty => 'Nothing matches that.';
-
-  @override
-  String modsSearchFiltered(String loader, String game) {
-    return '$loader · $game — matches only what can load here';
-  }
-
-  @override
-  String get modsSearchNeedsLoader => 'This version cannot take mods';
-
-  @override
-  String get modsSearchVanillaHint =>
-      'Install Fabric, Quilt, Forge or NeoForge for this game version first; mods need a loader.';
-
-  @override
-  String get modsInstall => 'Install';
-
-  @override
-  String get modsGet => 'Get mods';
-
-  @override
-  String get modsDisabled => 'Off';
-
-  @override
-  String get modsDeleteTitle => 'Delete this mod?';
-
-  @override
-  String modsDeleteBody(String name) {
-    return '$name will be removed from the mods folder.';
-  }
-
-  @override
-  String get modsDeleteAction => 'Delete';
-
-  @override
-  String get modsEmptyTitle => 'No mods yet';
-
-  @override
-  String get modsEmptyBody =>
-      'Drop a .jar into the mods folder, or get one from the download page.';
-
-  @override
-  String modsToggleFailed(String reason) {
-    return 'Could not change the mod: $reason';
-  }
-
-  @override
-  String get modsManageHint => 'mods/ · select to manage';
-
-  @override
-  String get instanceFilesHint =>
-      'The version folder and its four content folders. Select a row to open it.';
-
-  @override
-  String instanceFolderItems(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count items',
-      one: '1 item',
-      zero: 'Empty',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String get instanceOpenFolderTooltip => 'Open folder';
-
-  @override
-  String get instanceCopyPath => 'Copy path';
-
-  @override
-  String get instancePathCopied => 'Path copied';
 
   @override
   String get instanceSectionArguments => 'Arguments';
@@ -586,9 +440,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get instancePathLabel => 'Game folder';
-
-  @override
   String get instanceOpenFolderFailed => 'Could not open the folder.';
 
   @override
@@ -627,9 +478,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String launchExited(int code, String duration) {
     return 'Exited with code $code after $duration';
   }
-
-  @override
-  String get screenNotReady => 'This screen is not built yet';
 
   @override
   String get downloadSearchHint => 'Search versions';
@@ -706,12 +554,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get downloadCancelled => 'Install cancelled';
-
-  @override
-  String get downloadSourceOfficial => 'Official';
-
-  @override
-  String get downloadSourceBmclapi => 'BMCLAPI mirror';
 
   @override
   String get downloadShowSnapshots => 'Show snapshots';
@@ -821,16 +663,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String javaUseExisting(int major) {
     return 'Java $major found on this computer';
-  }
-
-  @override
-  String javaUnavailableOnPlatform(int major) {
-    return 'Java $major is not available for this platform.';
-  }
-
-  @override
-  String javaUnavailableDetail(int major, String platform) {
-    return 'No Java $major build is published for $platform. You can install one yourself and point the instance at it.';
   }
 
   @override
@@ -1023,12 +855,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'None of the known failure patterns matched. The tail of the log is the place to look: the last exception before the exit is usually the cause.';
 
   @override
-  String get contentResourcePacks => 'Resource packs';
-
-  @override
-  String get contentShaderPacks => 'Shader packs';
-
-  @override
   String get contentSaves => 'Worlds';
 
   @override
@@ -1071,19 +897,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contentDeleteBody => 'This cannot be undone.';
 
   @override
-  String get contentAddServer => 'Add server';
-
-  @override
-  String get contentServerName => 'Name';
-
-  @override
-  String get contentServerAddress => 'Address, e.g. play.example.com';
-
-  @override
   String get actionDelete => 'Delete';
-
-  @override
-  String get actionSave => 'Save';
 
   @override
   String sourceAuto(String name) {
@@ -1095,9 +909,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sourceBmclapi => 'BMCLAPI';
-
-  @override
-  String get sourceTitle => 'Download source';
 
   @override
   String get catalogMods => 'Mods';
@@ -1252,19 +1063,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get detailTabOverview => 'Overview';
 
   @override
-  String get detailTabContent => 'Content';
-
-  @override
   String get detailTabSettings => 'Settings';
 
   @override
-  String get detailTabFiles => 'Files';
-
-  @override
-  String detailCounts(int mods, int packs) {
-    return '$mods mods · $packs packs';
-  }
-
-  @override
   String get contentInstall => 'Install from Modrinth';
+
+  @override
+  String get contentModsHint =>
+      'Mods in this instance. A mod is switched off by renaming its jar.';
+
+  @override
+  String get contentDataPacksHint =>
+      'Data packs belong to a world: pick one, then install or remove its packs.';
+
+  @override
+  String get contentEmptyMods => 'No mods yet.';
+
+  @override
+  String get contentEmptyDataPacks => 'No data packs in this world yet.';
+
+  @override
+  String get contentAddServer => 'Add server';
+
+  @override
+  String get contentServerName => 'Name';
+
+  @override
+  String get contentServerAddress => 'Address';
+
+  @override
+  String get actionSave => 'Save';
 }

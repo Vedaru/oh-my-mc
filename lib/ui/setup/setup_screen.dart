@@ -7,6 +7,7 @@ import '../../core/instance/memory.dart';
 import '../../data/settings.dart';
 import '../../l10n/l10n.dart';
 import '../motion/motion.dart';
+import '../components/section_drawer.dart';
 import '../shell/shell_icons.dart';
 import '../theme/app_theme.dart';
 import 'java_panel.dart';
@@ -56,12 +57,14 @@ class _SetupScreenState extends State<SetupScreen> {
             child: m3.Row(
               crossAxisAlignment: m3.CrossAxisAlignment.stretch,
               children: [
-                m3.SizedBox(
-                  width: 200,
-                  child: _SectionList(
-                    current: _section,
-                    onPick: (section) => setState(() => _section = section),
-                  ),
+                SectionDrawer(
+                  selectedIndex: _section.index,
+                  onSelected: (index) =>
+                      setState(() => _section = SetupSection.values[index]),
+                  destinations: [
+                    for (final section in SetupSection.values)
+                      _destination(l10n, section),
+                  ],
                 ),
                 const m3.SizedBox(width: 16),
                 m3.Expanded(
@@ -80,6 +83,42 @@ class _SetupScreenState extends State<SetupScreen> {
       ),
     );
   }
+
+  SectionDestination _destination(
+    AppLocalizations l10n,
+    SetupSection section,
+  ) => switch (section) {
+    SetupSection.general => SectionDestination(
+      key: 'setup-section-general',
+      label: l10n.setupSectionGeneral,
+      icon: ShellIcons.settings,
+    ),
+    SetupSection.appearance => SectionDestination(
+      key: 'setup-section-appearance',
+      label: l10n.setupSectionAppearance,
+      icon: ShellIcons.resourcePacks,
+    ),
+    SetupSection.launch => SectionDestination(
+      key: 'setup-section-launch',
+      label: l10n.setupLaunch,
+      icon: ShellIcons.play,
+    ),
+    SetupSection.java => SectionDestination(
+      key: 'setup-section-java',
+      label: l10n.setupJava,
+      icon: ShellIcons.java,
+    ),
+    SetupSection.network => SectionDestination(
+      key: 'setup-section-network',
+      label: l10n.settingsNetworkTitle,
+      icon: ShellIcons.network,
+    ),
+    SetupSection.about => SectionDestination(
+      key: 'setup-section-about',
+      label: l10n.aboutTitle,
+      icon: ShellIcons.info,
+    ),
+  };
 
   Widget _body(BuildContext context, SetupSection section) {
     final l10n = context.l10n;
@@ -157,119 +196,6 @@ class _SetupScreenState extends State<SetupScreen> {
         children: const [AboutPanel()],
       ),
     };
-  }
-}
-
-/// The section list.
-///
-/// Rows, not a tab bar: six tabs across the top of a desktop window either wrap or
-/// shrink to unreadable, and a list of six is the same information without either
-/// problem. The selected row is marked and tinted, which is how M3 expresses state on
-/// a navigation surface.
-class _SectionList extends StatelessWidget {
-  const _SectionList({required this.current, required this.onPick});
-
-  final SetupSection current;
-  final void Function(SetupSection section) onPick;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final scheme = m3.Theme.of(context).colorScheme;
-
-    final labels = {
-      SetupSection.general: (l10n.setupSectionGeneral, ShellIcons.list),
-      SetupSection.appearance: (
-        l10n.setupSectionAppearance,
-        ShellIcons.resourcePacks,
-      ),
-      SetupSection.launch: (l10n.setupLaunch, ShellIcons.play),
-      SetupSection.java: (l10n.setupJava, ShellIcons.java),
-      SetupSection.network: (l10n.settingsNetworkTitle, ShellIcons.network),
-      SetupSection.about: (l10n.aboutTitle, ShellIcons.info),
-    };
-
-    return m3.Container(
-      decoration: m3.BoxDecoration(
-        color: scheme.surfaceContainerLow,
-        borderRadius: m3.BorderRadius.circular(16),
-      ),
-      padding: const m3.EdgeInsets.symmetric(vertical: 8),
-      child: m3.ListView(
-        padding: m3.EdgeInsets.zero,
-        children: [
-          for (final entry in labels.entries)
-            _SectionRow(
-              key: m3.ValueKey('setup-section-${entry.key.name}'),
-              label: entry.value.$1,
-              icon: entry.value.$2,
-              selected: entry.key == current,
-              onPressed: () => onPick(entry.key),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SectionRow extends StatelessWidget {
-  const _SectionRow({
-    required this.label,
-    required this.icon,
-    required this.selected,
-    required this.onPressed,
-    super.key,
-  });
-
-  final String label;
-  final Object icon;
-  final bool selected;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = m3.Theme.of(context).colorScheme;
-    return m3.Padding(
-      padding: const m3.EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      child: m3.Material(
-        color: selected ? scheme.secondaryContainer : m3.Colors.transparent,
-        borderRadius: m3.BorderRadius.circular(10),
-        child: m3.InkWell(
-          onTap: onPressed,
-          borderRadius: m3.BorderRadius.circular(10),
-          child: m3.Padding(
-            padding: const m3.EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 10,
-            ),
-            child: m3.Row(
-              children: [
-                m3.Icon(
-                  icon as m3.IconData,
-                  size: 16,
-                  color: selected
-                      ? scheme.onSecondaryContainer
-                      : scheme.onSurfaceVariant,
-                ),
-                const m3.SizedBox(width: 10),
-                m3.Expanded(
-                  child: m3.Text(
-                    label,
-                    maxLines: 1,
-                    overflow: m3.TextOverflow.ellipsis,
-                    style: AppTheme.label(context).copyWith(
-                      color: selected
-                          ? scheme.onSecondaryContainer
-                          : scheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }
 

@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 
 import '../core/instance/instance.dart';
-import '../core/mc/game_folders.dart';
 import 'instance_store.dart';
 import 'launch_factory.dart';
 
@@ -306,7 +305,3 @@ final instanceListProvider =
 /// The section that uses it is in the instance page, and a widget test has no way
 /// to let real directory IO complete inside the fake-async zone - so the scan is a
 /// provider and a test answers it directly. Production reads the disk.
-final gameFolderScannerProvider =
-    Provider<Future<List<GameFolder>> Function(String gameRoot)>(
-      (ref) => scanGameFolders,
-    );

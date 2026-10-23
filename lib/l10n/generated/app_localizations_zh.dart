@@ -28,12 +28,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get navLogs => '日志';
 
   @override
-  String get navExpand => '展开导航栏';
-
-  @override
-  String get navCollapse => '收起导航栏';
-
-  @override
   String get playButton => '启动游戏';
 
   @override
@@ -82,12 +76,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get instanceNoVersionsHint => '实例必须绑定一个已安装的版本。请先在「下载」页安装一个。';
 
   @override
-  String get instanceImport => '导入';
-
-  @override
-  String get instanceExport => '导出';
-
-  @override
   String get instanceClone => '复制';
 
   @override
@@ -128,13 +116,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get downloadVersions => '游戏版本';
 
   @override
-  String get downloadLoaders => '模组加载器';
-
-  @override
   String get loaderVanilla => '原版';
-
-  @override
-  String get downloadInstall => '安装';
 
   @override
   String get downloadInstalled => '已安装';
@@ -177,28 +159,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get downloadSnapshot => '快照';
 
   @override
-  String get downloadOld => '旧版';
-
-  @override
-  String get queueTitle => '安装队列';
-
-  @override
-  String get queuePause => '暂停';
-
-  @override
-  String get queueResume => '继续';
-
-  @override
-  String get queueCancel => '取消';
-
-  @override
   String get setupLaunch => '启动';
 
   @override
   String get setupJava => 'Java';
-
-  @override
-  String get setupDownload => '下载';
 
   @override
   String get setupUi => '界面';
@@ -296,9 +260,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get logsSessionEmpty => '还没有保存的会话日志。';
 
   @override
-  String get logsOpenFolder => '打开日志文件夹';
-
-  @override
   String get logsNoMatches => '没有符合筛选条件的日志。';
 
   @override
@@ -347,112 +308,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get instanceFullscreen => '全屏';
 
   @override
-  String get instanceFolderMods => '模组';
-
-  @override
-  String get instanceFolderResourcePacks => '资源包';
-
-  @override
-  String get instanceFolderShaderPacks => '光影';
-
-  @override
-  String get instanceFolderSaves => '存档';
-
-  @override
-  String get instanceSectionFiles => '文件';
-
-  @override
-  String get modsTitle => '模组';
-
-  @override
-  String modsCounts(int enabled, int total) {
-    return '已启用 $enabled / 共 $total';
-  }
-
-  @override
-  String get modsSearchHint => '搜索 Modrinth';
-
-  @override
-  String get modsRefresh => '刷新';
-
-  @override
-  String get modsOpenFolder => '打开文件夹';
-
-  @override
-  String get modsSearchTitle => '安装模组';
-
-  @override
-  String get modsSearchEmpty => '没有匹配的模组。';
-
-  @override
-  String modsSearchFiltered(String loader, String game) {
-    return '$loader · $game — 只显示能在这里加载的';
-  }
-
-  @override
-  String get modsSearchNeedsLoader => '这个版本无法安装模组';
-
-  @override
-  String get modsSearchVanillaHint =>
-      '请先为这个游戏版本安装 Fabric、Quilt、Forge 或 NeoForge，模组需要加载器。';
-
-  @override
-  String get modsInstall => '安装';
-
-  @override
-  String get modsGet => '获取模组';
-
-  @override
-  String get modsDisabled => '已禁用';
-
-  @override
-  String get modsDeleteTitle => '删除这个模组？';
-
-  @override
-  String modsDeleteBody(String name) {
-    return '$name 会从 mods 文件夹里删除。';
-  }
-
-  @override
-  String get modsDeleteAction => '删除';
-
-  @override
-  String get modsEmptyTitle => '还没有模组';
-
-  @override
-  String get modsEmptyBody => '把 .jar 放进 mods 文件夹，或从下载页获取。';
-
-  @override
-  String modsToggleFailed(String reason) {
-    return '无法修改模组：$reason';
-  }
-
-  @override
-  String get modsManageHint => 'mods/ · 点击管理';
-
-  @override
-  String get instanceFilesHint => '版本目录和四个内容文件夹，点一行即可打开。';
-
-  @override
-  String instanceFolderItems(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count 项',
-      one: '1 项',
-      zero: '空',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String get instanceOpenFolderTooltip => '打开文件夹';
-
-  @override
-  String get instanceCopyPath => '复制路径';
-
-  @override
-  String get instancePathCopied => '已复制路径';
 
   @override
   String get instanceSectionArguments => '参数';
@@ -567,9 +423,6 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get instancePathLabel => '游戏目录';
-
-  @override
   String get instanceOpenFolderFailed => '无法打开该目录。';
 
   @override
@@ -605,9 +458,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String launchExited(int code, String duration) {
     return '已退出，代码 $code，用时 $duration';
   }
-
-  @override
-  String get screenNotReady => '此界面尚未完成';
 
   @override
   String get downloadSearchHint => '搜索版本';
@@ -684,12 +534,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get downloadCancelled => '安装已取消';
-
-  @override
-  String get downloadSourceOfficial => '官方源';
-
-  @override
-  String get downloadSourceBmclapi => 'BMCLAPI 镜像';
 
   @override
   String get downloadShowSnapshots => '显示快照';
@@ -796,16 +640,6 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String javaUseExisting(int major) {
     return '已在本机找到 Java $major';
-  }
-
-  @override
-  String javaUnavailableOnPlatform(int major) {
-    return '此平台没有可用的 Java $major。';
-  }
-
-  @override
-  String javaUnavailableDetail(int major, String platform) {
-    return 'Mojang 没有为 $platform 发布 Java $major。你可以自行安装，并在实例设置中指向它。';
   }
 
   @override
@@ -994,12 +828,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get diagUnknownBody => '没有匹配到已知的失败模式。去看日志末尾：退出前最后一个异常通常就是原因。';
 
   @override
-  String get contentResourcePacks => '资源包';
-
-  @override
-  String get contentShaderPacks => '光影';
-
-  @override
   String get contentSaves => '存档';
 
   @override
@@ -1038,19 +866,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get contentDeleteBody => '这个操作无法撤销。';
 
   @override
-  String get contentAddServer => '添加服务器';
-
-  @override
-  String get contentServerName => '名称';
-
-  @override
-  String get contentServerAddress => '地址，例如 play.example.com';
-
-  @override
   String get actionDelete => '删除';
-
-  @override
-  String get actionSave => '保存';
 
   @override
   String sourceAuto(String name) {
@@ -1062,9 +878,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get sourceBmclapi => 'BMCLAPI';
-
-  @override
-  String get sourceTitle => '下载源';
 
   @override
   String get catalogMods => '模组';
@@ -1212,19 +1025,32 @@ class AppLocalizationsZh extends AppLocalizations {
   String get detailTabOverview => '概览';
 
   @override
-  String get detailTabContent => '内容';
-
-  @override
   String get detailTabSettings => '设置';
 
   @override
-  String get detailTabFiles => '文件';
-
-  @override
-  String detailCounts(int mods, int packs) {
-    return '$mods 个模组 · $packs 个资源包';
-  }
-
-  @override
   String get contentInstall => '从 Modrinth 安装';
+
+  @override
+  String get contentModsHint => '这个实例的模组。关闭一个模组就是改文件名。';
+
+  @override
+  String get contentDataPacksHint => '数据包属于某个存档：先选存档，再安装或删除它的数据包。';
+
+  @override
+  String get contentEmptyMods => '还没有模组。';
+
+  @override
+  String get contentEmptyDataPacks => '这个存档还没有数据包。';
+
+  @override
+  String get contentAddServer => 'Add a server';
+
+  @override
+  String get contentServerName => '名称';
+
+  @override
+  String get contentServerAddress => '地址';
+
+  @override
+  String get actionSave => '保存';
 }

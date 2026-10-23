@@ -24,14 +24,6 @@
   "@navLogs": {
     "description": "Navigation item for the log console."
   },
-  "navExpand": "Expand navigation",
-  "@navExpand": {
-    "description": "Tooltip on the navigation rail's expand control."
-  },
-  "navCollapse": "Collapse navigation",
-  "@navCollapse": {
-    "description": "Tooltip on the navigation rail's collapse control."
-  },
   "playButton": "Play",
   "@playButton": {
     "description": "Starts the selected instance."
@@ -96,14 +88,6 @@
   "@instanceCreate": {
     "description": "Creates a new instance."
   },
-  "instanceImport": "Import",
-  "@instanceImport": {
-    "description": "Imports an instance from an archive."
-  },
-  "instanceExport": "Export",
-  "@instanceExport": {
-    "description": "Exports an instance to an archive."
-  },
   "instanceClone": "Clone",
   "instanceCloneFailed": "Clone failed: {error}",
   "@instanceCloneFailed": {
@@ -165,17 +149,9 @@
   "@downloadVersions": {
     "description": "Version list tab."
   },
-  "downloadLoaders": "Loaders",
   "loaderVanilla": "Vanilla",
   "@loaderVanilla": {
     "description": "Loader choice meaning \"no loader\": the plain game version."
-  },
-  "@downloadLoaders": {
-    "description": "Installer tab for Forge/Fabric and friends."
-  },
-  "downloadInstall": "Install",
-  "@downloadInstall": {
-    "description": "Installs the selected version or loader."
   },
   "downloadInstalled": "Installed",
   "downloadIncomplete": "Incomplete",
@@ -235,26 +211,6 @@
   "@downloadSnapshot": {
     "description": "Snapshot channel filter."
   },
-  "downloadOld": "Old",
-  "@downloadOld": {
-    "description": "Old version filter."
-  },
-  "queueTitle": "Install queue",
-  "@queueTitle": {
-    "description": "Title of the task queue."
-  },
-  "queuePause": "Pause",
-  "@queuePause": {
-    "description": "Pauses the queue."
-  },
-  "queueResume": "Resume",
-  "@queueResume": {
-    "description": "Resumes the queue."
-  },
-  "queueCancel": "Cancel",
-  "@queueCancel": {
-    "description": "Cancels a task."
-  },
   "setupLaunch": "Launch",
   "@setupLaunch": {
     "description": "Setup section: how the game is launched."
@@ -262,10 +218,6 @@
   "setupJava": "Java",
   "@setupJava": {
     "description": "Setup section: Java runtime management."
-  },
-  "setupDownload": "Download",
-  "@setupDownload": {
-    "description": "Setup section: download source and mirror."
   },
   "setupUi": "Interface",
   "setupAccent": "Accent colour",
@@ -393,10 +345,6 @@
   "@logsSessionEmpty": {
     "description": "Shown when no log file exists on disk."
   },
-  "logsOpenFolder": "Open log folder",
-  "@logsOpenFolder": {
-    "description": "Opens the directory the launcher writes logs to."
-  },
   "@logsOnlyErrors": {
     "description": "Toggle that hides ordinary log lines and keeps failures."
   },
@@ -461,159 +409,12 @@
   "@instanceFullscreen": {
     "description": "Label of the fullscreen switch."
   },
-  "instanceFolderMods": "Mods",
-  "@instanceFolderMods": {
-    "description": "The mods folder in version settings."
-  },
-  "instanceFolderResourcePacks": "Resource packs",
-  "@instanceFolderResourcePacks": {
-    "description": "The resourcepacks folder."
-  },
-  "instanceFolderShaderPacks": "Shaders",
-  "@instanceFolderShaderPacks": {
-    "description": "The shaderpacks folder."
-  },
-  "instanceFolderSaves": "Saves",
-  "@instanceFolderSaves": {
-    "description": "The saves folder."
-  },
   "@instanceSectionRuntime": {
     "description": "Detail page section: heap size and JVM choice."
-  },
-  "instanceSectionFiles": "Files",
-  "modsTitle": "Mods",
-  "@modsTitle": {
-    "description": "Heading of the per-instance mod manager."
-  },
-  "modsCounts": "{enabled} of {total} enabled",
-  "@modsCounts": {
-    "description": "Subtitle counts: how many mods the game will load.",
-    "placeholders": {
-      "enabled": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "modsSearchHint": "Search Modrinth",
-  "@modsSearchHint": {
-    "description": "Search field hint in the mod search."
-  },
-  "modsRefresh": "Refresh",
-  "@modsRefresh": {
-    "description": "Rescans the mods folder."
-  },
-  "modsOpenFolder": "Open folder",
-  "modsSearchTitle": "Install mods",
-  "@modsSearchTitle": {
-    "description": "Title of the Modrinth search dialog."
-  },
-  "modsSearchEmpty": "Nothing matches that.",
-  "@modsSearchEmpty": {
-    "description": "Shown when a mod search returns no results."
-  },
-  "modsSearchFiltered": "{loader} · {game} — matches only what can load here",
-  "@modsSearchFiltered": {
-    "description": "States the filters the dialog applies.",
-    "placeholders": {
-      "loader": {
-        "type": "String"
-      },
-      "game": {
-        "type": "String"
-      }
-    }
-  },
-  "modsSearchNeedsLoader": "This version cannot take mods",
-  "@modsSearchNeedsLoader": {
-    "description": "Shown for a vanilla instance."
-  },
-  "modsSearchVanillaHint": "Install Fabric, Quilt, Forge or NeoForge for this game version first; mods need a loader.",
-  "@modsSearchVanillaHint": {
-    "description": "Explains why a vanilla instance has no search."
-  },
-  "modsInstall": "Install",
-  "@modsInstall": {
-    "description": "Install action on a mod search result."
-  },
-  "modsGet": "Get mods",
-  "@modsGet": {
-    "description": "Opens the Modrinth search from the mod list."
-  },
-  "@modsOpenFolder": {
-    "description": "Opens the mods folder in the file manager."
-  },
-  "modsDisabled": "Off",
-  "@modsDisabled": {
-    "description": "Trailing state of a disabled mod."
-  },
-  "modsDeleteTitle": "Delete this mod?",
-  "@modsDeleteTitle": {
-    "description": "Confirmation title for deleting a jar."
-  },
-  "modsDeleteBody": "{name} will be removed from the mods folder.",
-  "@modsDeleteBody": {
-    "description": "Confirmation body; name is the mod display name.",
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "modsDeleteAction": "Delete",
-  "@modsDeleteAction": {
-    "description": "Confirm button that deletes the jar."
-  },
-  "modsEmptyTitle": "No mods yet",
-  "@modsEmptyTitle": {
-    "description": "Empty state heading for the mods list."
-  },
-  "modsEmptyBody": "Drop a .jar into the mods folder, or get one from the download page.",
-  "@modsEmptyBody": {
-    "description": "Empty state body."
-  },
-  "modsToggleFailed": "Could not change the mod: {reason}",
-  "@modsToggleFailed": {
-    "description": "Shown when renaming a jar fails.",
-    "placeholders": {
-      "reason": {
-        "type": "String"
-      }
-    }
-  },
-  "modsManageHint": "mods/ · select to manage",
-  "@modsManageHint": {
-    "description": "Supporting text of the mods row in version settings."
-  },
-  "instanceFilesHint": "The version folder and its four content folders. Select a row to open it.",
-  "@instanceFilesHint": {
-    "description": "Description under the Files section heading."
-  },
-  "instanceFolderItems": "{count, plural, =0{Empty} =1{1 item} other{{count} items}}",
-  "@instanceFolderItems": {
-    "description": "Trailing count of one content folder.",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
   },
   "instanceOpenFolderTooltip": "Open folder",
   "@instanceOpenFolderTooltip": {
     "description": "Tooltip of the trailing action that opens a folder."
-  },
-  "instanceCopyPath": "Copy path",
-  "@instanceCopyPath": {
-    "description": "Tooltip of the action that copies the game folder path."
-  },
-  "instancePathCopied": "Path copied",
-  "@instancePathCopied": {
-    "description": "Confirmation shown after copying the game folder path."
-  },
-  "@instanceSectionFiles": {
-    "description": "Detail page section: game folder and playtime."
   },
   "instanceSectionArguments": "Arguments",
   "@instanceSectionArguments": {
@@ -783,10 +584,6 @@
       }
     }
   },
-  "instancePathLabel": "Game folder",
-  "@instancePathLabel": {
-    "description": "Label for the instance's directory path."
-  },
   "instanceOpenFolderFailed": "Could not open the folder.",
   "@instanceOpenFolderFailed": {
     "description": "Shown when no file manager could be launched."
@@ -817,10 +614,6 @@
         "type": "String"
       }
     }
-  },
-  "screenNotReady": "This screen is not built yet",
-  "@screenNotReady": {
-    "description": "Shown on a destination whose screen is not implemented yet."
   },
   "@instanceNameHint": {
     "description": "Placeholder in the new-instance name field."
@@ -979,14 +772,6 @@
   "downloadCancelled": "Install cancelled",
   "@downloadCancelled": {
     "description": "Shown after the user cancels an install."
-  },
-  "downloadSourceOfficial": "Official",
-  "@downloadSourceOfficial": {
-    "description": "Download source option: Mojang servers."
-  },
-  "downloadSourceBmclapi": "BMCLAPI mirror",
-  "@downloadSourceBmclapi": {
-    "description": "Download source option: a community mirror for mainland China. BMCLAPI is a proper name and stays untranslated."
   },
   "downloadShowSnapshots": "Show snapshots",
   "@downloadShowSnapshots": {
@@ -1161,27 +946,6 @@
     "placeholders": {
       "major": {
         "type": "int"
-      }
-    }
-  },
-  "javaUnavailableOnPlatform": "Java {major} is not available for this platform.",
-  "@javaUnavailableOnPlatform": {
-    "description": "Shown when Mojang publishes no runtime that can run this version on this computer. {major} is the Java major version.",
-    "placeholders": {
-      "major": {
-        "type": "int"
-      }
-    }
-  },
-  "javaUnavailableDetail": "No Java {major} build is published for {platform}. You can install one yourself and point the instance at it.",
-  "@javaUnavailableDetail": {
-    "description": "Explains a platform gap, e.g. Java 8 on Apple Silicon. {major} is the Java major version; {platform} is an OS name.",
-    "placeholders": {
-      "major": {
-        "type": "int"
-      },
-      "platform": {
-        "type": "String"
       }
     }
   },
@@ -1444,17 +1208,9 @@
   "@diagUnknownBody": {
     "description": "Crash diagnosis explanation (unknown)."
   },
-  "contentResourcePacks": "Resource packs",
-  "@contentResourcePacks": {
-    "description": "Title of the resource pack list."
-  },
-  "contentShaderPacks": "Shader packs",
-  "@contentShaderPacks": {
-    "description": "Title of the shader pack list."
-  },
   "contentSaves": "Worlds",
   "@contentSaves": {
-    "description": "Title of the save list."
+    "description": "Section name for the world list."
   },
   "contentServers": "Servers",
   "@contentServers": {
@@ -1500,25 +1256,9 @@
   "@contentDeleteBody": {
     "description": "Confirmation body before deleting a content entry."
   },
-  "contentAddServer": "Add server",
-  "@contentAddServer": {
-    "description": "Button and dialog title for adding a server entry."
-  },
-  "contentServerName": "Name",
-  "@contentServerName": {
-    "description": "Field label for a server name."
-  },
-  "contentServerAddress": "Address, e.g. play.example.com",
-  "@contentServerAddress": {
-    "description": "Field hint for a server address."
-  },
   "actionDelete": "Delete",
   "@actionDelete": {
     "description": "Generic delete action label."
-  },
-  "actionSave": "Save",
-  "@actionSave": {
-    "description": "Generic save action label."
   },
   "sourceAuto": "Automatic ({name} first)",
   "@sourceAuto": {
@@ -1536,10 +1276,6 @@
   "sourceBmclapi": "BMCLAPI",
   "@sourceBmclapi": {
     "description": "Radio label: always use the BMCLAPI mirror."
-  },
-  "sourceTitle": "Download source",
-  "@sourceTitle": {
-    "description": "Heading above the download source choice."
   },
   "catalogMods": "Mods",
   "@catalogMods": {
@@ -1756,32 +1492,44 @@
   "@detailTabOverview": {
     "description": "Instance page tab: what this instance is."
   },
-  "detailTabContent": "Content",
-  "@detailTabContent": {
-    "description": "Instance page tab: what is installed."
-  },
   "detailTabSettings": "Settings",
   "@detailTabSettings": {
     "description": "Instance page tab: what it runs with."
   },
-  "detailTabFiles": "Files",
-  "@detailTabFiles": {
-    "description": "Instance page tab: where the files are."
-  },
-  "detailCounts": "{mods} mods · {packs} packs",
-  "@detailCounts": {
-    "description": "Overview summary of installed content.",
-    "placeholders": {
-      "mods": {
-        "type": "int"
-      },
-      "packs": {
-        "type": "int"
-      }
-    }
-  },
   "contentInstall": "Install from Modrinth",
   "@contentInstall": {
     "description": "Button in the instance content tab that opens the catalogue."
+  },
+  "contentModsHint": "Mods in this instance. A mod is switched off by renaming its jar.",
+  "@contentModsHint": {
+    "description": "Hint above the mod list."
+  },
+  "contentDataPacksHint": "Data packs belong to a world: pick one, then install or remove its packs.",
+  "@contentDataPacksHint": {
+    "description": "Hint above the data pack list."
+  },
+  "contentEmptyMods": "No mods yet.",
+  "@contentEmptyMods": {
+    "description": "Empty state of the mod list."
+  },
+  "contentEmptyDataPacks": "No data packs in this world yet.",
+  "@contentEmptyDataPacks": {
+    "description": "Empty state of the data pack list."
+  },
+  "contentAddServer": "Add server",
+  "@contentAddServer": {
+    "description": "Adds a server to servers.dat."
+  },
+  "contentServerName": "Name",
+  "contentServerAddress": "Address",
+  "actionSave": "Save",
+  "@contentServerName": {
+    "description": "Label for the server name field in the add-server dialog."
+  },
+  "@contentServerAddress": {
+    "description": "Label for the server address field in the add-server dialog."
+  },
+  "@actionSave": {
+    "description": "Confirm button that saves the form."
   }
 }

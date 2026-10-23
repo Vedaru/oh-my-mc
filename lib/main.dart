@@ -26,9 +26,6 @@ import 'ui/download/download_screen.dart';
 import 'ui/logs/logs_screen.dart';
 import 'ui/setup/setup_screen.dart';
 import 'ui/instances/instance_detail_screen.dart';
-import 'core/game/content.dart';
-import 'ui/instances/content_screen.dart';
-import 'ui/instances/instance_mods_screen.dart';
 import 'ui/instances/instances_screen.dart';
 import 'ui/launch/launch_screen.dart';
 
@@ -179,19 +176,15 @@ class OhMyMcApp extends StatelessWidget {
     // parameter is the thing that says which screen this is.
     final detailId = state.pathParameters['id'];
     final mods = state.uri.path.endsWith('/${Routes.instanceModsSegment}');
-    final contentKind = state.pathParameters[Routes.instanceContentKindParam];
+
     return switch (state.uri.path) {
       Routes.instances => const InstancesScreen(),
       Routes.download => const DownloadScreen(),
       Routes.setup => const SetupScreen(),
       Routes.logs => const LogsScreen(),
-      _ when detailId != null && mods => InstanceModsScreen(id: detailId),
-      _ when detailId != null && contentKind != null => ContentScreen(
+      _ when detailId != null && mods => InstanceDetailScreen(
         id: detailId,
-        kind: ContentKind.values.firstWhere(
-          (kind) => kind.name == contentKind,
-          orElse: () => ContentKind.resourcePacks,
-        ),
+        initialSection: 'mods',
       ),
       _ when detailId != null => InstanceDetailScreen(id: detailId),
       Routes.launch => const LaunchScreen(),

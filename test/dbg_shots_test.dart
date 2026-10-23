@@ -11,7 +11,6 @@ import 'package:oh_my_mc/ui/theme/app_theme.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oh_my_mc/core/instance/instance.dart';
-import 'package:oh_my_mc/core/mc/game_folders.dart';
 import 'package:oh_my_mc/core/mods/mod_scanner.dart';
 import 'package:oh_my_mc/data/install_providers.dart';
 import 'package:oh_my_mc/core/install/version_installer.dart';
@@ -24,7 +23,7 @@ import 'package:oh_my_mc/core/diagnostics/lan_discovery.dart';
 import 'package:oh_my_mc/core/diagnostics/network_info.dart';
 import 'package:oh_my_mc/data/diagnostics_providers.dart';
 import 'package:oh_my_mc/core/game/content.dart';
-import 'package:oh_my_mc/ui/instances/content_screen.dart';
+import 'package:oh_my_mc/data/game_content_provider.dart';
 import 'package:oh_my_mc/core/update/update_check.dart';
 import 'package:oh_my_mc/ui/setup/about_panel.dart';
 import 'package:oh_my_mc/data/launch_providers.dart';
@@ -305,62 +304,30 @@ void main() {
   // A fixed mods folder for the screenshot: the shot reviews the arrangement, and
   // a real scan would need jars on disk.
 
-  // A fixed answer for the content-folder scan: the shot exists to review the
-  // arrangement of the section, not to race the filesystem.
-  Override foldersOverride({
-    int mods = 0,
-    int resourcePacks = 0,
-    int shaderPacks = 0,
-    int saves = 0,
-  }) => gameFolderScannerProvider.overrideWithValue(
-    (root) async => [
-      GameFolder(kind: GameFolderKind.mods, path: '$root/mods', entries: mods),
-      GameFolder(
-        kind: GameFolderKind.resourcePacks,
-        path: '$root/resourcepacks',
-        entries: resourcePacks,
-      ),
-      GameFolder(
-        kind: GameFolderKind.shaderPacks,
-        path: '$root/shaderpacks',
-        entries: shaderPacks,
-      ),
-      GameFolder(
-        kind: GameFolderKind.saves,
-        path: '$root/saves',
-        entries: saves,
-      ),
-    ],
-  );
-
-  testWidgets('detail', (tester) async {
-    await shoot(
-      tester,
-      '/instances/a',
-      'detail',
-      instances: [_instance('a', 'Survival', '1.20.1')],
-    );
-  });
-
   testWidgets('detail settings', (tester) async {
     await shoot(
       tester,
       '/instances/a',
       'detail-settings',
       instances: [_instance('a', 'Survival', '1.20.1')],
-      openKey: 'detail-tab-2',
+      openKey: 'detail-section-settings',
     );
   });
 
-  testWidgets('detail files', (tester) async {
+  // The content kinds are separate pages now, so the review shot is one of them: the
+  // resource packs, with the section list beside them.
+  testWidgets('detail resource packs', (tester) async {
     await shoot(
       tester,
       '/instances/a',
-      'detail-files',
+      'detail-resource-packs',
       instances: [_instance('a', 'Survival', '1.20.1')],
-      openKey: 'detail-tab-3',
+      openKey: 'detail-section-resource-packs',
       overrides: [
-        foldersOverride(mods: 14, resourcePacks: 3, shaderPacks: 0, saves: 6),
+        gameContentProvider.overrideWith(
+          (ref) =>
+              (root) => _ShotContent(),
+        ),
       ],
     );
   });
@@ -430,7 +397,7 @@ void main() {
   testWidgets('content resource packs', (tester) async {
     await shoot(
       tester,
-      '/instances/fabric/content/resourcePacks',
+      '/instances/fabric',
       'content-packs',
       instances: const [
         Instance(
@@ -547,7 +514,7 @@ void main() {
           ],
         ),
       ],
-      openKey: 'mods-get',
+      openKey: 'content-install',
     );
   });
 

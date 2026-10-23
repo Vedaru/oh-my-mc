@@ -10,7 +10,11 @@ enum ContentKind {
   resourcePacks('resourcepacks'),
   shaderPacks('shaderpacks'),
   saves('saves'),
-  servers('servers.dat');
+  servers('servers.dat'),
+
+  /// Data packs live *inside a world* (`saves/<world>/datapacks`), which is why this
+  /// kind is read with a world directory as the root rather than the game root.
+  datapacks('datapacks');
 
   const ContentKind(this.path);
 
@@ -67,6 +71,7 @@ class GameContent {
       case ContentKind.resourcePacks:
         return _listPacks(kind, await _readOptions());
       case ContentKind.shaderPacks:
+      case ContentKind.datapacks:
         return _listPacks(kind, await _readOptions());
       case ContentKind.saves:
         return _listSaves();
@@ -116,7 +121,7 @@ class GameContent {
           path: entity.path,
           isDirectory: isDir,
           sizeBytes: sizeBytes,
-          enabled: kind == ContentKind.shaderPacks
+          enabled: kind != ContentKind.resourcePacks
               ? true
               : enabledIds.contains(packIdFor(name)),
           modified: await entity.stat().then((s) => s.modified),

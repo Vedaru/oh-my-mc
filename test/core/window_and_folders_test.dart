@@ -1,9 +1,7 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oh_my_mc/core/instance/instance.dart';
-import 'package:oh_my_mc/core/mc/game_folders.dart';
 import 'package:oh_my_mc/core/mc/version_json.dart';
 import 'package:oh_my_mc/data/launch_factory.dart';
 import 'package:oh_my_mc/data/settings.dart';
@@ -116,54 +114,6 @@ void main() {
       );
 
       expect(request.extraGameArgs, isEmpty);
-    });
-  });
-
-  group('content folders', () {
-    late Directory root;
-
-    setUp(() async {
-      root = await Directory.systemTemp.createTemp('game-folders');
-    });
-
-    tearDown(() async {
-      if (root.existsSync()) await root.delete(recursive: true);
-    });
-
-    test('counts what the game would load, not every file', () async {
-      File('${root.path}/mods/sodium.jar').createSync(recursive: true);
-      File('${root.path}/mods/lithium.jar.disabled')
-          .createSync(recursive: true);
-      File('${root.path}/mods/readme.txt').createSync(recursive: true);
-      Directory('${root.path}/resourcepacks/faithful')
-          .createSync(recursive: true);
-      File('${root.path}/resourcepacks/vanilla-tweaks.zip')
-          .createSync(recursive: true);
-      File('${root.path}/shaderpacks/bsl.zip').createSync(recursive: true);
-      Directory('${root.path}/saves/World1').createSync(recursive: true);
-      File('${root.path}/saves/World1/level.dat').createSync(recursive: true);
-
-      final folders = await scanGameFolders(root.path);
-      final byKind = {for (final f in folders) f.kind: f};
-
-      // A disabled mod is still a mod the user put there.
-      expect(byKind[GameFolderKind.mods]!.entries, 2);
-      // Zip or directory; a stray text file is not a pack.
-      expect(byKind[GameFolderKind.resourcePacks]!.entries, 2);
-      expect(byKind[GameFolderKind.shaderPacks]!.entries, 1);
-      // Only directories: `level.dat` inside a save is not a save.
-      expect(byKind[GameFolderKind.saves]!.entries, 1);
-    });
-
-    test('a missing folder is zero, not an error', () async {
-      final folders = await scanGameFolders(root.path);
-
-      expect(folders, hasLength(GameFolderKind.values.length));
-      expect(folders.every((f) => f.entries == 0), isTrue);
-      expect(
-        folders.first.path,
-        '${root.path}/${GameFolderKind.mods.directoryName}',
-      );
     });
   });
 }

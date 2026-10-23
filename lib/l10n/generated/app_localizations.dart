@@ -134,18 +134,6 @@ abstract class AppLocalizations {
   /// **'Logs'**
   String get navLogs;
 
-  /// Tooltip on the navigation rail's expand control.
-  ///
-  /// In en, this message translates to:
-  /// **'Expand navigation'**
-  String get navExpand;
-
-  /// Tooltip on the navigation rail's collapse control.
-  ///
-  /// In en, this message translates to:
-  /// **'Collapse navigation'**
-  String get navCollapse;
-
   /// Starts the selected instance.
   ///
   /// In en, this message translates to:
@@ -242,18 +230,6 @@ abstract class AppLocalizations {
   /// **'An instance has to point at an installed version. Install one on the Download page first.'**
   String get instanceNoVersionsHint;
 
-  /// Imports an instance from an archive.
-  ///
-  /// In en, this message translates to:
-  /// **'Import'**
-  String get instanceImport;
-
-  /// Exports an instance to an archive.
-  ///
-  /// In en, this message translates to:
-  /// **'Export'**
-  String get instanceExport;
-
   /// Duplicates an instance.
   ///
   /// In en, this message translates to:
@@ -302,23 +278,11 @@ abstract class AppLocalizations {
   /// **'Versions'**
   String get downloadVersions;
 
-  /// Installer tab for Forge/Fabric and friends.
-  ///
-  /// In en, this message translates to:
-  /// **'Loaders'**
-  String get downloadLoaders;
-
   /// Loader choice meaning "no loader": the plain game version.
   ///
   /// In en, this message translates to:
   /// **'Vanilla'**
   String get loaderVanilla;
-
-  /// Installs the selected version or loader.
-  ///
-  /// In en, this message translates to:
-  /// **'Install'**
-  String get downloadInstall;
 
   /// Marks a version that is already installed.
   ///
@@ -392,36 +356,6 @@ abstract class AppLocalizations {
   /// **'Snapshot'**
   String get downloadSnapshot;
 
-  /// Old version filter.
-  ///
-  /// In en, this message translates to:
-  /// **'Old'**
-  String get downloadOld;
-
-  /// Title of the task queue.
-  ///
-  /// In en, this message translates to:
-  /// **'Install queue'**
-  String get queueTitle;
-
-  /// Pauses the queue.
-  ///
-  /// In en, this message translates to:
-  /// **'Pause'**
-  String get queuePause;
-
-  /// Resumes the queue.
-  ///
-  /// In en, this message translates to:
-  /// **'Resume'**
-  String get queueResume;
-
-  /// Cancels a task.
-  ///
-  /// In en, this message translates to:
-  /// **'Cancel'**
-  String get queueCancel;
-
   /// Setup section: how the game is launched.
   ///
   /// In en, this message translates to:
@@ -433,12 +367,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Java'**
   String get setupJava;
-
-  /// Setup section: download source and mirror.
-  ///
-  /// In en, this message translates to:
-  /// **'Download'**
-  String get setupDownload;
 
   /// Setup section: theme, motion and language.
   ///
@@ -626,12 +554,6 @@ abstract class AppLocalizations {
   /// **'No saved sessions yet.'**
   String get logsSessionEmpty;
 
-  /// Opens the directory the launcher writes logs to.
-  ///
-  /// In en, this message translates to:
-  /// **'Open log folder'**
-  String get logsOpenFolder;
-
   /// Shown when the log has lines but the search or filter hides them all.
   ///
   /// In en, this message translates to:
@@ -728,185 +650,11 @@ abstract class AppLocalizations {
   /// **'Fullscreen'**
   String get instanceFullscreen;
 
-  /// The mods folder in version settings.
-  ///
-  /// In en, this message translates to:
-  /// **'Mods'**
-  String get instanceFolderMods;
-
-  /// The resourcepacks folder.
-  ///
-  /// In en, this message translates to:
-  /// **'Resource packs'**
-  String get instanceFolderResourcePacks;
-
-  /// The shaderpacks folder.
-  ///
-  /// In en, this message translates to:
-  /// **'Shaders'**
-  String get instanceFolderShaderPacks;
-
-  /// The saves folder.
-  ///
-  /// In en, this message translates to:
-  /// **'Saves'**
-  String get instanceFolderSaves;
-
-  /// Detail page section: game folder and playtime.
-  ///
-  /// In en, this message translates to:
-  /// **'Files'**
-  String get instanceSectionFiles;
-
-  /// Heading of the per-instance mod manager.
-  ///
-  /// In en, this message translates to:
-  /// **'Mods'**
-  String get modsTitle;
-
-  /// Subtitle counts: how many mods the game will load.
-  ///
-  /// In en, this message translates to:
-  /// **'{enabled} of {total} enabled'**
-  String modsCounts(int enabled, int total);
-
-  /// Search field hint in the mod search.
-  ///
-  /// In en, this message translates to:
-  /// **'Search Modrinth'**
-  String get modsSearchHint;
-
-  /// Rescans the mods folder.
-  ///
-  /// In en, this message translates to:
-  /// **'Refresh'**
-  String get modsRefresh;
-
-  /// Opens the mods folder in the file manager.
-  ///
-  /// In en, this message translates to:
-  /// **'Open folder'**
-  String get modsOpenFolder;
-
-  /// Title of the Modrinth search dialog.
-  ///
-  /// In en, this message translates to:
-  /// **'Install mods'**
-  String get modsSearchTitle;
-
-  /// Shown when a mod search returns no results.
-  ///
-  /// In en, this message translates to:
-  /// **'Nothing matches that.'**
-  String get modsSearchEmpty;
-
-  /// States the filters the dialog applies.
-  ///
-  /// In en, this message translates to:
-  /// **'{loader} · {game} — matches only what can load here'**
-  String modsSearchFiltered(String loader, String game);
-
-  /// Shown for a vanilla instance.
-  ///
-  /// In en, this message translates to:
-  /// **'This version cannot take mods'**
-  String get modsSearchNeedsLoader;
-
-  /// Explains why a vanilla instance has no search.
-  ///
-  /// In en, this message translates to:
-  /// **'Install Fabric, Quilt, Forge or NeoForge for this game version first; mods need a loader.'**
-  String get modsSearchVanillaHint;
-
-  /// Install action on a mod search result.
-  ///
-  /// In en, this message translates to:
-  /// **'Install'**
-  String get modsInstall;
-
-  /// Opens the Modrinth search from the mod list.
-  ///
-  /// In en, this message translates to:
-  /// **'Get mods'**
-  String get modsGet;
-
-  /// Trailing state of a disabled mod.
-  ///
-  /// In en, this message translates to:
-  /// **'Off'**
-  String get modsDisabled;
-
-  /// Confirmation title for deleting a jar.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete this mod?'**
-  String get modsDeleteTitle;
-
-  /// Confirmation body; name is the mod display name.
-  ///
-  /// In en, this message translates to:
-  /// **'{name} will be removed from the mods folder.'**
-  String modsDeleteBody(String name);
-
-  /// Confirm button that deletes the jar.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete'**
-  String get modsDeleteAction;
-
-  /// Empty state heading for the mods list.
-  ///
-  /// In en, this message translates to:
-  /// **'No mods yet'**
-  String get modsEmptyTitle;
-
-  /// Empty state body.
-  ///
-  /// In en, this message translates to:
-  /// **'Drop a .jar into the mods folder, or get one from the download page.'**
-  String get modsEmptyBody;
-
-  /// Shown when renaming a jar fails.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not change the mod: {reason}'**
-  String modsToggleFailed(String reason);
-
-  /// Supporting text of the mods row in version settings.
-  ///
-  /// In en, this message translates to:
-  /// **'mods/ · select to manage'**
-  String get modsManageHint;
-
-  /// Description under the Files section heading.
-  ///
-  /// In en, this message translates to:
-  /// **'The version folder and its four content folders. Select a row to open it.'**
-  String get instanceFilesHint;
-
-  /// Trailing count of one content folder.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =0{Empty} =1{1 item} other{{count} items}}'**
-  String instanceFolderItems(int count);
-
   /// Tooltip of the trailing action that opens a folder.
   ///
   /// In en, this message translates to:
   /// **'Open folder'**
   String get instanceOpenFolderTooltip;
-
-  /// Tooltip of the action that copies the game folder path.
-  ///
-  /// In en, this message translates to:
-  /// **'Copy path'**
-  String get instanceCopyPath;
-
-  /// Confirmation shown after copying the game folder path.
-  ///
-  /// In en, this message translates to:
-  /// **'Path copied'**
-  String get instancePathCopied;
 
   /// Detail page section: extra JVM and game arguments.
   ///
@@ -1094,12 +842,6 @@ abstract class AppLocalizations {
   /// **'{duration} in total, last played {date}'**
   String instancePlaytimeValue(String duration, String date);
 
-  /// Label for the instance's directory path.
-  ///
-  /// In en, this message translates to:
-  /// **'Game folder'**
-  String get instancePathLabel;
-
   /// Shown when no file manager could be launched.
   ///
   /// In en, this message translates to:
@@ -1153,12 +895,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Exited with code {code} after {duration}'**
   String launchExited(int code, String duration);
-
-  /// Shown on a destination whose screen is not implemented yet.
-  ///
-  /// In en, this message translates to:
-  /// **'This screen is not built yet'**
-  String get screenNotReady;
 
   /// Placeholder in the version search box.
   ///
@@ -1279,18 +1015,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Install cancelled'**
   String get downloadCancelled;
-
-  /// Download source option: Mojang servers.
-  ///
-  /// In en, this message translates to:
-  /// **'Official'**
-  String get downloadSourceOfficial;
-
-  /// Download source option: a community mirror for mainland China. BMCLAPI is a proper name and stays untranslated.
-  ///
-  /// In en, this message translates to:
-  /// **'BMCLAPI mirror'**
-  String get downloadSourceBmclapi;
 
   /// Toggle that includes snapshot versions in the version list.
   ///
@@ -1459,18 +1183,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Java {major} found on this computer'**
   String javaUseExisting(int major);
-
-  /// Shown when Mojang publishes no runtime that can run this version on this computer. {major} is the Java major version.
-  ///
-  /// In en, this message translates to:
-  /// **'Java {major} is not available for this platform.'**
-  String javaUnavailableOnPlatform(int major);
-
-  /// Explains a platform gap, e.g. Java 8 on Apple Silicon. {major} is the Java major version; {platform} is an OS name.
-  ///
-  /// In en, this message translates to:
-  /// **'No Java {major} build is published for {platform}. You can install one yourself and point the instance at it.'**
-  String javaUnavailableDetail(int major, String platform);
 
   /// Button that imports a modpack file.
   ///
@@ -1784,19 +1496,7 @@ abstract class AppLocalizations {
   /// **'None of the known failure patterns matched. The tail of the log is the place to look: the last exception before the exit is usually the cause.'**
   String get diagUnknownBody;
 
-  /// Title of the resource pack list.
-  ///
-  /// In en, this message translates to:
-  /// **'Resource packs'**
-  String get contentResourcePacks;
-
-  /// Title of the shader pack list.
-  ///
-  /// In en, this message translates to:
-  /// **'Shader packs'**
-  String get contentShaderPacks;
-
-  /// Title of the save list.
+  /// Section name for the world list.
   ///
   /// In en, this message translates to:
   /// **'Worlds'**
@@ -1868,35 +1568,11 @@ abstract class AppLocalizations {
   /// **'This cannot be undone.'**
   String get contentDeleteBody;
 
-  /// Button and dialog title for adding a server entry.
-  ///
-  /// In en, this message translates to:
-  /// **'Add server'**
-  String get contentAddServer;
-
-  /// Field label for a server name.
-  ///
-  /// In en, this message translates to:
-  /// **'Name'**
-  String get contentServerName;
-
-  /// Field hint for a server address.
-  ///
-  /// In en, this message translates to:
-  /// **'Address, e.g. play.example.com'**
-  String get contentServerAddress;
-
   /// Generic delete action label.
   ///
   /// In en, this message translates to:
   /// **'Delete'**
   String get actionDelete;
-
-  /// Generic save action label.
-  ///
-  /// In en, this message translates to:
-  /// **'Save'**
-  String get actionSave;
 
   /// Radio label: follow the fastest measured source.
   ///
@@ -1915,12 +1591,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'BMCLAPI'**
   String get sourceBmclapi;
-
-  /// Heading above the download source choice.
-  ///
-  /// In en, this message translates to:
-  /// **'Download source'**
-  String get sourceTitle;
 
   /// Catalogue name for mods.
   ///
@@ -2180,35 +1850,65 @@ abstract class AppLocalizations {
   /// **'Overview'**
   String get detailTabOverview;
 
-  /// Instance page tab: what is installed.
-  ///
-  /// In en, this message translates to:
-  /// **'Content'**
-  String get detailTabContent;
-
   /// Instance page tab: what it runs with.
   ///
   /// In en, this message translates to:
   /// **'Settings'**
   String get detailTabSettings;
 
-  /// Instance page tab: where the files are.
-  ///
-  /// In en, this message translates to:
-  /// **'Files'**
-  String get detailTabFiles;
-
-  /// Overview summary of installed content.
-  ///
-  /// In en, this message translates to:
-  /// **'{mods} mods · {packs} packs'**
-  String detailCounts(int mods, int packs);
-
   /// Button in the instance content tab that opens the catalogue.
   ///
   /// In en, this message translates to:
   /// **'Install from Modrinth'**
   String get contentInstall;
+
+  /// Hint above the mod list.
+  ///
+  /// In en, this message translates to:
+  /// **'Mods in this instance. A mod is switched off by renaming its jar.'**
+  String get contentModsHint;
+
+  /// Hint above the data pack list.
+  ///
+  /// In en, this message translates to:
+  /// **'Data packs belong to a world: pick one, then install or remove its packs.'**
+  String get contentDataPacksHint;
+
+  /// Empty state of the mod list.
+  ///
+  /// In en, this message translates to:
+  /// **'No mods yet.'**
+  String get contentEmptyMods;
+
+  /// Empty state of the data pack list.
+  ///
+  /// In en, this message translates to:
+  /// **'No data packs in this world yet.'**
+  String get contentEmptyDataPacks;
+
+  /// Adds a server to servers.dat.
+  ///
+  /// In en, this message translates to:
+  /// **'Add server'**
+  String get contentAddServer;
+
+  /// Label for the server name field in the add-server dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get contentServerName;
+
+  /// Label for the server address field in the add-server dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get contentServerAddress;
+
+  /// Confirm button that saves the form.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get actionSave;
 }
 
 class _AppLocalizationsDelegate

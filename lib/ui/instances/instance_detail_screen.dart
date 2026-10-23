@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';
-import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart' as m3;
@@ -11,11 +10,9 @@ import 'package:path/path.dart' as p;
 
 import '../../app/providers.dart';
 import '../../app/router.dart';
-import '../../core/game/content.dart';
 import '../../core/instance/instance.dart';
 import '../../data/instance_cloner.dart';
 import '../../core/instance/memory.dart';
-import '../../core/mc/game_folders.dart';
 import '../../data/instance_providers.dart';
 import '../../data/launch_providers.dart';
 import '../../data/pack_providers.dart';
@@ -24,11 +21,12 @@ import '../../data/launch_factory.dart';
 import '../../l10n/l10n.dart';
 import '../components/app_banner.dart';
 import '../components/list_row.dart';
+import '../components/section_drawer.dart';
 import '../motion/motion.dart';
 import '../shell/shell_icons.dart';
 import '../theme/app_theme.dart';
 import 'args_field.dart';
-import 'content_browser.dart';
+import 'instance_content_page.dart';
 import 'instance_card.dart';
 import '../components/app_slider.dart';
 import '../components/app_switch.dart';
@@ -42,9 +40,17 @@ import '../components/app_dialog.dart';
 /// settings page whose changes are lost when the window closes is a bug report,
 /// and there is no multi-field invariant that would need a transaction.
 class InstanceDetailScreen extends ConsumerStatefulWidget {
-  const InstanceDetailScreen({required this.id, this.onClose, super.key});
+  const InstanceDetailScreen({
+    required this.id,
+    this.onClose,
+    this.initialSection,
+    super.key,
+  });
 
   final String id;
+
+  /// Opens the page on a section, for the `/instances/:id/mods` deep link.
+  final String? initialSection;
 
   /// Leaves the page. Production replaces the route; tests pass a callback so
   /// the page can be asserted without a router.
@@ -55,17 +61,33 @@ class InstanceDetailScreen extends ConsumerStatefulWidget {
       _InstanceDetailScreenState();
 }
 
-/// The page's tabs.
+/// The page's sections.
 ///
-/// The page used to stack five sections on one scroll - general, runtime, window,
-/// arguments, files - and a per-version settings page that long is a page where
-/// nobody finds the memory slider. The tabs are the task phases: what this instance
-/// *is* (概览), what is installed in it (内容), what it runs with (设置), and where the
-/// files are (文件).
-enum DetailTab { overview, content, settings, files }
+/// Same shape as Prism's instance window: one page per thing you can look at - the
+/// version, the mods, the resource packs, the shaders, the worlds, the servers, the
+/// data packs, the logs, the settings - because those lists behave differently and a
+/// user looking for "my resource packs" should not have to find a filter first.
+enum DetailSection {
+  overview,
+  mods,
+  resourcePacks,
+  shaderPacks,
+  worlds,
+  servers,
+  dataPacks,
+  settings,
+}
 
 class _InstanceDetailScreenState extends ConsumerState<InstanceDetailScreen> {
-  var _tab = DetailTab.overview;
+  late var _section = switch (widget.initialSection) {
+    'mods' => DetailSection.mods,
+    'resourcePacks' => DetailSection.resourcePacks,
+    'shaderPacks' => DetailSection.shaderPacks,
+    'worlds' => DetailSection.worlds,
+    'servers' => DetailSection.servers,
+    'dataPacks' => DetailSection.dataPacks,
+    _ => DetailSection.overview,
+  };
 
   /// Leaves the page.
   ///
@@ -211,31 +233,132 @@ class _InstanceDetailScreenState extends ConsumerState<InstanceDetailScreen> {
             ],
           ),
         ),
-        DetailTabs(
-          current: _tab.index,
-          labels: [
-            l10n.detailTabOverview,
-            l10n.detailTabContent,
-            l10n.detailTabSettings,
-            l10n.detailTabFiles,
-          ],
-          onPick: (index) => setState(() => _tab = DetailTab.values[index]),
-        ),
         m3.Expanded(
-          child: m3.SingleChildScrollView(
-            key: m3.ValueKey('detail-${_tab.name}'),
-            padding: const m3.EdgeInsets.fromLTRB(16, 12, 16, 16),
-            child: switch (_tab) {
-              DetailTab.overview => _overview(context, instance),
-              DetailTab.content => _content(context, instance),
-              DetailTab.settings => _settings(context, instance),
-              DetailTab.files => _files(context, instance),
-            },
+          // The pane beside the drawer needs its own right margin: the row above ends
+          // at the window edge, and a list's trailing controls would be clipped there.
+          child: m3.Padding(
+            padding: m3.EdgeInsets.only(right: 24),
+            child: m3.Row(
+              crossAxisAlignment: m3.CrossAxisAlignment.stretch,
+              children: [
+                SectionDrawer(
+                  selectedIndex: _section.index,
+                  onSelected: (index) =>
+                      setState(() => _section = DetailSection.values[index]),
+                  destinations: [
+                    for (final section in DetailSection.values)
+                      _destination(l10n, section),
+                  ],
+                ),
+                const m3.SizedBox(width: 16),
+                m3.Expanded(
+                  // Two kinds of section: the forms (概览, 设置) scroll, and the content
+                  // sections are lists that fill the pane themselves. Wrapping a list in
+                  // a scroll view gives it unbounded height, which its `Expanded` cannot
+                  // live with.
+                  child: _isFormSection
+                      ? m3.SingleChildScrollView(
+                          key: m3.ValueKey('detail-${_section.name}'),
+                          padding: const m3.EdgeInsets.only(bottom: 16),
+                          child: _sectionBody(context, instance),
+                        )
+                      : m3.Padding(
+                          key: m3.ValueKey('detail-${_section.name}'),
+                          padding: const m3.EdgeInsets.only(bottom: 16),
+                          child: _sectionBody(context, instance),
+                        ),
+                ),
+              ],
+            ),
           ),
         ),
       ],
     );
   }
+
+  /// Whether the selected section is a form (scrolls) or a list (fills the pane).
+  ///
+  /// A list inside a scroll view gets unbounded height, and its own `Expanded` list
+  /// cannot be laid out in one.
+  bool get _isFormSection =>
+      _section == DetailSection.overview || _section == DetailSection.settings;
+
+  SectionDestination _destination(
+    AppLocalizations l10n,
+    DetailSection section,
+  ) => switch (section) {
+    DetailSection.overview => SectionDestination(
+      key: 'detail-section-overview',
+      label: l10n.detailTabOverview,
+      icon: ShellIcons.info,
+    ),
+    DetailSection.mods => SectionDestination(
+      key: 'detail-section-mods',
+      label: l10n.catalogMods,
+      icon: ShellIcons.mods,
+    ),
+    DetailSection.resourcePacks => SectionDestination(
+      key: 'detail-section-resource-packs',
+      label: l10n.catalogResourcePacks,
+      icon: ShellIcons.resourcePacks,
+    ),
+    DetailSection.shaderPacks => SectionDestination(
+      key: 'detail-section-shader-packs',
+      label: l10n.catalogShaders,
+      icon: ShellIcons.shaderPacks,
+    ),
+    DetailSection.worlds => SectionDestination(
+      key: 'detail-section-worlds',
+      label: l10n.contentSaves,
+      icon: ShellIcons.saves,
+    ),
+    DetailSection.servers => SectionDestination(
+      key: 'detail-section-servers',
+      label: l10n.contentServers,
+      icon: ShellIcons.network,
+    ),
+    DetailSection.dataPacks => SectionDestination(
+      key: 'detail-section-data-packs',
+      label: l10n.catalogDataPacks,
+      icon: ShellIcons.addon,
+    ),
+    DetailSection.settings => SectionDestination(
+      key: 'detail-section-settings',
+      label: l10n.detailTabSettings,
+      icon: ShellIcons.settings,
+    ),
+  };
+
+  /// The body of the selected section.
+  Widget _sectionBody(BuildContext context, Instance instance) =>
+      switch (_section) {
+        DetailSection.overview => _overview(context, instance),
+        DetailSection.mods => InstanceContentPage(
+          instance: instance,
+          kind: InstanceContentKind.mods,
+        ),
+        DetailSection.resourcePacks => InstanceContentPage(
+          instance: instance,
+          kind: InstanceContentKind.resourcePacks,
+        ),
+        DetailSection.shaderPacks => InstanceContentPage(
+          instance: instance,
+          kind: InstanceContentKind.shaderPacks,
+        ),
+        DetailSection.worlds => InstanceContentPage(
+          instance: instance,
+          kind: InstanceContentKind.worlds,
+        ),
+        DetailSection.servers => InstanceContentPage(
+          instance: instance,
+          kind: InstanceContentKind.servers,
+        ),
+        DetailSection.dataPacks => InstanceContentPage(
+          instance: instance,
+          kind: InstanceContentKind.dataPacks,
+        ),
+        DetailSection.settings => _settings(context, instance),
+      };
 
   /// 概览: what this instance *is*, and the state worth knowing before playing.
   Widget _overview(BuildContext context, Instance instance) {
@@ -272,19 +395,13 @@ class _InstanceDetailScreenState extends ConsumerState<InstanceDetailScreen> {
             ListRow(
               leadingIcon: ShellIcons.clock,
               label: l10n.instancePlaytimeLabel,
-              trailingText: _FilesListState.playtimeOf(l10n, instance),
+              trailingText: _playtimeLine(l10n, instance),
             ),
           ],
         ),
       ],
     );
   }
-
-  /// 内容: everything installed in this instance, one kind at a time.
-  Widget _content(BuildContext context, Instance instance) => ContentBrowser(
-    instance: instance,
-    initialKind: ContentKind.resourcePacks,
-  );
 
   /// 设置: the fields that change how it runs.
   Widget _settings(BuildContext context, Instance instance) {
@@ -373,86 +490,11 @@ class _InstanceDetailScreenState extends ConsumerState<InstanceDetailScreen> {
     );
   }
 
-  /// 文件: the paths, one row per folder, and the log shortcut.
-  Widget _files(BuildContext context, Instance instance) {
-    final l10n = context.l10n;
-    return _Section(
-      title: l10n.instanceSectionFiles,
-      description: l10n.instanceFilesHint,
-      children: [
-        _FilesList(
-          instance: instance,
-          onOpenFolder: (folder) =>
-              _openFolder(context, ref, instance, folder: folder),
-          onOpenRoot: () => _openFolder(context, ref, instance),
-          onCopyPath: (path) => _copyPath(context, path),
-          onManageMods: () => setState(() => _tab = DetailTab.content),
-          onOpenContent: (kind) => setState(() => _tab = DetailTab.content),
-        ),
-      ],
-    );
-  }
-
   /// Opens the directory in the OS file manager.
   ///
   /// The directory is created first: for a never-launched instance it does not
   /// exist yet, and "open folder" silently doing nothing is worse than making an
   /// empty one.
-  Future<void> _copyPath(BuildContext context, String path) async {
-    await Clipboard.setData(ClipboardData(text: path));
-    if (!context.mounted) return;
-    m3.ScaffoldMessenger.maybeOf(context)
-      ?..hideCurrentSnackBar()
-      ..showSnackBar(
-        m3.SnackBar(
-          content: m3.Text(context.l10n.instancePathCopied),
-          behavior: m3.SnackBarBehavior.floating,
-          width: 200,
-        ),
-      );
-  }
-
-  Future<void> _openFolder(
-    BuildContext context,
-    WidgetRef ref,
-    Instance instance, {
-    GameFolderKind? folder,
-  }) async {
-    final gameRoot = ref
-        .read(launcherPathsProvider)
-        .gamePathsFor(instance)
-        .root;
-    final root = folder == null
-        ? gameRoot
-        : '$gameRoot/${folder.directoryName}';
-    await Directory(root).create(recursive: true);
-
-    final (exe, args) = switch (Platform.operatingSystem) {
-      'windows' => ('explorer', [root]),
-      'macos' => ('open', [root]),
-      _ => ('xdg-open', [root]),
-    };
-    try {
-      await Process.start(exe, args, mode: ProcessStartMode.detached);
-    } on ProcessException {
-      if (!context.mounted) return;
-      await m3.showDialog<void>(
-        context: context,
-        builder: (context) => AppDialog(
-          title: context.l10n.instanceOpenFolderFailed,
-          content: m3.SelectableText(root),
-          actions: [
-            AppButton(
-              onPressed: () => m3.Navigator.pop(context),
-              style: AppButtonStyle.filled,
-              label: m3.Text(context.l10n.actionClose),
-            ),
-          ],
-        ),
-      );
-    }
-  }
-
   /// 复制实例: a full copy of the game directory under a new instance.
   ///
   /// Large instances take a while (a modded world is a few GB), so the button stays
@@ -592,19 +634,10 @@ class _InstanceDetailScreenState extends ConsumerState<InstanceDetailScreen> {
 }
 
 class _Section extends StatelessWidget {
-  const _Section({
-    required this.title,
-    required this.children,
-    this.description,
-  });
+  const _Section({required this.title, required this.children});
 
   final String title;
   final List<Widget> children;
-
-  /// One line under the heading saying what the section is for. M3 puts an
-  /// optional description in the header block, not in a tooltip or a footnote:
-  /// the reader meets it before the content.
-  final String? description;
 
   @override
   Widget build(BuildContext context) {
@@ -622,14 +655,6 @@ class _Section extends StatelessWidget {
         crossAxisAlignment: m3.CrossAxisAlignment.stretch,
         children: [
           m3.Text(title, style: AppTheme.label(context)),
-          if (description != null) ...[
-            const m3.SizedBox(height: 2),
-            m3.Text(
-              description!,
-              style: AppTheme.caption(context)
-                  .copyWith(color: scheme.onSurfaceVariant),
-            ),
-          ],
           const m3.SizedBox(height: 10),
           for (final child in children) ...[
             child,
@@ -1083,173 +1108,7 @@ class _JavaRowState extends ConsumerState<_JavaRow> {
 ///   [icon] Game folder   /path/to/version          [copy]
 ///   [icon] Mods          mods/            2 items  [open]
 ///   [icon] Playtime      2h 14m
-class _FilesList extends StatefulWidget {
-  const _FilesList({
-    required this.instance,
-    required this.onOpenFolder,
-    required this.onOpenRoot,
-    required this.onCopyPath,
-    required this.onManageMods,
-    required this.onOpenContent,
-  });
 
-  final Instance instance;
-  final void Function(GameFolderKind folder) onOpenFolder;
-  final VoidCallback onOpenRoot;
-  final void Function(String path) onCopyPath;
-
-  /// The mods row is the one content folder with a screen behind it: PCL's
-  /// 版本设置 → Mod 管理 is where enabling and deleting happens, so the row opens
-  /// that instead of a file manager (the trailing icon still opens the folder).
-  final VoidCallback onManageMods;
-
-  /// 资源包 / 光影 / 存档 / 服务器 each open a list screen; the trailing icon still
-  /// opens the folder, so the row is a door and the icon is the shortcut.
-  final void Function(ContentKind kind) onOpenContent;
-
-  @override
-  State<_FilesList> createState() => _FilesListState();
-}
-
-class _FilesListState extends State<_FilesList> {
-  Future<List<GameFolder>>? _folders;
-  String? _root;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final container = ProviderScope.containerOf(context);
-    final root = container
-        .read(launcherPathsProvider)
-        .gamePathsFor(widget.instance)
-        .root;
-    if (_root != root) {
-      _root = root;
-      _folders = container.read(gameFolderScannerProvider)(root);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final root = _root ?? '';
-
-    return m3.Column(
-      crossAxisAlignment: m3.CrossAxisAlignment.stretch,
-      mainAxisSize: m3.MainAxisSize.min,
-      children: [
-        ListRow(
-          leadingIcon: ShellIcons.folder,
-          label: l10n.instancePathLabel,
-          supporting: root,
-          trailingIcon: ShellIcons.copy,
-          trailingTooltip: l10n.instanceCopyPath,
-          onPressed: widget.onOpenRoot,
-          onTrailingPressed: () => widget.onCopyPath(root),
-        ),
-        FutureBuilder<List<GameFolder>>(
-          future: _folders,
-          builder: (context, snapshot) {
-            final folders = snapshot.data ?? const <GameFolder>[];
-            return m3.Column(
-              crossAxisAlignment: m3.CrossAxisAlignment.stretch,
-              mainAxisSize: m3.MainAxisSize.min,
-              children: [
-                for (final folder in folders)
-                  ListRow(
-                    key: m3.ValueKey(
-                      'instance-folder-${folder.kind.directoryName}',
-                    ),
-                    leadingIcon: _folderIcon(folder.kind),
-                    label: _folderLabel(l10n, folder.kind),
-                    supporting: folder.kind == GameFolderKind.mods
-                        ? l10n.modsManageHint
-                        : '${folder.kind.directoryName}/',
-                    trailingText: l10n.instanceFolderItems(folder.entries),
-                    trailingTextKey: m3.ValueKey(
-                      'instance-folder-count-${folder.kind.name}',
-                    ),
-                    trailingIcon: ShellIcons.openExternal,
-                    trailingTooltip: l10n.instanceOpenFolderTooltip,
-                    onPressed: switch (folder.kind) {
-                      GameFolderKind.mods => widget.onManageMods,
-                      GameFolderKind.resourcePacks =>
-                        () => widget.onOpenContent(ContentKind.resourcePacks),
-                      GameFolderKind.shaderPacks => () => widget.onOpenContent(
-                        ContentKind.shaderPacks,
-                      ),
-                      GameFolderKind.saves => () => widget.onOpenContent(
-                        ContentKind.saves,
-                      ),
-                    },
-                    onTrailingPressed: () => widget.onOpenFolder(folder.kind),
-                  ),
-              ],
-            );
-          },
-        ),
-        ListRow(
-          key: const m3.ValueKey('instance-folder-servers'),
-          leadingIcon: ShellIcons.network,
-          label: l10n.contentServers,
-          supporting: l10n.contentServersHint,
-          trailingIcon: ShellIcons.openExternal,
-          trailingTooltip: l10n.instanceOpenFolderTooltip,
-          onPressed: () => widget.onOpenContent(ContentKind.servers),
-          onTrailingPressed: widget.onOpenRoot,
-        ),
-        ListRow(
-          leadingIcon: ShellIcons.clock,
-          label: l10n.instancePlaytimeLabel,
-          trailingText: _playtime(l10n, widget.instance),
-        ),
-      ],
-    );
-  }
-
-  static String playtimeOf(AppLocalizations l10n, Instance instance) =>
-      formatPlaytimeLine(l10n, instance);
-
-  static String _playtime(AppLocalizations l10n, Instance instance) =>
-      formatPlaytimeLine(l10n, instance);
-}
-
-/// "3 h 20 min · last played 2026-10-20", or the never-played sentence.
-String formatPlaytimeLine(AppLocalizations l10n, Instance instance) {
-  final last = instance.lastPlayedAt;
-  if (last == null) return l10n.instanceNeverPlayed;
-  String two(int value) => value.toString().padLeft(2, '0');
-  return l10n.instancePlaytimeValue(
-    formatPlaytime(instance.totalPlaytime),
-    '${last.year}-${two(last.month)}-${two(last.day)}',
-  );
-}
-
-// The folder-list helpers below are file-scope because the overview tab needs the
-// same playtime sentence the files list shows.
-
-/// A different cue per folder. M3 asks the leading icon to relate to the label;
-/// four identical puzzle pieces would be decoration, not a cue.
-m3.IconData _folderIcon(GameFolderKind kind) => switch (kind) {
-  GameFolderKind.mods => ShellIcons.mods,
-  GameFolderKind.resourcePacks => ShellIcons.resourcePacks,
-  GameFolderKind.shaderPacks => ShellIcons.shaderPacks,
-  GameFolderKind.saves => ShellIcons.saves,
-};
-
-String _folderLabel(AppLocalizations l10n, GameFolderKind kind) =>
-    switch (kind) {
-      GameFolderKind.mods => l10n.instanceFolderMods,
-      GameFolderKind.resourcePacks => l10n.instanceFolderResourcePacks,
-      GameFolderKind.shaderPacks => l10n.instanceFolderShaderPacks,
-      GameFolderKind.saves => l10n.instanceFolderSaves,
-    };
-
-/// Window width/height and the fullscreen switch.
-///
-/// Text fields rather than a slider: users copy a size out of a screenshot or a
-/// config, and 854x480 is a real answer. Both dimensions or neither - half a pair
-/// is a typo the game rejects.
 class _WindowRow extends StatefulWidget {
   const _WindowRow({
     required this.instance,
@@ -1343,4 +1202,15 @@ class _WindowRowState extends State<_WindowRow> {
       ],
     );
   }
+}
+
+/// "3 h 20 min · last played 2026-10-20", or the never-played sentence.
+String _playtimeLine(AppLocalizations l10n, Instance instance) {
+  final last = instance.lastPlayedAt;
+  if (last == null) return l10n.instanceNeverPlayed;
+  String two(int value) => value.toString().padLeft(2, '0');
+  return l10n.instancePlaytimeValue(
+    formatPlaytime(instance.totalPlaytime),
+    '${last.year}-${two(last.month)}-${two(last.day)}',
+  );
 }

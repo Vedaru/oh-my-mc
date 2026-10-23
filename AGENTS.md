@@ -181,6 +181,12 @@ directory and `test/shots/` are now git-ignored.)
 - **Launch owns version selection** (PCL's operation logic). The launch page's picker lists every
   instance and links to management; `/instances` is a *management* route, not a rail item. A second
   tab that only chooses what the launch page already chooses is two doors to one room.
+- **An instance is a section list, not one long page.** One page per thing you can look at (概览, 模组,
+  资源包, 光影, 存档, 服务器, 数据包, 设置), the way Prism's instance window is arranged. The kinds are
+  not interchangeable - a mod is switched off by renaming its jar, a pack by editing `options.txt`, a
+  world only deletes, a data pack belongs to one world - so a single list with a kind filter is a list
+  that has to explain itself. Sections use `SectionDrawer` (an MD3 `NavigationDrawer`), the same
+  control 设置 uses; do not hand-roll a column of rows for a section list.
 - **A card is one filled surface**: `surfaceContainerLow`, 16 px radius, no outline; only a selected
   item carries a border. Boxed cards on a dark surface read as unrelated panels.
 - **No shadows, no glows.** Material 3 expresses elevation as *tone*: a raised surface is

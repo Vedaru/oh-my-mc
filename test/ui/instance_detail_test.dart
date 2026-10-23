@@ -1,12 +1,10 @@
 import 'dart:io';
 
-import 'package:flutter/widgets.dart';
 import 'package:flutter/material.dart' hide Text, Icon, Colors;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oh_my_mc/app/providers.dart';
 import 'package:oh_my_mc/core/instance/instance.dart';
-import 'package:oh_my_mc/core/mc/game_folders.dart';
 import 'package:oh_my_mc/core/mc/host.dart';
 import 'package:oh_my_mc/core/mc/java_manager.dart';
 import 'package:oh_my_mc/data/instance_providers.dart';
@@ -16,7 +14,6 @@ import 'package:oh_my_mc/data/launch_factory.dart';
 import 'package:oh_my_mc/data/settings.dart';
 import 'package:oh_my_mc/ui/instances/instance_detail_screen.dart';
 import 'package:oh_my_mc/ui/components/app_button.dart';
-import 'package:oh_my_mc/ui/components/list_row.dart';
 
 import '../support/harness.dart';
 
@@ -44,8 +41,9 @@ void main() {
     javaPath: javaPath,
   );
 
-  /// Opens the instance page on a tab. The page shows one tab at a time, so every
-  /// test has to say which one it is about: 0 概览, 1 内容, 2 设置, 3 文件.
+  /// Opens the instance page on a section. The page shows one section at a time, so
+  /// every test has to say which one it is about: `overview`, `mods`,
+  /// `resource-packs`, `shader-packs`, `worlds`, `servers`, `data-packs`, `settings`.
   Future<ProviderContainer> pump(
     WidgetTester tester, {
     List<Instance> instances = const [],
@@ -53,8 +51,7 @@ void main() {
     AppSettings settings = AppSettings.defaults,
     VoidCallback? onClose,
     Future<JavaRuntime?> Function(String)? probe,
-    List<GameFolder>? folders,
-    int tab = 0,
+    String section = 'overview',
   }) async {
     // A real temp directory, because the page reads the game path from
     // `launcherPathsProvider` and a missing override is a hard error.
@@ -82,8 +79,6 @@ void main() {
         // No real JVM is probed in a widget test.
         javaRuntimesProvider.overrideWith(() => _EmptyRuntimes()),
         javaProbeRunnerProvider.overrideWithValue(probe ?? (exe) async => null),
-        if (folders != null)
-          gameFolderScannerProvider.overrideWithValue((root) async => folders),
       ],
     );
     addTearDown(container.dispose);
@@ -97,8 +92,8 @@ void main() {
       container,
       InstanceDetailScreen(id: id, onClose: onClose),
     );
-    if (tab != 0) {
-      await tester.tap(find.byKey(ValueKey('detail-tab-$tab')));
+    if (section != 'overview') {
+      await tester.tap(find.byKey(ValueKey('detail-section-$section')));
       await tester.pumpAndSettle();
     }
     return container;
@@ -136,7 +131,11 @@ void main() {
     });
 
     testWidgets('renaming writes the new name to the store', (tester) async {
-      final container = await pump(tester, instances: [sample()], tab: 2);
+      final container = await pump(
+        tester,
+        instances: [sample()],
+        section: 'settings',
+      );
 
       final field = find.byKey(const ValueKey('instance-name'));
       await tester.enterText(field, 'Renamed');
@@ -148,7 +147,11 @@ void main() {
     });
 
     testWidgets('the isolation switch persists', (tester) async {
-      final container = await pump(tester, instances: [sample()], tab: 2);
+      final container = await pump(
+        tester,
+        instances: [sample()],
+        section: 'settings',
+      );
 
       await tester.tap(find.byKey(const ValueKey('instance-isolation')));
       await tester.pumpAndSettle();
@@ -169,7 +172,7 @@ void main() {
           vendor: 'Eclipse Adoptium',
           arch: HostArch.x86_64,
         ),
-        tab: 2,
+        section: 'settings',
       );
 
       expect(
@@ -194,7 +197,7 @@ void main() {
         tester,
         instances: [sample(javaPath: '/opt/nope/bin/java')],
         probe: (exe) async => null,
-        tab: 2,
+        section: 'settings',
       );
 
       await tester.tap(find.byKey(const ValueKey('instance-java-test')));
@@ -207,7 +210,7 @@ void main() {
     });
 
     testWidgets('no test button without a chosen runtime', (tester) async {
-      await pump(tester, instances: [sample()], tab: 2);
+      await pump(tester, instances: [sample()], section: 'settings');
 
       // Nothing to run: "Automatic" is a decision the version makes at launch.
       expect(find.byKey(const ValueKey('instance-java-test')), findsNothing);
@@ -216,7 +219,7 @@ void main() {
     testWidgets('switching to isolated warns that nothing is migrated', (
       tester,
     ) async {
-      await pump(tester, instances: [sample()], tab: 2);
+      await pump(tester, instances: [sample()], section: 'settings');
 
       // Nothing moves. If this message disappears, the switch starts looking like
       // a data migration and users will lose track of their worlds.
@@ -241,7 +244,7 @@ void main() {
       await pump(
         tester,
         instances: [sample(isolation: IsolationKind.isolated)],
-        tab: 2,
+        section: 'settings',
       );
 
       await tester.tap(find.byKey(const ValueKey('instance-isolation')));
@@ -260,7 +263,7 @@ void main() {
         tester,
         instances: [sample()],
         settings: const AppSettings(memoryMb: 4096),
-        tab: 2,
+        section: 'settings',
       );
 
       // Off means "use the global default", which is a separate state from
@@ -277,7 +280,7 @@ void main() {
       final container = await pump(
         tester,
         instances: [sample(memoryMb: 8192)],
-        tab: 2,
+        section: 'settings',
       );
 
       await tester.tap(find.byKey(const ValueKey('instance-memory-override')));
@@ -291,7 +294,11 @@ void main() {
     });
 
     testWidgets('JVM arguments are parsed and stored as argv', (tester) async {
-      final container = await pump(tester, instances: [sample()], tab: 2);
+      final container = await pump(
+        tester,
+        instances: [sample()],
+        section: 'settings',
+      );
 
       await tester.enterText(
         find.byKey(const ValueKey('instance-jvm-args')),
@@ -312,7 +319,11 @@ void main() {
     });
 
     testWidgets('game arguments land in their own field', (tester) async {
-      final container = await pump(tester, instances: [sample()], tab: 2);
+      final container = await pump(
+        tester,
+        instances: [sample()],
+        section: 'settings',
+      );
 
       await tester.enterText(
         find.byKey(const ValueKey('instance-game-args')),
@@ -335,7 +346,7 @@ void main() {
         instances: [
           sample().copyWith(jvmArgs: ['-Xmx4G', '-Dfoo=a b']),
         ],
-        tab: 2,
+        section: 'settings',
       );
 
       // Quoted on the way in, so the round trip back through the parser is the
@@ -398,7 +409,11 @@ void main() {
 
   group('window size', () {
     testWidgets('the size is written to the store on submit', (tester) async {
-      final container = await pump(tester, instances: [sample()], tab: 2);
+      final container = await pump(
+        tester,
+        instances: [sample()],
+        section: 'settings',
+      );
 
       await tester.enterText(
         find.byKey(const ValueKey('instance-window-width')),
@@ -416,7 +431,11 @@ void main() {
     });
 
     testWidgets('a half-filled pair is not stored', (tester) async {
-      final container = await pump(tester, instances: [sample()], tab: 2);
+      final container = await pump(
+        tester,
+        instances: [sample()],
+        section: 'settings',
+      );
 
       await tester.enterText(
         find.byKey(const ValueKey('instance-window-width')),
@@ -430,7 +449,11 @@ void main() {
     });
 
     testWidgets('the fullscreen switch persists', (tester) async {
-      final container = await pump(tester, instances: [sample()], tab: 2);
+      final container = await pump(
+        tester,
+        instances: [sample()],
+        section: 'settings',
+      );
 
       await tester.tap(find.byKey(const ValueKey('instance-fullscreen')));
       await tester.pumpAndSettle();
@@ -438,111 +461,10 @@ void main() {
       expect(stored(container).fullscreen, isTrue);
     });
   });
-
-  group('content folders', () {
-    testWidgets(
-      'the list keeps one anatomy: path, four folders, servers, playtime',
-      (tester) async {
-        await pump(
-          tester,
-          instances: [sample()],
-          folders: const [
-            GameFolder(kind: GameFolderKind.mods, path: '/g/mods', entries: 0),
-            GameFolder(
-              kind: GameFolderKind.resourcePacks,
-              path: '/g/resourcepacks',
-              entries: 0,
-            ),
-            GameFolder(
-              kind: GameFolderKind.shaderPacks,
-              path: '/g/shaderpacks',
-              entries: 0,
-            ),
-            GameFolder(
-              kind: GameFolderKind.saves,
-              path: '/g/saves',
-              entries: 0,
-            ),
-          ],
-          tab: 3,
-        );
-        await tester.pumpAndSettle();
-
-        // The path row and the playtime row are list rows too, not key/value pairs:
-        // one layout for the whole section is the point.
-        // path + mods/resourcepacks/shaderpacks/saves + servers + playtime
-        expect(find.byType(ListRow), findsNWidgets(7));
-        // Every row carries its supporting text - the on-disk name - so the localized
-        // label and the real folder name sit in the same place in each row.
-        // The mods row's supporting text now says it opens the manager, not just
-        // which folder it is.
-        expect(find.textContaining('mods/'), findsOneWidget);
-        expect(find.text('resourcepacks/'), findsOneWidget);
-        expect(find.text('shaderpacks/'), findsOneWidget);
-        expect(find.text('saves/'), findsOneWidget);
-      },
-    );
-
-    testWidgets('each folder shows its count, and an empty one says so', (
-      tester,
-    ) async {
-      // The scan itself is covered on disk in
-      // test/core/window_and_folders_test.dart; here it is the rendering.
-      await pump(
-        tester,
-        instances: [sample()],
-        folders: const [
-          GameFolder(kind: GameFolderKind.mods, path: '/g/mods', entries: 2),
-          GameFolder(
-            kind: GameFolderKind.resourcePacks,
-            path: '/g/resourcepacks',
-            entries: 0,
-          ),
-          GameFolder(
-            kind: GameFolderKind.shaderPacks,
-            path: '/g/shaderpacks',
-            entries: 0,
-          ),
-          GameFolder(kind: GameFolderKind.saves, path: '/g/saves', entries: 1),
-        ],
-        tab: 3,
-      );
-      await tester.pumpAndSettle();
-
-      expect(
-        find.byKey(const ValueKey('instance-folder-count-mods')),
-        findsOneWidget,
-      );
-      expect(
-        tester
-            .widget<Text>(
-              find.byKey(const ValueKey('instance-folder-count-mods')),
-            )
-            .data,
-        '2 items',
-      );
-      expect(
-        tester
-            .widget<Text>(
-              find.byKey(const ValueKey('instance-folder-count-saves')),
-            )
-            .data,
-        '1 item',
-      );
-      // Nothing installed yet reads as empty rather than as zero.
-      expect(
-        tester
-            .widget<Text>(
-              find.byKey(const ValueKey('instance-folder-count-shaderPacks')),
-            )
-            .data,
-        'Empty',
-      );
-    });
-  });
 }
 
-/// The runtimes list, answered without touching the disk.
+/// No managed runtimes: the Java row then shows the "download one" affordance instead
+/// of a list, which is the state these tests are about.
 class _EmptyRuntimes extends JavaRuntimesController {
   @override
   Future<List<ManagedJavaRuntime>> build() async => const [];

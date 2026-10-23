@@ -28,14 +28,6 @@ abstract final class Routes {
 
   static String instanceMods(String id) =>
       '/instances/$id/$instanceModsSegment';
-
-  /// 版本设置 → a content list. `:kind` is a [ContentKind] name (`resourcePacks`,
-  /// `shaderPacks`, `saves`, `servers`).
-  static const instanceContentSegment = 'content';
-  static const instanceContentKindParam = 'kind';
-
-  static String instanceContent(String id, String kind) =>
-      '/instances/$id/$instanceContentSegment/$kind';
 }
 
 /// Builds the app's [GoRouter].
@@ -76,14 +68,10 @@ GoRouter createRouter({
             Routes.instances,
             screens,
             routes: [
-              _route(
-                ':id',
-                screens,
-                routes: [
-                  _route(':mods', screens),
-                  _route(':content/:kind', screens),
-                ],
-              ),
+              // `:mods` is kept as a URL: existing links and the launch page's
+              // "open mods" both use it, and it now opens the instance page's mods
+              // section rather than a second screen with its own list.
+              _route(':id', screens, routes: [_route(':mods', screens)]),
             ],
           ),
           _route(Routes.download, screens),
