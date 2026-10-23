@@ -77,8 +77,9 @@ class _InstanceContentPageState extends ConsumerState<InstanceContentPage> {
 
   /// A data pack page opens on the newest world: that is the one someone is playing.
   Future<void> _initWorld() async {
-    if (widget.kind != InstanceContentKind.dataPacks || _world.isNotEmpty)
+    if (widget.kind != InstanceContentKind.dataPacks || _world.isNotEmpty) {
       return;
+    }
     final saves = await ref
         .read(gameContentProvider)(_root)
         .list(ContentKind.saves);
