@@ -1051,4 +1051,18 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get actionSave => '保存';
+
+  @override
+  String sourceAuto(String name) {
+    return '自动（优先 $name）';
+  }
+
+  @override
+  String get sourceOfficial => 'Mojang';
+
+  @override
+  String get sourceBmclapi => 'BMCLAPI';
+
+  @override
+  String get sourceTitle => '下载源';
 }

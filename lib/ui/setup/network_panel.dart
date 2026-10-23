@@ -5,9 +5,12 @@ import 'package:material_ui/material_ui.dart' as m3;
 
 import '../../core/diagnostics/network_info.dart';
 import '../../core/diagnostics/speed_test.dart';
+import '../../app/providers.dart';
 import '../../data/diagnostics_providers.dart';
+import '../../data/settings.dart';
 import '../../l10n/l10n.dart';
 import '../components/app_button.dart';
+import '../components/app_radio_group.dart';
 import '../components/list_row.dart';
 import '../shell/shell_icons.dart';
 import '../theme/app_theme.dart';
@@ -47,6 +50,17 @@ class _NetworkPanelState extends ConsumerState<NetworkPanel> {
         },
       );
       if (!mounted) return;
+      // The winner is remembered, not applied by itself: `auto` follows it, and a
+      // user who pinned a source keeps their pin.
+      final fastest = _fastestOf(samples);
+      if (fastest != null) {
+        await ref
+            .read(appSettingsProvider.notifier)
+            .set(
+              ref.read(appSettingsProvider).copyWith(fastestSource: fastest),
+            );
+      }
+      if (!mounted) return;
       setState(() {
         _samples = samples;
         _running = false;
@@ -60,6 +74,20 @@ class _NetworkPanelState extends ConsumerState<NetworkPanel> {
         _running = false;
       });
     }
+  }
+
+  /// The source with the highest measured throughput, if any sample succeeded.
+  static String? _fastestOf(List<SpeedSample> samples) {
+    final ok = [
+      for (final sample in samples)
+        if (sample.ok) sample,
+    ]..sort((a, b) => b.bytesPerSecond.compareTo(a.bytesPerSecond));
+    if (ok.isEmpty) return null;
+    return switch (ok.first.name) {
+      'Mojang' => 'official',
+      'BMCLAPI' => 'bmclapi',
+      _ => null,
+    };
   }
 
   @override
@@ -144,6 +172,28 @@ class _NetworkPanelState extends ConsumerState<NetworkPanel> {
                   size: AppButtonSize.sm,
                   label: m3.Text(l10n.settingsCopy),
                 ),
+        ),
+        const m3.SizedBox(height: 14),
+        // Which source installs use. `auto` is not a third choice between the two:
+        // it means "whichever the last test found faster", which is what most users
+        // actually want and what the test above produces.
+        AppRadioGroup<SourcePreference>(
+          keyPrefix: 'source',
+          value: ref.watch(appSettingsProvider).downloadSource,
+          onChanged: (value) => ref
+              .read(appSettingsProvider.notifier)
+              .set(
+                ref.read(appSettingsProvider).copyWith(downloadSource: value),
+              ),
+          options: {
+            SourcePreference.auto: l10n.sourceAuto(
+              ref.watch(appSettingsProvider).fastestSource == 'bmclapi'
+                  ? 'BMCLAPI'
+                  : 'Mojang',
+            ),
+            SourcePreference.official: l10n.sourceOfficial,
+            SourcePreference.bmclapi: l10n.sourceBmclapi,
+          },
         ),
       ],
     );

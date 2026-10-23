@@ -38,20 +38,22 @@ class Mirror {
   final String name;
   final String url;
 
-  /// The default set: one file each from the three CDNs an install touches.
+  /// The two sources the launcher can choose between, measured on the *same* file.
   ///
-  /// Small on purpose - a speed test that takes a minute is a speed test nobody
-  /// runs. [maxBytes] caps it anyway.
+  /// Same file matters: measuring a Mojang library against a Modrinth jar compares
+  /// two CDNs and two payloads, and the result says nothing about which source to
+  /// prefer. `gson` is a real library every install downloads, so this is the exact
+  /// path a user waits on.
   static const defaults = [
     Mirror(
       'Mojang',
-      'https://piston-data.mojang.com/v1/objects/'
-          '5b8b41b5d5b1a2a5e3a0d8b1f6f2c0a6e1d3f4a7/client.jar',
+      'https://libraries.minecraft.net/com/google/code/gson/gson/2.10.1/'
+          'gson-2.10.1.jar',
     ),
     Mirror(
-      'Modrinth',
-      'https://cdn.modrinth.com/data/AANobbMI/versions/'
-          'mc1.20.1-0.5.13-fabric/sodium-fabric-0.5.13%2Bmc1.20.1.jar',
+      'BMCLAPI',
+      'https://bmclapi2.bangbang93.com/maven/com/google/code/gson/gson/2.10.1/'
+          'gson-2.10.1.jar',
     ),
   ];
 }

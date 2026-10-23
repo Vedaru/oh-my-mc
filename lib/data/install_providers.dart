@@ -15,6 +15,7 @@ import '../core/net/version_manifest.dart';
 import 'instance_providers.dart';
 import 'java_providers.dart';
 import 'launch_factory.dart';
+import 'mirror_preference.dart';
 
 /// The install log the panel renders and the controller writes.
 ///
@@ -127,8 +128,11 @@ class InstallCancelled extends InstallState {
 /// opens a socket, and so an install can be driven to a chosen progress value.
 typedef InstallerFactory = VersionInstaller Function();
 
+/// The real factory passes the user's mirror preference; a test override does not
+/// need to, which is why the factory type stays argument-free.
 final installerFactoryProvider = Provider<InstallerFactory>(
-  (ref) => VersionInstaller.new,
+  (ref) =>
+      () => VersionInstaller(mirrors: ref.read(mirrorChainProvider)),
 );
 
 class InstallController extends Notifier<InstallState> {

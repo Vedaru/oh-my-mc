@@ -38,6 +38,8 @@ class AppSettings {
     this.playerName = defaultPlayerName,
     this.memoryMb = defaultMemoryMb,
     this.javaDirs = const [],
+    this.downloadSource = SourcePreference.auto,
+    this.fastestSource,
   });
 
   /// A valid offline player name (3-16 ASCII word characters). Shown to other
@@ -67,6 +69,16 @@ class AppSettings {
   /// Global heap cap, used when an instance has no override.
   final int memoryMb;
 
+  /// Which download source to prefer. `auto` follows the last speed test: the
+  /// mirror that won it is tried first, and a failure still falls back to the other.
+  final SourcePreference downloadSource;
+
+  /// The source the last speed test ranked first, as a [DownloadSource] id.
+  ///
+  /// Stored rather than re-measured on every launch: a speed test at startup would
+  /// add seconds to opening the launcher for information that changes rarely.
+  final String? fastestSource;
+
   /// Extra directories to look for a JVM in, on top of the built-in roots.
   ///
   /// The launcher downloads its own runtime when a version needs one, but a user
@@ -87,6 +99,8 @@ class AppSettings {
     // writes scalars, and one key per directory would leak the list's length into
     // the preferences file.
     'javaDirs': jsonEncode(javaDirs),
+    'downloadSource': downloadSource.name,
+    'fastestSource': ?fastestSource,
   };
 
   /// Reads [map], falling back to [defaults] per field rather than wholesale, so
@@ -113,6 +127,16 @@ class AppSettings {
       playerName: _validPlayerName(map['playerName']),
       memoryMb: _validMemoryMb(map['memoryMb']),
       javaDirs: _validJavaDirs(map['javaDirs']),
+      downloadSource: _enumByName(
+        SourcePreference.values,
+        map['downloadSource'],
+        SourcePreference.auto,
+      ),
+      fastestSource: switch (map['fastestSource']) {
+        'official' => 'official',
+        'bmclapi' => 'bmclapi',
+        _ => null,
+      },
     );
   }
 
@@ -123,6 +147,8 @@ class AppSettings {
     String? playerName,
     int? memoryMb,
     List<String>? javaDirs,
+    SourcePreference? downloadSource,
+    String? fastestSource,
   }) => AppSettings(
     theme: theme ?? this.theme,
     language: language ?? this.language,
@@ -130,6 +156,8 @@ class AppSettings {
     playerName: playerName ?? this.playerName,
     memoryMb: memoryMb ?? this.memoryMb,
     javaDirs: javaDirs ?? this.javaDirs,
+    downloadSource: downloadSource ?? this.downloadSource,
+    fastestSource: fastestSource ?? this.fastestSource,
   );
 
   @override
@@ -151,6 +179,8 @@ class AppSettings {
     playerName,
     memoryMb,
     Object.hashAll(javaDirs),
+    downloadSource,
+    fastestSource,
   );
 
   @override
@@ -250,4 +280,19 @@ class MemorySettingsStore implements SettingsStore {
     _settings = settings;
     writes++;
   }
+}
+
+/// Which CDN the launcher prefers for Mojang files.
+///
+/// `auto` is not "no preference": it means "the source the last speed test ranked
+/// first". A launcher that always ships with the same default is the reason installs
+/// crawl for users whose link to the official CDN is the slow one.
+enum SourcePreference {
+  auto('auto'),
+  official('official'),
+  bmclapi('bmclapi');
+
+  const SourcePreference(this.id);
+
+  final String id;
 }

@@ -1519,5 +1519,26 @@
   "actionSave": "Save",
   "@actionSave": {
     "description": "Generic save action label."
+  },
+  "sourceAuto": "Automatic ({name} first)",
+  "@sourceAuto": {
+    "description": "Radio label: follow the fastest measured source.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sourceOfficial": "Mojang",
+  "@sourceOfficial": {
+    "description": "Radio label: always use the official CDN."
+  },
+  "sourceBmclapi": "BMCLAPI",
+  "@sourceBmclapi": {
+    "description": "Radio label: always use the BMCLAPI mirror."
+  },
+  "sourceTitle": "Download source",
+  "@sourceTitle": {
+    "description": "Heading above the download source choice."
   }
 }

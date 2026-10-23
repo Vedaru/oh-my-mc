@@ -1084,4 +1084,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get actionSave => 'Save';
+
+  @override
+  String sourceAuto(String name) {
+    return 'Automatic ($name first)';
+  }
+
+  @override
+  String get sourceOfficial => 'Mojang';
+
+  @override
+  String get sourceBmclapi => 'BMCLAPI';
+
+  @override
+  String get sourceTitle => 'Download source';
 }

@@ -1808,95 +1808,119 @@ abstract class AppLocalizations {
   /// **'Servers'**
   String get contentServers;
 
-  /// No description provided for @contentResourcePacksHint.
+  /// Explains that enabled resource packs are written to options.txt.
   ///
   /// In en, this message translates to:
   /// **'Enabled packs are written to options.txt, which the game reads on start.'**
   String get contentResourcePacksHint;
 
-  /// No description provided for @contentShaderPacksHint.
+  /// Explains that the active shader is picked in game.
   ///
   /// In en, this message translates to:
   /// **'Installed shader packs; pick the active one in game.'**
   String get contentShaderPacksHint;
 
-  /// No description provided for @contentSavesHint.
+  /// Warns that deleting a world is permanent.
   ///
   /// In en, this message translates to:
   /// **'Worlds in this instance. Deleting one is permanent.'**
   String get contentSavesHint;
 
-  /// No description provided for @contentServersHint.
+  /// Explains that this is the in-game multiplayer list.
   ///
   /// In en, this message translates to:
   /// **'The multiplayer server list this instance shows in game.'**
   String get contentServersHint;
 
-  /// No description provided for @contentEmptyResourcePacks.
+  /// Empty state of the resource pack list.
   ///
   /// In en, this message translates to:
   /// **'No resource packs yet.'**
   String get contentEmptyResourcePacks;
 
-  /// No description provided for @contentEmptyShaderPacks.
+  /// Empty state of the shader pack list.
   ///
   /// In en, this message translates to:
   /// **'No shader packs yet.'**
   String get contentEmptyShaderPacks;
 
-  /// No description provided for @contentEmptySaves.
+  /// Empty state of the world list.
   ///
   /// In en, this message translates to:
   /// **'No worlds yet.'**
   String get contentEmptySaves;
 
-  /// No description provided for @contentEmptyServers.
+  /// Empty state of the server list.
   ///
   /// In en, this message translates to:
   /// **'No servers yet.'**
   String get contentEmptyServers;
 
-  /// No description provided for @contentDeleteTitle.
+  /// Confirmation title before deleting a content entry.
   ///
   /// In en, this message translates to:
   /// **'Delete {name}?'**
   String contentDeleteTitle(Object name);
 
-  /// No description provided for @contentDeleteBody.
+  /// Confirmation body before deleting a content entry.
   ///
   /// In en, this message translates to:
   /// **'This cannot be undone.'**
   String get contentDeleteBody;
 
-  /// No description provided for @contentAddServer.
+  /// Button and dialog title for adding a server entry.
   ///
   /// In en, this message translates to:
   /// **'Add server'**
   String get contentAddServer;
 
-  /// No description provided for @contentServerName.
+  /// Field label for a server name.
   ///
   /// In en, this message translates to:
   /// **'Name'**
   String get contentServerName;
 
-  /// No description provided for @contentServerAddress.
+  /// Field hint for a server address.
   ///
   /// In en, this message translates to:
   /// **'Address, e.g. play.example.com'**
   String get contentServerAddress;
 
-  /// No description provided for @actionDelete.
+  /// Generic delete action label.
   ///
   /// In en, this message translates to:
   /// **'Delete'**
   String get actionDelete;
 
-  /// No description provided for @actionSave.
+  /// Generic save action label.
   ///
   /// In en, this message translates to:
   /// **'Save'**
   String get actionSave;
+
+  /// Radio label: follow the fastest measured source.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic ({name} first)'**
+  String sourceAuto(String name);
+
+  /// Radio label: always use the official CDN.
+  ///
+  /// In en, this message translates to:
+  /// **'Mojang'**
+  String get sourceOfficial;
+
+  /// Radio label: always use the BMCLAPI mirror.
+  ///
+  /// In en, this message translates to:
+  /// **'BMCLAPI'**
+  String get sourceBmclapi;
+
+  /// Heading above the download source choice.
+  ///
+  /// In en, this message translates to:
+  /// **'Download source'**
+  String get sourceTitle;
 }
 
 class _AppLocalizationsDelegate

@@ -58,6 +58,8 @@ void main() {
         'instanceMemoryMb', // a number and the SI-ish unit "MB"
         'downloadPercent', // a number and a percent sign
         'languageEnglish', // a language is named in its own language
+        'sourceOfficial', // "Mojang" is a company name
+        'sourceBmclapi', // "BMCLAPI" is a mirror's name
       };
       final untranslated = [
         for (final key in en.keys)

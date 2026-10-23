@@ -345,5 +345,9 @@
   "contentServerName": "名称",
   "contentServerAddress": "地址，例如 play.example.com",
   "actionDelete": "删除",
-  "actionSave": "保存"
+  "actionSave": "保存",
+  "sourceAuto": "自动（优先 {name}）",
+  "sourceOfficial": "Mojang",
+  "sourceBmclapi": "BMCLAPI",
+  "sourceTitle": "下载源"
 }

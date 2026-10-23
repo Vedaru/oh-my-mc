@@ -6,6 +6,8 @@ import 'package:oh_my_mc/core/diagnostics/crash_analyzer.dart';
 import 'package:oh_my_mc/core/diagnostics/network_info.dart';
 import 'package:oh_my_mc/core/diagnostics/speed_test.dart';
 import 'package:oh_my_mc/data/diagnostics_providers.dart';
+import 'package:oh_my_mc/data/settings.dart';
+import 'package:oh_my_mc/app/providers.dart';
 import 'package:oh_my_mc/l10n/l10n.dart';
 import 'package:oh_my_mc/l10n/generated/app_localizations.dart';
 import 'package:oh_my_mc/ui/launch/crash_card.dart';
@@ -45,6 +47,10 @@ void main() {
       final test = _ScriptedSpeedTest(samples);
       final container = ProviderContainer(
         overrides: [
+          // The panel also shows the download-source preference, which reads settings.
+          settingsStoreProvider.overrideWith(
+            (ref) => MemorySettingsStore(AppSettings.defaults),
+          ),
           lanInterfacesProvider.overrideWith((ref) async => interfaces),
           speedTestProvider.overrideWithValue(test),
         ],
@@ -109,7 +115,8 @@ void main() {
       await tester.tap(find.byKey(const m3.ValueKey('speed-test')));
       await tester.pumpAndSettle();
 
-      expect(find.text('Mojang'), findsOneWidget);
+      // "Mojang" is also a radio label below, so the row is found by key.
+      expect(find.byKey(const m3.ValueKey('speed-Mojang')), findsOneWidget);
       expect(find.text('4.0 MB/s'), findsOneWidget);
       // The failure keeps its reason instead of showing a fake number.
       expect(find.text('HTTP 404'), findsOneWidget);
