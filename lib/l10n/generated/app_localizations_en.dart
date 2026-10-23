@@ -1162,18 +1162,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get setupBackgroundFailed => 'Could not use that file.';
 
   @override
-  String launcherUpdateTitle(String version) {
-    return 'Version $version is available';
-  }
-
-  @override
-  String get launcherUpdateBody =>
-      'Download it from the release page; your instances and settings are kept.';
-
-  @override
-  String get launcherUpdateAction => 'Open release page';
-
-  @override
   String get worldRestore => 'Restore from backup…';
 
   @override
@@ -1184,5 +1172,22 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String worldRestoreFailed(String error) {
     return 'Restore failed: $error';
+  }
+
+  @override
+  String get downloadUninstall => 'Uninstall';
+
+  @override
+  String downloadUninstallTitle(String version) {
+    return 'Uninstall $version?';
+  }
+
+  @override
+  String get downloadUninstallBody =>
+      'Deletes this version\'s own files. Shared libraries and assets are kept, and instances using it are left alone - they will report a missing version.';
+
+  @override
+  String downloadUninstallDone(String version) {
+    return '$version uninstalled';
   }
 }

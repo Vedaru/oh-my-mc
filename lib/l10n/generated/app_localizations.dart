@@ -2018,24 +2018,6 @@ abstract class AppLocalizations {
   /// **'Could not use that file.'**
   String get setupBackgroundFailed;
 
-  /// Banner title when a newer launcher release exists.
-  ///
-  /// In en, this message translates to:
-  /// **'Version {version} is available'**
-  String launcherUpdateTitle(String version);
-
-  /// Banner line explaining where to get the update.
-  ///
-  /// In en, this message translates to:
-  /// **'Download it from the release page; your instances and settings are kept.'**
-  String get launcherUpdateBody;
-
-  /// Button that opens the release page.
-  ///
-  /// In en, this message translates to:
-  /// **'Open release page'**
-  String get launcherUpdateAction;
-
   /// Button that restores a world from a backup zip.
   ///
   /// In en, this message translates to:
@@ -2053,6 +2035,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Restore failed: {error}'**
   String worldRestoreFailed(String error);
+
+  /// Tooltip of the button that removes an installed version.
+  ///
+  /// In en, this message translates to:
+  /// **'Uninstall'**
+  String get downloadUninstall;
+
+  /// Confirmation title for uninstalling a version.
+  ///
+  /// In en, this message translates to:
+  /// **'Uninstall {version}?'**
+  String downloadUninstallTitle(String version);
+
+  /// Explains exactly what an uninstall deletes and keeps.
+  ///
+  /// In en, this message translates to:
+  /// **'Deletes this version\'s own files. Shared libraries and assets are kept, and instances using it are left alone - they will report a missing version.'**
+  String get downloadUninstallBody;
+
+  /// Snackbar after uninstalling a version.
+  ///
+  /// In en, this message translates to:
+  /// **'{version} uninstalled'**
+  String downloadUninstallDone(String version);
 }
 
 class _AppLocalizationsDelegate

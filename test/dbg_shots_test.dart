@@ -14,6 +14,7 @@ import 'package:oh_my_mc/core/instance/instance.dart';
 import 'package:oh_my_mc/core/mods/mod_scanner.dart';
 import 'package:oh_my_mc/core/mods/update_checker.dart';
 import 'package:oh_my_mc/core/net/cancellation.dart';
+import 'package:oh_my_mc/core/net/version_manifest.dart';
 import 'package:oh_my_mc/data/install_providers.dart';
 import 'package:oh_my_mc/core/install/version_installer.dart';
 import 'package:oh_my_mc/core/net/progress.dart';
@@ -409,6 +410,19 @@ void main() {
       overrides: [
         installControllerProvider.overrideWith(_ShotFailedInstall.new),
         installLogProvider.overrideWith(_ShotFailedLog.new),
+      ],
+    );
+  });
+
+  testWidgets('download installed versions', (tester) async {
+    await shoot(
+      tester,
+      '/download',
+      'download-installed',
+      instances: [_instance('mc', 'mc', '1.20.1')],
+      overrides: [
+        versionListProvider.overrideWith(() => _ShotVersionList()),
+        installedVersionsProvider.overrideWith(() => _ShotInstalled()),
       ],
     );
   });
@@ -1071,4 +1085,30 @@ class _ShotUpdateClient implements ModrinthClient {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// A fixed version list: the shot exists to review the row anatomy (status, type,
+/// installed marker, uninstall action), not to race a manifest download.
+class _ShotVersionList extends VersionListController {
+  @override
+  VersionListState build() => VersionListReady(
+    VersionManifest.fromJson({
+      'latest': {'release': '1.21', 'snapshot': '24w14a'},
+      'versions': [
+        for (final id in ['1.21', '1.20.6', '1.20.1', '1.19.4'])
+          {
+            'id': id,
+            'type': 'release',
+            'url': 'https://example.invalid/$id.json',
+            'sha1': 'aa',
+            'releaseTime': '2024-06-13T00:00:00+00:00',
+          },
+      ],
+    }),
+  );
+}
+
+class _ShotInstalled extends InstalledVersions {
+  @override
+  Set<String> build() => {'1.21', '1.20.1'};
 }

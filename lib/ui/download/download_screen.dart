@@ -9,6 +9,7 @@ import '../../core/instance/instance.dart';
 import '../../core/net/progress.dart';
 import '../../core/net/version_manifest.dart';
 import '../../data/install_providers.dart';
+import '../../data/launch_factory.dart';
 import '../../l10n/l10n.dart';
 import '../components/app_banner.dart';
 import '../components/hover_row.dart';
@@ -75,6 +76,46 @@ class _DownloadScreenState extends ConsumerState<DownloadScreen> {
   void dispose() {
     _search.dispose();
     super.dispose();
+  }
+
+  /// Removes a version, after saying exactly what that deletes.
+  Future<void> _uninstall(String versionId) async {
+    final l10n = context.l10n;
+    final messenger = m3.ScaffoldMessenger.maybeOf(context);
+    final confirmed = await m3.showDialog<bool>(
+      context: context,
+      builder: (context) => m3.AlertDialog(
+        title: m3.Text(l10n.downloadUninstallTitle(versionId)),
+        content: m3.Text(l10n.downloadUninstallBody),
+        actions: [
+          m3.TextButton(
+            onPressed: () => m3.Navigator.of(context).pop(false),
+            child: m3.Text(l10n.actionCancel),
+          ),
+          m3.TextButton(
+            key: const m3.ValueKey('download-uninstall-confirm'),
+            onPressed: () => m3.Navigator.of(context).pop(true),
+            child: m3.Text(l10n.downloadUninstall),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final gamePaths = ref.read(launcherPathsProvider).gamePaths;
+    final removed = await ref
+        .read(versionRemoverProvider)
+        .remove(versionId, versionsDir: gamePaths.versions);
+    await ref.read(installedVersionsProvider.notifier).refresh();
+    if (!mounted || !removed) return;
+    messenger
+      ?..hideCurrentSnackBar()
+      ..showSnackBar(
+        m3.SnackBar(
+          content: m3.Text(l10n.downloadUninstallDone(versionId)),
+          behavior: m3.SnackBarBehavior.floating,
+        ),
+      );
   }
 
   @override
@@ -145,6 +186,7 @@ class _DownloadScreenState extends ConsumerState<DownloadScreen> {
                     notifier.install(id, loader: _loader);
                   }
                 },
+                onUninstall: (id) => _uninstall(id),
               ),
             },
           ),
@@ -284,6 +326,7 @@ class _VersionList extends StatelessWidget {
     required this.stale,
     required this.query,
     required this.onInstall,
+    required this.onUninstall,
   });
 
   final List<VersionRowData> versions;
@@ -295,6 +338,7 @@ class _VersionList extends StatelessWidget {
   final bool stale;
   final String query;
   final void Function(String versionId) onInstall;
+  final void Function(String versionId) onUninstall;
 
   @override
   Widget build(BuildContext context) {
@@ -333,6 +377,7 @@ class _VersionList extends StatelessWidget {
               incomplete: incomplete.contains(versions[index].id),
               busy: busy,
               onInstall: onInstall,
+              onUninstall: onUninstall,
             ),
           ),
         ),
@@ -348,6 +393,7 @@ class _VersionRow extends StatelessWidget {
     required this.incomplete,
     required this.busy,
     required this.onInstall,
+    required this.onUninstall,
   });
 
   final VersionRowData version;
@@ -357,6 +403,10 @@ class _VersionRow extends StatelessWidget {
   final bool incomplete;
   final bool busy;
   final void Function(String versionId) onInstall;
+
+  /// Null when there is nothing to remove. An installed version is the only row with a
+  /// way out: a downloadable one is just a line in a catalogue.
+  final void Function(String versionId)? onUninstall;
 
   @override
   Widget build(BuildContext context) {
@@ -412,6 +462,18 @@ class _VersionRow extends StatelessWidget {
                     : scheme.onSurfaceVariant,
               ),
             ),
+          ),
+          m3.SizedBox(
+            width: 40,
+            child: (installed || incomplete) && onUninstall != null
+                ? m3.IconButton(
+                    key: m3.ValueKey('download-uninstall-${version.id}'),
+                    onPressed: () => onUninstall!(version.id),
+                    icon: m3.Icon(ShellIcons.trash, size: 18),
+                    visualDensity: m3.VisualDensity.compact,
+                    tooltip: l10n.downloadUninstall,
+                  )
+                : null,
           ),
         ],
       ),

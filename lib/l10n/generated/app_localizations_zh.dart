@@ -1119,17 +1119,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get setupBackgroundFailed => '无法使用这个文件。';
 
   @override
-  String launcherUpdateTitle(String version) {
-    return '有新版本 $version';
-  }
-
-  @override
-  String get launcherUpdateBody => '到发布页下载更新，实例和设置都会保留。';
-
-  @override
-  String get launcherUpdateAction => '打开发布页';
-
-  @override
   String get worldRestore => '从备份还原…';
 
   @override
@@ -1140,5 +1129,22 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String worldRestoreFailed(String error) {
     return '还原失败：$error';
+  }
+
+  @override
+  String get downloadUninstall => '卸载';
+
+  @override
+  String downloadUninstallTitle(String version) {
+    return '卸载 $version？';
+  }
+
+  @override
+  String get downloadUninstallBody =>
+      '只删除这个版本自己的文件；共享库和资源会保留，使用它的实例也不会被删除——它们会显示缺少版本。';
+
+  @override
+  String downloadUninstallDone(String version) {
+    return '已卸载 $version';
   }
 }

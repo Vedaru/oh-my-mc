@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/install/version_installer.dart';
+import '../core/install/version_remover.dart';
 import '../core/instance/instance.dart';
 import '../core/install/install_journal.dart';
 import '../core/install/install_log.dart';
@@ -660,3 +661,9 @@ final versionListProvider =
     NotifierProvider<VersionListController, VersionListState>(
       VersionListController.new,
     );
+
+/// Where a version is uninstalled from. A provider so a widget test can answer without
+/// deleting a directory.
+final versionRemoverProvider = Provider<VersionRemover>(
+  (ref) => const VersionRemover(),
+);

@@ -9,6 +9,7 @@ import 'package:oh_my_mc/core/install/version_installer.dart';
 import 'package:oh_my_mc/core/net/progress.dart';
 import 'package:oh_my_mc/core/net/version_manifest.dart';
 import 'package:oh_my_mc/core/instance/instance.dart';
+import 'package:oh_my_mc/core/install/version_remover.dart';
 import 'package:oh_my_mc/data/install_providers.dart';
 import 'package:oh_my_mc/data/launch_factory.dart';
 import 'package:oh_my_mc/ui/download/download_screen.dart';
@@ -193,6 +194,7 @@ void main() {
     Set<String> installed = const {},
     Set<String> incomplete = const {},
     List<String> logLines = const [],
+    VersionRemover? remover,
   }) async {
     final container = ProviderContainer(
       overrides: [
@@ -214,6 +216,7 @@ void main() {
             game: Directory('${tmp.path}/game')..createSync(recursive: true),
           ),
         ),
+        versionRemoverProvider.overrideWithValue(remover ?? _FakeRemover()),
       ],
     );
     addTearDown(container.dispose);
@@ -230,6 +233,43 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
     return container;
   }
+
+  testWidgets('an installed version can be uninstalled, with a warning', (
+    tester,
+  ) async {
+    final remover = _FakeRemover();
+    await pump(tester, installed: {'1.20.1'}, remover: remover);
+
+    // The row that says 已安装 is the row that can be removed.
+    final action = find.byKey(const ValueKey('download-uninstall-1.20.1'));
+    expect(action, findsOneWidget);
+    // A version that is only downloadable has no way out: nothing to remove.
+    expect(find.byKey(const ValueKey('download-uninstall-1.21')), findsNothing);
+
+    await tester.tap(action);
+    await tester.pump(const Duration(milliseconds: 300));
+
+    // The dialog says what is kept, because "uninstall" is the word that makes people
+    // expect their libraries to go too.
+    expect(find.textContaining('Shared libraries'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('download-uninstall-confirm')));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(remover.removed, ['1.20.1']);
+  });
+
+  testWidgets('cancelling the uninstall removes nothing', (tester) async {
+    final remover = _FakeRemover();
+    await pump(tester, installed: {'1.20.1'}, remover: remover);
+
+    await tester.tap(find.byKey(const ValueKey('download-uninstall-1.20.1')));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Cancel'));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(remover.removed, isEmpty);
+  });
 
   testWidgets('releases are listed; snapshots and old betas are hidden', (
     tester,
@@ -625,4 +665,20 @@ void main() {
     expect(find.text('Versions'), findsNothing);
     expect(find.text('Installed'), findsNothing);
   });
+}
+
+/// Records what an uninstall was asked to remove. The real one deletes a directory, and
+/// a widget test that does that is a widget test that touches the disk.
+class _FakeRemover implements VersionRemover {
+  final removed = <String>[];
+
+  @override
+  Future<bool> remove(String versionId, {required String versionsDir}) async {
+    removed.add(versionId);
+    return true;
+  }
+
+  @override
+  Future<bool> exists(String versionId, {required String versionsDir}) async =>
+      false;
 }

@@ -1629,23 +1629,6 @@
   "@setupBackgroundFailed": {
     "description": "Reported when the chosen file is not a readable image."
   },
-  "launcherUpdateTitle": "Version {version} is available",
-  "@launcherUpdateTitle": {
-    "description": "Banner title when a newer launcher release exists.",
-    "placeholders": {
-      "version": {
-        "type": "String"
-      }
-    }
-  },
-  "launcherUpdateBody": "Download it from the release page; your instances and settings are kept.",
-  "@launcherUpdateBody": {
-    "description": "Banner line explaining where to get the update."
-  },
-  "launcherUpdateAction": "Open release page",
-  "@launcherUpdateAction": {
-    "description": "Button that opens the release page."
-  },
   "worldRestore": "Restore from backup…",
   "@worldRestore": {
     "description": "Button that restores a world from a backup zip."
@@ -1664,6 +1647,32 @@
     "description": "Snackbar when a restore failed.",
     "placeholders": {
       "error": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadUninstall": "Uninstall",
+  "@downloadUninstall": {
+    "description": "Tooltip of the button that removes an installed version."
+  },
+  "downloadUninstallTitle": "Uninstall {version}?",
+  "@downloadUninstallTitle": {
+    "description": "Confirmation title for uninstalling a version.",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadUninstallBody": "Deletes this version's own files. Shared libraries and assets are kept, and instances using it are left alone - they will report a missing version.",
+  "@downloadUninstallBody": {
+    "description": "Explains exactly what an uninstall deletes and keeps."
+  },
+  "downloadUninstallDone": "{version} uninstalled",
+  "@downloadUninstallDone": {
+    "description": "Snackbar after uninstalling a version.",
+    "placeholders": {
+      "version": {
         "type": "String"
       }
     }
