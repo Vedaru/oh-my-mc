@@ -12,6 +12,8 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oh_my_mc/core/instance/instance.dart';
 import 'package:oh_my_mc/core/mods/mod_scanner.dart';
+import 'package:oh_my_mc/core/mods/update_checker.dart';
+import 'package:oh_my_mc/core/net/cancellation.dart';
 import 'package:oh_my_mc/data/install_providers.dart';
 import 'package:oh_my_mc/core/install/version_installer.dart';
 import 'package:oh_my_mc/core/net/progress.dart';
@@ -140,15 +142,22 @@ String? _findFont() {
   return null;
 }
 
-Instance _instance(String id, String name, String version, {DateTime? last}) =>
-    Instance(
-      id: id,
-      name: name,
-      versionId: version,
-      createdAt: DateTime(2026, 1, 1),
-      lastPlayedAt: last,
-      totalPlaytime: const Duration(hours: 12, minutes: 30),
-    );
+Instance _instance(
+  String id,
+  String name,
+  String version, {
+  DateTime? last,
+  LoaderKind loader = LoaderKind.vanilla,
+}) => Instance(
+  id: id,
+  name: name,
+  versionId: version,
+  loader: loader,
+  loaderVersion: loader.isModded ? '0.16.9' : null,
+  createdAt: DateTime(2026, 1, 1),
+  lastPlayedAt: last,
+  totalPlaytime: const Duration(hours: 12, minutes: 30),
+);
 
 void main() {
   setUpAll(_loadFonts);
@@ -209,6 +218,7 @@ void main() {
     double scrollDown = 0,
     List<Override> overrides = const [],
     String? openKey,
+    String? tapAfter,
   }) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
@@ -253,6 +263,14 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
       // A section whose rows read something asynchronous (a server's ping) needs one
       // more frame after the answer lands, or the shot captures the pending state.
+      await tester.pump(const Duration(milliseconds: 400));
+    }
+
+    if (tapAfter != null) {
+      // A shot of a state that needs one more interaction - checking for updates -
+      // with the answer already faked, so the capture is deterministic.
+      await tester.tap(find.byKey(w.ValueKey(tapAfter)));
+      await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
     }
 
@@ -403,6 +421,45 @@ void main() {
       '/download',
       'download',
       instances: [_instance('mc', 'mc', '1.20.1')],
+    );
+  });
+
+  testWidgets('instance mods with updates', (tester) async {
+    await shoot(
+      tester,
+      '/instances/a',
+      'instance-mod-updates',
+      instances: [
+        _instance('a', 'Survival', '1.20.1', loader: LoaderKind.fabric),
+      ],
+      openKey: 'detail-section-mods',
+      overrides: [
+        instanceModsProvider.overrideWith(
+          (ref, id) async => const [
+            ModEntry(
+              path: '/shot/mods/sodium-0.5.8.jar',
+              enabled: true,
+              sizeBytes: 900 * 1024,
+              loader: ModLoaderKind.fabric,
+              name: 'Sodium',
+              version: '0.5.8',
+            ),
+            ModEntry(
+              path: '/shot/mods/iris-1.7.0.jar',
+              enabled: true,
+              sizeBytes: 3 * 1024 * 1024,
+              loader: ModLoaderKind.fabric,
+              name: 'Iris Shaders',
+              version: '1.7.0',
+            ),
+          ],
+        ),
+        modsRepositoryProvider.overrideWithValue(_ShotModsRecorder()),
+        modUpdateCheckerProvider.overrideWithValue(
+          ModUpdateChecker(_ShotUpdateClient(), hash: (_) async => 'sha1'),
+        ),
+      ],
+      tapAfter: 'mods-check-updates',
     );
   });
 
@@ -967,4 +1024,51 @@ class _ShotLanWorlds extends LanDiscovery {
     LanWorld(motd: "Vedaru's Survival", port: 54321, address: '192.168.1.9'),
     LanWorld(motd: 'Creative Test', port: 25566, address: '192.168.1.14'),
   ];
+}
+
+/// Records the delete an update performs, without touching the disk.
+class _ShotModsRecorder implements ModsRepository {
+  @override
+  Future<List<ModEntry>> scan(String directory) async => const [];
+
+  @override
+  Future<String> setEnabled(ModEntry mod, bool enabled) async => mod.path;
+
+  @override
+  Future<void> delete(ModEntry mod) async {}
+}
+
+/// Two of the four shot mods have a newer version, which is what the shot shows.
+class _ShotUpdateClient implements ModrinthClient {
+  @override
+  Future<ModrinthVersion> versionForFile(
+    String sha1, {
+    CancelToken? cancel,
+  }) async => const ModrinthVersion(
+    id: 'installed',
+    projectId: 'p1',
+    name: 'Installed',
+    versionNumber: '0.5.8',
+    files: [],
+    dependencies: [],
+  );
+
+  @override
+  Future<ModrinthVersion> versionFor(
+    String projectId, {
+    required String gameVersion,
+    String? loader,
+    String projectType = 'mod',
+    CancelToken? cancel,
+  }) async => const ModrinthVersion(
+    id: 'latest',
+    projectId: 'p1',
+    name: 'Latest',
+    versionNumber: '0.6.0',
+    files: [],
+    dependencies: [],
+  );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

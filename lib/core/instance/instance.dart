@@ -261,6 +261,16 @@ enum LoaderKind {
   );
 
   bool get isModded => this != LoaderKind.vanilla;
+
+  /// The loader's name in Modrinth's `loaders` facet, or null for vanilla (which has
+  /// no loader tag at all).
+  String? get modrinthTag => switch (this) {
+    LoaderKind.vanilla => null,
+    LoaderKind.fabric => 'fabric',
+    LoaderKind.forge => 'forge',
+    LoaderKind.neoforge => 'neoforge',
+    LoaderKind.quilt => 'quilt',
+  };
 }
 
 /// How an instance's files are stored.

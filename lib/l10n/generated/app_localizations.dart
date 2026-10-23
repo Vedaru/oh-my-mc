@@ -1963,6 +1963,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This window is showing {language}.'**
   String languageEffective(String language);
+
+  /// Button that asks Modrinth which installed mods are out of date.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for updates'**
+  String get modsCheckUpdates;
+
+  /// Same button while the check runs.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking…'**
+  String get modsChecking;
+
+  /// Count of mods with a newer version.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} updates available'**
+  String modsUpdatesFound(int count);
+
+  /// The version an update would move the mod to.
+  ///
+  /// In en, this message translates to:
+  /// **'Update to {version}'**
+  String modsUpdateTo(String version);
+
+  /// Tooltip of the per-row update button.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get modsUpdateAction;
 }
 
 class _AppLocalizationsDelegate

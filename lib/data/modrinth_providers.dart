@@ -5,6 +5,7 @@ import '../core/game/content.dart';
 import '../core/instance/instance.dart';
 import '../core/mods/mod_installer.dart';
 import '../core/mods/modrinth.dart';
+import '../core/mods/update_checker.dart';
 import 'launch_factory.dart';
 
 /// The catalogues the download page offers, and what each installs into.
@@ -143,3 +144,12 @@ final contentInstallActionProvider =
         };
       },
     );
+
+/// The update checker, over the same client the installer uses.
+///
+/// A provider so a test can hand it a fake client *and* a fake hasher: identifying an
+/// installed jar means reading and hashing it, which does not complete inside the
+/// widget-test clock.
+final modUpdateCheckerProvider = Provider<ModUpdateChecker>(
+  (ref) => ModUpdateChecker(ref.watch(modrinthClientProvider)),
+);

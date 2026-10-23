@@ -1130,4 +1130,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String languageEffective(String language) {
     return 'This window is showing $language.';
   }
+
+  @override
+  String get modsCheckUpdates => 'Check for updates';
+
+  @override
+  String get modsChecking => 'Checking…';
+
+  @override
+  String modsUpdatesFound(int count) {
+    return '$count updates available';
+  }
+
+  @override
+  String modsUpdateTo(String version) {
+    return 'Update to $version';
+  }
+
+  @override
+  String get modsUpdateAction => 'Update';
 }

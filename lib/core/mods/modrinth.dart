@@ -251,6 +251,26 @@ class ModrinthClient {
     throw ModrinthNoMatch(projectId, gameVersion, loader);
   }
 
+  /// The version that contains the file with this sha1.
+  ///
+  /// This is how an installed jar is identified: the launcher has a path and a hash,
+  /// and Modrinth answers "version X of project Y". Anything else (a jar built from
+  /// source, a dev build) comes back as [ModrinthNoMatch] and simply has no update.
+  Future<ModrinthVersion> versionForFile(
+    String sha1, {
+    CancelToken? cancel,
+  }) async {
+    final uri = _base.replace(
+      path: '/v2/version_file/$sha1',
+      queryParameters: {'algorithm': 'sha1'},
+    );
+    final body = await _getJson(uri, cancel: cancel);
+    if (body is! Map<String, dynamic>) {
+      throw StateError('version_file/$sha1 is not an object');
+    }
+    return ModrinthVersion.fromJson(body);
+  }
+
   /// Everything [projectId] needs to run, itself included.
   ///
   /// Breadth-first over `required` dependencies with a visited set: mods depend on

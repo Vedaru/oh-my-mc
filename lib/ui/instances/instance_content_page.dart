@@ -9,6 +9,8 @@ import '../../core/game/content.dart';
 import '../../core/game/world_backup.dart';
 import '../../core/instance/instance.dart';
 import '../../core/mods/mod_scanner.dart';
+import '../../core/mods/modrinth.dart';
+import '../../core/mods/update_checker.dart';
 import '../../data/game_content_provider.dart';
 import '../../data/launch_factory.dart';
 import '../../data/mods_providers.dart';
@@ -64,6 +66,10 @@ class _InstanceContentPageState extends ConsumerState<InstanceContentPage> {
   /// Bumped after a write, so the list re-reads the folder the write landed in.
   var _generation = 0;
 
+  /// Mods with a newer version on Modrinth, once the user asked.
+  List<ModUpdate>? _updates;
+  var _checking = false;
+
   /// The world the data pack page is pointed at.
   ///
   /// It lives on the page, not in the list, because the install action is here: asking
@@ -107,6 +113,59 @@ class _InstanceContentPageState extends ConsumerState<InstanceContentPage> {
     if (mounted) setState(() => _generation++);
   }
 
+  Future<void> _checkUpdates() async {
+    final instance = widget.instance;
+    if (!instance.loader.isModded) return;
+    setState(() => _checking = true);
+    try {
+      final mods = await ref.read(instanceModsProvider(instance.id).future);
+      final updates = await ref
+          .read(modUpdateCheckerProvider)
+          .check(
+            mods,
+            gameVersion: instance.versionId,
+            loader: instance.loader.modrinthTag,
+          );
+      if (mounted) setState(() => _updates = updates);
+    } on Object {
+      // A check that cannot reach Modrinth is not an error state for the list: the
+      // mods are still there and the button can be pressed again.
+      if (mounted) setState(() => _updates = const []);
+    } finally {
+      if (mounted) setState(() => _checking = false);
+    }
+  }
+
+  /// Installs the newer file over the old one.
+  Future<void> _applyUpdate(ModUpdate update) async {
+    await ref
+        .read(modInstallerProvider)
+        .install(
+          plans: [
+            ModInstallPlan(
+              projectId: update.latest.projectId,
+              title: update.mod.name ?? update.latest.name,
+              file: update.latest.primaryFile!,
+            ),
+          ],
+          directory: modsDirFor(
+            ref.read(launcherPathsProvider),
+            widget.instance,
+          ),
+        );
+    // The old jar goes: two versions of the same mod is a crash the launcher caused.
+    await ref.read(modsRepositoryProvider).delete(update.mod);
+    ref.invalidate(instanceModsProvider(widget.instance.id));
+    if (mounted) {
+      setState(() {
+        _updates = [
+          for (final entry in _updates ?? const <ModUpdate>[])
+            if (entry.mod.path != update.mod.path) entry,
+        ];
+      });
+    }
+  }
+
   /// A server is a name and an address in `servers.dat`; there is nothing to download.
   Future<void> _addServer() async {
     final server = await m3.showDialog<({String name, String ip})>(
@@ -139,55 +198,85 @@ class _InstanceContentPageState extends ConsumerState<InstanceContentPage> {
           // Same left inset as a `ListRow`, so the hint starts where the rows' text
           // starts instead of 8 px to its left.
           padding: const m3.EdgeInsets.only(bottom: 8, left: 8),
-          child: m3.Row(
+          child: m3.Column(
+            crossAxisAlignment: m3.CrossAxisAlignment.stretch,
             children: [
-              m3.Expanded(
-                child: m3.Text(
-                  _hint(l10n),
-                  style: AppTheme.caption(context).copyWith(
-                    color: m3.Theme.of(context).colorScheme.onSurfaceVariant,
+              m3.Text(
+                _hint(l10n),
+                style: AppTheme.caption(context).copyWith(
+                  color: m3.Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const m3.SizedBox(height: 8),
+              // `Wrap`, not a `Row`: three buttons and a count have to fit at 824 px
+              // of pane on a 1400 px window, and a Row that overflows paints a yellow
+              // stripe instead of moving the last button down.
+              m3.Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                crossAxisAlignment: m3.WrapCrossAlignment.center,
+                children: [
+                  if (_updates case final updates? when updates.isNotEmpty)
+                    m3.Text(
+                      l10n.modsUpdatesFound(updates.length),
+                      style: AppTheme.caption(context).copyWith(
+                        color: m3.Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  AppButton(
+                    key: const m3.ValueKey('content-open-folder'),
+                    onPressed: _openFolder,
+                    style: AppButtonStyle.text,
+                    size: AppButtonSize.sm,
+                    icon: const m3.Icon(ShellIcons.folder, size: 14),
+                    label: m3.Text(l10n.instanceOpenFolderTooltip),
                   ),
-                ),
+                  if (widget.kind == InstanceContentKind.servers) ...[
+                    m3.IconButton(
+                      key: const m3.ValueKey('servers-refresh'),
+                      onPressed: () => ref.invalidate(serverPingProvider),
+                      icon: const m3.Icon(ShellIcons.refresh, size: 18),
+                      tooltip: l10n.actionRefresh,
+                    ),
+                  ],
+                  if (widget.kind == InstanceContentKind.mods &&
+                      widget.instance.loader.isModded) ...[
+                    const m3.SizedBox(width: 8),
+                    AppButton(
+                      key: const m3.ValueKey('mods-check-updates'),
+                      onPressed: _checking ? null : _checkUpdates,
+                      style: AppButtonStyle.text,
+                      size: AppButtonSize.sm,
+                      icon: const m3.Icon(ShellIcons.refresh, size: 14),
+                      label: m3.Text(
+                        _checking ? l10n.modsChecking : l10n.modsCheckUpdates,
+                      ),
+                    ),
+                  ],
+                  if (widget.kind == InstanceContentKind.servers) ...[
+                    const m3.SizedBox(width: 8),
+                    AppButton(
+                      key: const m3.ValueKey('content-add-server'),
+                      onPressed: _addServer,
+                      style: AppButtonStyle.filled,
+                      size: AppButtonSize.sm,
+                      icon: const m3.Icon(ShellIcons.add, size: 14),
+                      label: m3.Text(l10n.contentAddServer),
+                    ),
+                  ],
+                  if (widget.kind.catalog != null) ...[
+                    const m3.SizedBox(width: 8),
+                    AppButton(
+                      key: const m3.ValueKey('content-install'),
+                      onPressed: _install,
+                      style: AppButtonStyle.filled,
+                      size: AppButtonSize.sm,
+                      icon: const m3.Icon(ShellIcons.add, size: 14),
+                      label: m3.Text(l10n.contentInstall),
+                    ),
+                  ],
+                ],
               ),
-              const m3.SizedBox(width: 12),
-              AppButton(
-                key: const m3.ValueKey('content-open-folder'),
-                onPressed: _openFolder,
-                style: AppButtonStyle.text,
-                size: AppButtonSize.sm,
-                icon: const m3.Icon(ShellIcons.folder, size: 14),
-                label: m3.Text(l10n.instanceOpenFolderTooltip),
-              ),
-              if (widget.kind == InstanceContentKind.servers) ...[
-                m3.IconButton(
-                  key: const m3.ValueKey('servers-refresh'),
-                  onPressed: () => ref.invalidate(serverPingProvider),
-                  icon: const m3.Icon(ShellIcons.refresh, size: 18),
-                  tooltip: l10n.actionRefresh,
-                ),
-              ],
-              if (widget.kind == InstanceContentKind.servers) ...[
-                const m3.SizedBox(width: 8),
-                AppButton(
-                  key: const m3.ValueKey('content-add-server'),
-                  onPressed: _addServer,
-                  style: AppButtonStyle.filled,
-                  size: AppButtonSize.sm,
-                  icon: const m3.Icon(ShellIcons.add, size: 14),
-                  label: m3.Text(l10n.contentAddServer),
-                ),
-              ],
-              if (widget.kind.catalog != null) ...[
-                const m3.SizedBox(width: 8),
-                AppButton(
-                  key: const m3.ValueKey('content-install'),
-                  onPressed: _install,
-                  style: AppButtonStyle.filled,
-                  size: AppButtonSize.sm,
-                  icon: const m3.Icon(ShellIcons.add, size: 14),
-                  label: m3.Text(l10n.contentInstall),
-                ),
-              ],
             ],
           ),
         ),
@@ -202,6 +291,8 @@ class _InstanceContentPageState extends ConsumerState<InstanceContentPage> {
               ? _ModList(
                   key: m3.ValueKey('mods-$_generation'),
                   instance: widget.instance,
+                  updates: _updates ?? const [],
+                  onApply: _applyUpdate,
                 )
               : _GameContentPage(
                   key: m3.ValueKey('${widget.kind.name}-$_generation-$_world'),
@@ -225,69 +316,126 @@ class _InstanceContentPageState extends ConsumerState<InstanceContentPage> {
 }
 
 /// Mods: switched off by renaming the jar, so this is the one list with a switch.
+///
+/// Also the one list that can check for updates: a mod has a Modrinth identity (found by
+/// the jar's sha1), a pack usually does not.
+/// Mods: switched off by renaming the jar, so this is the one list with a switch.
+///
+/// The update state lives on the page (one toolbar for the section), so this is a
+/// plain widget: it draws rows and reports what the user pressed.
 class _ModList extends ConsumerWidget {
-  const _ModList({required this.instance, super.key});
+  const _ModList({
+    required this.instance,
+    required this.updates,
+    required this.onApply,
+    super.key,
+  });
 
   final Instance instance;
+
+  /// Mods with a newer version, once the check has run.
+  final List<ModUpdate> updates;
+
+  final Future<void> Function(ModUpdate update) onApply;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final mods = ref.watch(instanceModsProvider(instance.id));
 
-    return mods.when(
-      loading: () => const m3.Center(child: m3.CircularProgressIndicator()),
-      error: (error, _) => m3.SelectableText('$error'),
-      data: (entries) {
-        if (entries.isEmpty) {
-          return EmptyState(
-            icon: ShellIcons.mods,
-            message: l10n.contentEmptyMods,
-            hint: l10n.contentEmptyModsHint,
-          );
-        }
-        return m3.ListView(
-          padding: m3.EdgeInsets.zero,
-          children: [
-            for (final mod in entries)
-              ListRow(
-                key: m3.ValueKey('mod-${mod.fileName}'),
-                leadingIcon: mod.problem == null
-                    ? ShellIcons.mods
-                    : ShellIcons.warning,
-                label: mod.displayName,
-                supporting: mod.problem ?? _supporting(mod),
-                errorText: mod.problem,
-                trailingControl: m3.Row(
-                  mainAxisSize: m3.MainAxisSize.min,
-                  children: [
-                    m3.IconButton(
-                      onPressed: () async {
-                        await ref.read(modsRepositoryProvider).delete(mod);
-                        ref.invalidate(instanceModsProvider(instance.id));
-                      },
-                      icon: const m3.Icon(ShellIcons.trash, size: 18),
-                      visualDensity: m3.VisualDensity.compact,
-                      tooltip: l10n.actionDelete,
+    return m3.Column(
+      crossAxisAlignment: m3.CrossAxisAlignment.stretch,
+      children: [
+        m3.Expanded(
+          child: mods.when(
+            loading: () =>
+                const m3.Center(child: m3.CircularProgressIndicator()),
+            error: (error, _) => m3.SelectableText('$error'),
+            data: (entries) {
+              if (entries.isEmpty) {
+                return EmptyState(
+                  icon: ShellIcons.mods,
+                  message: l10n.contentEmptyMods,
+                  hint: l10n.contentEmptyModsHint,
+                );
+              }
+              return m3.ListView(
+                padding: m3.EdgeInsets.zero,
+                children: [
+                  for (final mod in entries)
+                    ListRow(
+                      key: m3.ValueKey('mod-${mod.fileName}'),
+                      leadingIcon: mod.problem == null
+                          ? ShellIcons.mods
+                          : ShellIcons.warning,
+                      label: mod.displayName,
+                      supporting: mod.problem ?? _supporting(mod),
+                      errorText: mod.problem,
+                      trailingText: _updateLabel(l10n, updates, mod),
+                      trailingControl: m3.Row(
+                        mainAxisSize: m3.MainAxisSize.min,
+                        children: [
+                          if (_updateFor(updates, mod) case final update?)
+                            m3.IconButton(
+                              key: m3.ValueKey('mod-update-${mod.fileName}'),
+                              onPressed: () => onApply(update),
+                              icon: m3.Icon(
+                                ShellIcons.download,
+                                size: 18,
+                                color: m3.Theme.of(context).colorScheme.primary,
+                              ),
+                              visualDensity: m3.VisualDensity.compact,
+                              tooltip: l10n.modsUpdateAction,
+                            ),
+                          m3.IconButton(
+                            onPressed: () async {
+                              await ref
+                                  .read(modsRepositoryProvider)
+                                  .delete(mod);
+                              ref.invalidate(instanceModsProvider(instance.id));
+                            },
+                            icon: const m3.Icon(ShellIcons.trash, size: 18),
+                            visualDensity: m3.VisualDensity.compact,
+                            tooltip: l10n.actionDelete,
+                          ),
+                          const m3.SizedBox(width: 4),
+                          // The row's state is the last thing at the edge.
+                          m3.Switch(
+                            value: mod.enabled,
+                            onChanged: (value) async {
+                              await ref
+                                  .read(modsRepositoryProvider)
+                                  .setEnabled(mod, value);
+                              ref.invalidate(instanceModsProvider(instance.id));
+                            },
+                          ),
+                        ],
+                      ),
                     ),
-                    const m3.SizedBox(width: 4),
-                    // The row's state is the last thing at the edge.
-                    m3.Switch(
-                      value: mod.enabled,
-                      onChanged: (value) async {
-                        await ref
-                            .read(modsRepositoryProvider)
-                            .setEnabled(mod, value);
-                        ref.invalidate(instanceModsProvider(instance.id));
-                      },
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        );
-      },
+                ],
+              );
+            },
+          ),
+        ),
+      ],
     );
+  }
+
+  static String? _updateLabel(
+    AppLocalizations l10n,
+    List<ModUpdate> updates,
+    ModEntry mod,
+  ) {
+    final update = _updateFor(updates, mod);
+    if (update == null) return null;
+    return l10n.modsUpdateTo(update.to);
+  }
+
+  static ModUpdate? _updateFor(List<ModUpdate> updates, ModEntry mod) {
+    for (final update in updates) {
+      if (update.mod.path == mod.path) return update;
+    }
+    return null;
   }
 
   static String _supporting(ModEntry mod) => [
@@ -297,12 +445,6 @@ class _ModList extends ConsumerWidget {
   ].join(' · ');
 }
 
-/// Resource packs, shaders, worlds, servers and data packs, read through
-/// `GameContent`.
-///
-/// Stateful rather than a `FutureBuilder` over a fresh future per build: after a
-/// toggle or a delete the list has to be re-read from disk, and a rebuilt
-/// `FutureBuilder` would either show the stale result or flash a spinner per frame.
 class _GameContentPage extends ConsumerStatefulWidget {
   const _GameContentPage({
     required this.root,

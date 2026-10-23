@@ -1587,5 +1587,35 @@
         "type": "String"
       }
     }
+  },
+  "modsCheckUpdates": "Check for updates",
+  "@modsCheckUpdates": {
+    "description": "Button that asks Modrinth which installed mods are out of date."
+  },
+  "modsChecking": "Checking…",
+  "@modsChecking": {
+    "description": "Same button while the check runs."
+  },
+  "modsUpdatesFound": "{count} updates available",
+  "@modsUpdatesFound": {
+    "description": "Count of mods with a newer version.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "modsUpdateTo": "Update to {version}",
+  "@modsUpdateTo": {
+    "description": "The version an update would move the mod to.",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "modsUpdateAction": "Update",
+  "@modsUpdateAction": {
+    "description": "Tooltip of the per-row update button."
   }
 }

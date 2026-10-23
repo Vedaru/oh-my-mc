@@ -348,5 +348,10 @@
   "actionRefresh": "刷新",
   "serverOffline": "无响应",
   "languageSystemWith": "跟随系统（{language}）",
-  "languageEffective": "当前界面显示的是{language}。"
+  "languageEffective": "当前界面显示的是{language}。",
+  "modsCheckUpdates": "检查更新",
+  "modsChecking": "检查中…",
+  "modsUpdatesFound": "有 {count} 个可更新",
+  "modsUpdateTo": "更新至 {version}",
+  "modsUpdateAction": "更新"
 }

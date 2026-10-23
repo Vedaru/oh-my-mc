@@ -1088,4 +1088,23 @@ class AppLocalizationsZh extends AppLocalizations {
   String languageEffective(String language) {
     return '当前界面显示的是$language。';
   }
+
+  @override
+  String get modsCheckUpdates => '检查更新';
+
+  @override
+  String get modsChecking => '检查中…';
+
+  @override
+  String modsUpdatesFound(int count) {
+    return '有 $count 个可更新';
+  }
+
+  @override
+  String modsUpdateTo(String version) {
+    return '更新至 $version';
+  }
+
+  @override
+  String get modsUpdateAction => '更新';
 }

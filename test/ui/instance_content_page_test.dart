@@ -8,12 +8,17 @@ import 'package:material_ui/material_ui.dart' as m3;
 import 'package:oh_my_mc/app/providers.dart';
 import 'package:oh_my_mc/core/game/content.dart';
 import 'package:oh_my_mc/core/instance/instance.dart';
+import 'package:oh_my_mc/core/mods/mod_installer.dart';
 import 'package:oh_my_mc/core/mods/mod_scanner.dart';
+import 'package:oh_my_mc/core/mods/modrinth.dart';
+import 'package:oh_my_mc/core/mods/update_checker.dart';
+import 'package:oh_my_mc/core/net/cancellation.dart';
 import 'package:oh_my_mc/data/game_content_provider.dart';
 import 'package:oh_my_mc/data/instance_providers.dart';
 import 'package:oh_my_mc/data/instance_store.dart';
 import 'package:oh_my_mc/core/server/server_ping.dart';
 import 'package:oh_my_mc/data/mods_providers.dart';
+import 'package:oh_my_mc/data/modrinth_providers.dart';
 import 'package:oh_my_mc/data/server_providers.dart';
 import 'package:oh_my_mc/data/launch_factory.dart';
 import 'package:oh_my_mc/data/settings.dart';
@@ -36,6 +41,90 @@ class _Ready extends InstanceListNotifier {
   @override
   InstanceListState build() =>
       InstanceListReady([instance], selectedId: instance.id);
+}
+
+/// Answers the two lookups an update check makes: which version a file is, and which
+/// version is newest.
+class _UpdateClient implements ModrinthClient {
+  @override
+  Future<ModrinthVersion> versionForFile(
+    String sha1, {
+    CancelToken? cancel,
+  }) async => const ModrinthVersion(
+    id: 'v1',
+    projectId: 'p1',
+    name: 'Example 1.0',
+    versionNumber: '1.0',
+    files: [
+      ModrinthFile(
+        url: 'https://example.invalid/a.jar',
+        filename: 'a.jar',
+        sizeBytes: 4,
+      ),
+    ],
+    dependencies: [],
+  );
+
+  @override
+  Future<ModrinthVersion> versionFor(
+    String projectId, {
+    required String gameVersion,
+    String? loader,
+    String projectType = 'mod',
+    CancelToken? cancel,
+  }) async => const ModrinthVersion(
+    id: 'v2',
+    projectId: 'p1',
+    name: 'Example 2.0',
+    versionNumber: '2.0',
+    files: [
+      ModrinthFile(
+        url: 'https://example.invalid/b.jar',
+        filename: 'example-2.0.jar',
+        sizeBytes: 4,
+      ),
+    ],
+    dependencies: [],
+  );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// Records the deletes the update replaces. The real one unlinks a path, and the test's
+/// "installed" jar does not exist on disk.
+class _FakeModsRepository implements ModsRepository {
+  final deleted = <String>[];
+
+  @override
+  Future<List<ModEntry>> scan(String directory) async => const [];
+
+  @override
+  Future<String> setEnabled(ModEntry mod, bool enabled) async => mod.path;
+
+  @override
+  Future<void> delete(ModEntry mod) async => deleted.add(mod.path);
+}
+
+class _FakeInstaller implements ModInstaller {
+  final directories = <String>[];
+
+  @override
+  Future<ModInstallOutcome> install({
+    required List<ModInstallPlan> plans,
+    required String directory,
+    dynamic cancel,
+    void Function(int, int, String)? onProgress,
+  }) async {
+    directories.add(directory);
+    return const ModInstallOutcome(installed: [], skipped: [], failed: {});
+  }
+
+  @override
+  void close() {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 class _FakeContent extends GameContent {
@@ -106,6 +195,8 @@ void main() {
   Future<ProviderContainer> pump(
     WidgetTester tester, {
     String section = 'overview',
+    Instance target = instance,
+    List<ModEntry> mods = const [],
     List<Override> overrides = const [],
   }) async {
     final container = ProviderContainer(
@@ -114,9 +205,9 @@ void main() {
           (ref) => MemorySettingsStore(AppSettings.defaults),
         ),
         instanceStoreProvider.overrideWith(
-          (ref) => MemoryInstanceStore(const [instance]),
+          (ref) => MemoryInstanceStore([target]),
         ),
-        instanceListProvider.overrideWith(() => _Ready(instance)),
+        instanceListProvider.overrideWith(() => _Ready(target)),
         launcherPathsProvider.overrideWithValue(
           LauncherPaths(
             data: Directory('/data'),
@@ -127,9 +218,7 @@ void main() {
           (ref) =>
               (root) => content,
         ),
-        instanceModsProvider.overrideWith(
-          (ref, id) async => const <ModEntry>[],
-        ),
+        instanceModsProvider.overrideWith((ref, id) async => mods),
         ...overrides,
       ],
     );
@@ -240,6 +329,60 @@ void main() {
     // The pack from the previous section is gone: switching sections switches lists.
     expect(find.text('Pack A.zip'), findsNothing);
     expect(find.text('Terralith.zip'), findsOneWidget);
+  });
+
+  testWidgets('an outdated mod says so, and updates on demand', (tester) async {
+    final installer = _FakeInstaller();
+    await pump(
+      tester,
+      section: 'mods',
+      target: const Instance(
+        id: 'demo',
+        name: 'Demo',
+        versionId: '1.20.1',
+        loader: LoaderKind.fabric,
+        loaderVersion: '0.16.9',
+        isolation: IsolationKind.isolated,
+      ),
+      mods: [
+        ModEntry(
+          path: '/mods/example-1.0.jar',
+          enabled: true,
+          sizeBytes: 4,
+          loader: ModLoaderKind.fabric,
+          name: 'Example',
+          version: '1.0',
+        ),
+      ],
+      overrides: [
+        modUpdateCheckerProvider.overrideWithValue(
+          ModUpdateChecker(_UpdateClient(), hash: (_) async => 'sha1'),
+        ),
+        modsRepositoryProvider.overrideWithValue(_FakeModsRepository()),
+        modInstallerProvider.overrideWithValue(installer),
+      ],
+    );
+
+    // No `runAsync` here: the fake client and the fake hasher both complete on a
+    // microtask, so the whole check runs inside the widget-test clock. Hashing a real
+    // jar is what would need real time, and that is what the injected hasher avoids.
+    await tester.tap(find.byKey(const ValueKey('mods-check-updates')));
+    await tester.pumpAndSettle();
+
+    // The row names the version it would move to, and offers the action.
+    expect(find.text('Update to 2.0'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('mod-update-example-1.0.jar')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('mod-update-example-1.0.jar')));
+    await tester.pumpAndSettle();
+
+    // The new file is installed and the old jar is gone: two versions of one mod is a
+    // crash the launcher caused.
+    expect(installer.directories, isNotEmpty);
+    expect(find.text('Update to 2.0'), findsNothing);
   });
 
   testWidgets('a server row shows whether the server is up', (tester) async {
