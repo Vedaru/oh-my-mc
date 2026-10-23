@@ -313,6 +313,19 @@ the current gap table and the ordered backlog. Two rules from it bind new code:
   off the screen. One line goes to the console (`launch: java · N classpath
   entries · main`), the exact command line goes to `<data>/logs/launch-*.log`
   with `--accessToken` masked.
+- **The game owns `options.txt` and `servers.dat`; the launcher edits the field it
+  was asked to change.** `OptionsTxt` rewrites one key in place and keeps every other
+  line (the game rewrites the file on exit, so a wholesale rewrite loses settings), and
+  `servers.dat` is NBT that has to round-trip. Resource packs are the only content kind
+  with a launcher-writable enabled state; Iris keeps the active shader in its own
+  config, so that row has no toggle rather than one that lies.
+- **A clone is always an isolated instance.** A shared instance's "game directory" is
+  the launcher-wide one, so copying it is a self-copy; the clone gets its own
+  `minecraft/` and skips `libraries/`, `assets/`, `versions/`, `logs/`.
+- **Widget tests never touch the real disk through a screen.** Real file I/O does not
+  complete inside `pumpAndSettle`'s fake clock, so screens that read files take their
+  data layer from a provider (`gameContentProvider`) and the disk behaviour is pinned by
+  a core test against a temp tree.
 - **User-facing text lives in the ARB files, never in `lib/core`.** `Diagnosis`
   carries a kind plus parameters; `CrashCopy` (UI) turns it into a sentence. The
   inverse - an English sentence in core - put the literal `版本设置` inside an English

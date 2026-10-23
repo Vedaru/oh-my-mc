@@ -20,6 +20,8 @@ import 'package:oh_my_mc/core/mods/modrinth.dart';
 import 'package:oh_my_mc/data/modrinth_providers.dart';
 import 'package:oh_my_mc/core/diagnostics/network_info.dart';
 import 'package:oh_my_mc/data/diagnostics_providers.dart';
+import 'package:oh_my_mc/core/game/content.dart';
+import 'package:oh_my_mc/ui/instances/content_screen.dart';
 import 'package:oh_my_mc/data/launch_providers.dart';
 import 'package:oh_my_mc/core/launch/launch_handle.dart';
 import 'package:oh_my_mc/data/instance_providers.dart';
@@ -360,6 +362,29 @@ void main() {
 
   testWidgets('download', (tester) async {
     await shoot(tester, '/download', 'download');
+  });
+
+  testWidgets('content resource packs', (tester) async {
+    await shoot(
+      tester,
+      '/instances/fabric/content/resourcePacks',
+      'content-packs',
+      instances: const [
+        Instance(
+          id: 'fabric',
+          name: 'Fabulously Optimized',
+          versionId: '1.20.1',
+          loader: LoaderKind.fabric,
+          loaderVersion: '0.16.9',
+        ),
+      ],
+      overrides: [
+        gameContentProvider.overrideWith(
+          (ref) =>
+              (root) => _ShotContent(),
+        ),
+      ],
+    );
   });
 
   testWidgets('crash diagnosis', (tester) async {
@@ -737,4 +762,38 @@ class _ShotSelected extends InstanceListNotifier {
       loaderVersion: '0.16.9',
     ),
   ], selectedId: id);
+}
+
+/// A content layer with a plausible list, so the shot does not depend on a real
+/// game directory existing in the test's temp folder.
+class _ShotContent extends GameContent {
+  _ShotContent() : super('/shot');
+
+  @override
+  Future<List<ContentEntry>> list(ContentKind kind) async => switch (kind) {
+    ContentKind.resourcePacks => const [
+      ContentEntry(
+        name: 'Faithful 32x.zip',
+        path: '/shot/resourcepacks/Faithful 32x.zip',
+        isDirectory: false,
+        sizeBytes: 18 * 1024 * 1024,
+        enabled: true,
+      ),
+      ContentEntry(
+        name: 'Fresh Animations.zip',
+        path: '/shot/resourcepacks/Fresh Animations.zip',
+        isDirectory: false,
+        sizeBytes: 6 * 1024 * 1024,
+        enabled: true,
+      ),
+      ContentEntry(
+        name: 'Stay True.zip',
+        path: '/shot/resourcepacks/Stay True.zip',
+        isDirectory: false,
+        sizeBytes: 3 * 1024 * 1024,
+        enabled: false,
+      ),
+    ],
+    _ => const [],
+  };
 }

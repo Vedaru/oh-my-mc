@@ -69,11 +69,12 @@ wrong: installing wrote files, and nothing pointed the launcher at them.
 | 日志: current session **and** every saved session, from disk, with filter/search/copy | **done** | `lib/core/logs/log_files.dart`, `logs/` page, `logs/launch-*.log` |
 | **Mod search/install** (Modrinth, dependencies) | **done** (CurseForge needs a key, not wired) | `lib/core/mods/modrinth.dart`, `mod_installer.dart`, `ui/instances/mod_search_dialog.dart` |
 | **Modpack import/export** (`.zip`, `.mrpack`) | **done** | `lib/core/packs/` (mrpack, importer, exporter), import button on 实例, export on the instance page |
-| **Instance import/export/clone** | **missing** (ARB strings only) | `instanceImport`, `instanceExport`, `instanceClone` |
-| **Crash analysis** | **missing** | - |
+| **Instance import/export/clone** | **done** | `instance_cloner.dart` (clone button on the instance page), `pack_providers.dart` (export/import) |
+| **Crash analysis** | **done** | `lib/core/diagnostics/crash_analyzer.dart`, `crash_card.dart`, `crash_copy.dart` |
 | **Microsoft sign-in, skin** | **missing** | offline identity only |
-| 资源包 / 光影 / 存档 / 数据包 / 服务器 entries | **missing** | - |
-| Download speed test / mirror health | **missing** (planned v1.1) | - |
+| 资源包 / 光影 / 存档 / 服务器 management (list, toggle, delete, add) | **done** | `lib/core/game/content.dart`, `options_txt.dart`, `nbt.dart`, `ui/instances/content_screen.dart` |
+| 数据包 (datapacks) | **missing** | needs a world context; the list belongs to a save, not a version |
+| Download speed test / mirror health | **done** (speed test; mirror reordering not yet) | `lib/core/diagnostics/speed_test.dart`, 设置 → 网络 |
 | 联机 (LAN/port mapping) | **missing** | - |
 
 ## 4. Backlog, in the order it gets built

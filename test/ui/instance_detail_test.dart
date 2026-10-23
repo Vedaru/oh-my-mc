@@ -422,41 +422,47 @@ void main() {
   });
 
   group('content folders', () {
-    testWidgets('the list keeps one anatomy: path, four folders, playtime', (
-      tester,
-    ) async {
-      await pump(
-        tester,
-        instances: [sample()],
-        folders: const [
-          GameFolder(kind: GameFolderKind.mods, path: '/g/mods', entries: 0),
-          GameFolder(
-            kind: GameFolderKind.resourcePacks,
-            path: '/g/resourcepacks',
-            entries: 0,
-          ),
-          GameFolder(
-            kind: GameFolderKind.shaderPacks,
-            path: '/g/shaderpacks',
-            entries: 0,
-          ),
-          GameFolder(kind: GameFolderKind.saves, path: '/g/saves', entries: 0),
-        ],
-      );
-      await tester.pumpAndSettle();
+    testWidgets(
+      'the list keeps one anatomy: path, four folders, servers, playtime',
+      (tester) async {
+        await pump(
+          tester,
+          instances: [sample()],
+          folders: const [
+            GameFolder(kind: GameFolderKind.mods, path: '/g/mods', entries: 0),
+            GameFolder(
+              kind: GameFolderKind.resourcePacks,
+              path: '/g/resourcepacks',
+              entries: 0,
+            ),
+            GameFolder(
+              kind: GameFolderKind.shaderPacks,
+              path: '/g/shaderpacks',
+              entries: 0,
+            ),
+            GameFolder(
+              kind: GameFolderKind.saves,
+              path: '/g/saves',
+              entries: 0,
+            ),
+          ],
+        );
+        await tester.pumpAndSettle();
 
-      // The path row and the playtime row are list rows too, not key/value pairs:
-      // one layout for the whole section is the point.
-      expect(find.byType(ListRow), findsNWidgets(6));
-      // Every row carries its supporting text - the on-disk name - so the localized
-      // label and the real folder name sit in the same place in each row.
-      // The mods row's supporting text now says it opens the manager, not just
-      // which folder it is.
-      expect(find.textContaining('mods/'), findsOneWidget);
-      expect(find.text('resourcepacks/'), findsOneWidget);
-      expect(find.text('shaderpacks/'), findsOneWidget);
-      expect(find.text('saves/'), findsOneWidget);
-    });
+        // The path row and the playtime row are list rows too, not key/value pairs:
+        // one layout for the whole section is the point.
+        // path + mods/resourcepacks/shaderpacks/saves + servers + playtime
+        expect(find.byType(ListRow), findsNWidgets(7));
+        // Every row carries its supporting text - the on-disk name - so the localized
+        // label and the real folder name sit in the same place in each row.
+        // The mods row's supporting text now says it opens the manager, not just
+        // which folder it is.
+        expect(find.textContaining('mods/'), findsOneWidget);
+        expect(find.text('resourcepacks/'), findsOneWidget);
+        expect(find.text('shaderpacks/'), findsOneWidget);
+        expect(find.text('saves/'), findsOneWidget);
+      },
+    );
 
     testWidgets('each folder shows its count, and an empty one says so', (
       tester,

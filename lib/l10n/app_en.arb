@@ -105,6 +105,15 @@
     "description": "Exports an instance to an archive."
   },
   "instanceClone": "Clone",
+  "instanceCloneFailed": "Clone failed: {error}",
+  "@instanceCloneFailed": {
+    "description": "Snackbar when cloning an instance fails.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "@instanceClone": {
     "description": "Duplicates an instance."
   },
@@ -1434,5 +1443,81 @@
   "diagUnknownBody": "None of the known failure patterns matched. The tail of the log is the place to look: the last exception before the exit is usually the cause.",
   "@diagUnknownBody": {
     "description": "Crash diagnosis explanation (unknown)."
+  },
+  "contentResourcePacks": "Resource packs",
+  "@contentResourcePacks": {
+    "description": "Title of the resource pack list."
+  },
+  "contentShaderPacks": "Shader packs",
+  "@contentShaderPacks": {
+    "description": "Title of the shader pack list."
+  },
+  "contentSaves": "Worlds",
+  "@contentSaves": {
+    "description": "Title of the save list."
+  },
+  "contentServers": "Servers",
+  "@contentServers": {
+    "description": "Title of the server list."
+  },
+  "contentResourcePacksHint": "Enabled packs are written to options.txt, which the game reads on start.",
+  "@contentResourcePacksHint": {
+    "description": "Explains that enabled resource packs are written to options.txt."
+  },
+  "contentShaderPacksHint": "Installed shader packs; pick the active one in game.",
+  "@contentShaderPacksHint": {
+    "description": "Explains that the active shader is picked in game."
+  },
+  "contentSavesHint": "Worlds in this instance. Deleting one is permanent.",
+  "@contentSavesHint": {
+    "description": "Warns that deleting a world is permanent."
+  },
+  "contentServersHint": "The multiplayer server list this instance shows in game.",
+  "@contentServersHint": {
+    "description": "Explains that this is the in-game multiplayer list."
+  },
+  "contentEmptyResourcePacks": "No resource packs yet.",
+  "@contentEmptyResourcePacks": {
+    "description": "Empty state of the resource pack list."
+  },
+  "contentEmptyShaderPacks": "No shader packs yet.",
+  "@contentEmptyShaderPacks": {
+    "description": "Empty state of the shader pack list."
+  },
+  "contentEmptySaves": "No worlds yet.",
+  "@contentEmptySaves": {
+    "description": "Empty state of the world list."
+  },
+  "contentEmptyServers": "No servers yet.",
+  "@contentEmptyServers": {
+    "description": "Empty state of the server list."
+  },
+  "contentDeleteTitle": "Delete {name}?",
+  "@contentDeleteTitle": {
+    "description": "Confirmation title before deleting a content entry."
+  },
+  "contentDeleteBody": "This cannot be undone.",
+  "@contentDeleteBody": {
+    "description": "Confirmation body before deleting a content entry."
+  },
+  "contentAddServer": "Add server",
+  "@contentAddServer": {
+    "description": "Button and dialog title for adding a server entry."
+  },
+  "contentServerName": "Name",
+  "@contentServerName": {
+    "description": "Field label for a server name."
+  },
+  "contentServerAddress": "Address, e.g. play.example.com",
+  "@contentServerAddress": {
+    "description": "Field hint for a server address."
+  },
+  "actionDelete": "Delete",
+  "@actionDelete": {
+    "description": "Generic delete action label."
+  },
+  "actionSave": "Save",
+  "@actionSave": {
+    "description": "Generic save action label."
   }
 }

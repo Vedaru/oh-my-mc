@@ -91,6 +91,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get instanceClone => '复制';
 
   @override
+  String instanceCloneFailed(String error) {
+    return '复制失败：$error';
+  }
+
+  @override
   String get instanceDelete => '删除';
 
   @override
@@ -987,4 +992,63 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get diagUnknownBody => '没有匹配到已知的失败模式。去看日志末尾：退出前最后一个异常通常就是原因。';
+
+  @override
+  String get contentResourcePacks => '资源包';
+
+  @override
+  String get contentShaderPacks => '光影';
+
+  @override
+  String get contentSaves => '存档';
+
+  @override
+  String get contentServers => '服务器';
+
+  @override
+  String get contentResourcePacksHint => '启用的资源包会写进 options.txt，游戏启动时读取。';
+
+  @override
+  String get contentShaderPacksHint => '已安装的光影包；在游戏里选择启用的那个。';
+
+  @override
+  String get contentSavesHint => '这个实例的存档。删除后无法恢复。';
+
+  @override
+  String get contentServersHint => '游戏里多人游戏列表显示的内容。';
+
+  @override
+  String get contentEmptyResourcePacks => '还没有资源包。';
+
+  @override
+  String get contentEmptyShaderPacks => '还没有光影包。';
+
+  @override
+  String get contentEmptySaves => '还没有存档。';
+
+  @override
+  String get contentEmptyServers => '还没有服务器。';
+
+  @override
+  String contentDeleteTitle(Object name) {
+    return '删除「$name」？';
+  }
+
+  @override
+  String get contentDeleteBody => '这个操作无法撤销。';
+
+  @override
+  String get contentAddServer => '添加服务器';
+
+  @override
+  String get contentServerName => '名称';
+
+  @override
+  String get contentServerAddress => '地址，例如 play.example.com';
+
+  @override
+  String get actionDelete => '删除';
+
+  @override
+  String get actionSave => '保存';
 }

@@ -260,6 +260,12 @@ abstract class AppLocalizations {
   /// **'Clone'**
   String get instanceClone;
 
+  /// Snackbar when cloning an instance fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Clone failed: {error}'**
+  String instanceCloneFailed(String error);
+
   /// Deletes an instance.
   ///
   /// In en, this message translates to:
@@ -1777,6 +1783,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'None of the known failure patterns matched. The tail of the log is the place to look: the last exception before the exit is usually the cause.'**
   String get diagUnknownBody;
+
+  /// Title of the resource pack list.
+  ///
+  /// In en, this message translates to:
+  /// **'Resource packs'**
+  String get contentResourcePacks;
+
+  /// Title of the shader pack list.
+  ///
+  /// In en, this message translates to:
+  /// **'Shader packs'**
+  String get contentShaderPacks;
+
+  /// Title of the save list.
+  ///
+  /// In en, this message translates to:
+  /// **'Worlds'**
+  String get contentSaves;
+
+  /// Title of the server list.
+  ///
+  /// In en, this message translates to:
+  /// **'Servers'**
+  String get contentServers;
+
+  /// No description provided for @contentResourcePacksHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enabled packs are written to options.txt, which the game reads on start.'**
+  String get contentResourcePacksHint;
+
+  /// No description provided for @contentShaderPacksHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Installed shader packs; pick the active one in game.'**
+  String get contentShaderPacksHint;
+
+  /// No description provided for @contentSavesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Worlds in this instance. Deleting one is permanent.'**
+  String get contentSavesHint;
+
+  /// No description provided for @contentServersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The multiplayer server list this instance shows in game.'**
+  String get contentServersHint;
+
+  /// No description provided for @contentEmptyResourcePacks.
+  ///
+  /// In en, this message translates to:
+  /// **'No resource packs yet.'**
+  String get contentEmptyResourcePacks;
+
+  /// No description provided for @contentEmptyShaderPacks.
+  ///
+  /// In en, this message translates to:
+  /// **'No shader packs yet.'**
+  String get contentEmptyShaderPacks;
+
+  /// No description provided for @contentEmptySaves.
+  ///
+  /// In en, this message translates to:
+  /// **'No worlds yet.'**
+  String get contentEmptySaves;
+
+  /// No description provided for @contentEmptyServers.
+  ///
+  /// In en, this message translates to:
+  /// **'No servers yet.'**
+  String get contentEmptyServers;
+
+  /// No description provided for @contentDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}?'**
+  String contentDeleteTitle(Object name);
+
+  /// No description provided for @contentDeleteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This cannot be undone.'**
+  String get contentDeleteBody;
+
+  /// No description provided for @contentAddServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Add server'**
+  String get contentAddServer;
+
+  /// No description provided for @contentServerName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get contentServerName;
+
+  /// No description provided for @contentServerAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Address, e.g. play.example.com'**
+  String get contentServerAddress;
+
+  /// No description provided for @actionDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get actionDelete;
+
+  /// No description provided for @actionSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get actionSave;
 }
 
 class _AppLocalizationsDelegate

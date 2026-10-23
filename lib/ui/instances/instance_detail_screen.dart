@@ -11,7 +11,9 @@ import 'package:path/path.dart' as p;
 
 import '../../app/providers.dart';
 import '../../app/router.dart';
+import '../../core/game/content.dart';
 import '../../core/instance/instance.dart';
+import '../../data/instance_cloner.dart';
 import '../../core/instance/memory.dart';
 import '../../core/mc/game_folders.dart';
 import '../../data/instance_providers.dart';
@@ -147,8 +149,15 @@ class InstanceDetailScreen extends ConsumerWidget {
                   overflow: m3.TextOverflow.ellipsis,
                 ),
               ),
-              // A pack is how an instance leaves this machine: the data folder
-              // alone is not something a user can hand to anyone.
+              // Clone and export are different questions: "I want a second copy
+              // here" versus "I want to hand this to someone". Both existed as
+              // strings in the ARB long before either had a button.
+              AppButton(
+                key: const m3.ValueKey('instance-clone'),
+                onPressed: () => _clone(context, ref, instance!),
+                style: AppButtonStyle.text,
+                label: m3.Text(l10n.instanceClone),
+              ),
               AppButton(
                 key: const m3.ValueKey('instance-export-pack'),
                 onPressed: () => _exportPack(context, ref, instance!),
@@ -270,6 +279,9 @@ class InstanceDetailScreen extends ConsumerWidget {
                     onCopyPath: (path) => _copyPath(context, path),
                     onManageMods: () =>
                         context.go(Routes.instanceMods(instance!.id)),
+                    onOpenContent: (kind) => context.go(
+                      Routes.instanceContent(instance!.id, kind.name),
+                    ),
                   ),
                 ],
               ),
@@ -337,6 +349,41 @@ class InstanceDetailScreen extends ConsumerWidget {
           ],
         ),
       );
+    }
+  }
+
+  /// 复制实例: a full copy of the game directory under a new instance.
+  ///
+  /// Large instances take a while (a modded world is a few GB), so the button stays
+  /// busy and the result is reported: a copy that silently takes 20 seconds with no
+  /// feedback reads as a broken button.
+  Future<void> _clone(
+    BuildContext context,
+    WidgetRef ref,
+    Instance instance,
+  ) async {
+    final l10n = context.l10n;
+    final messenger = m3.ScaffoldMessenger.maybeOf(context);
+    try {
+      final created = await const InstanceCloner().clone(
+        source: instance,
+        instances: ref.read(instanceListProvider.notifier),
+        paths: ref.read(launcherPathsProvider),
+      );
+      if (!context.mounted) return;
+      await ref.read(instanceListProvider.notifier).select(created.id);
+      if (!context.mounted) return;
+      // The clone is now the selection, so the page has to follow it.
+      context.go(Routes.instanceDetail(created.id));
+    } on Object catch (e) {
+      messenger
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(
+          m3.SnackBar(
+            content: m3.Text(l10n.instanceCloneFailed('$e')),
+            behavior: m3.SnackBarBehavior.floating,
+          ),
+        );
     }
   }
 
@@ -942,6 +989,7 @@ class _FilesList extends StatefulWidget {
     required this.onOpenRoot,
     required this.onCopyPath,
     required this.onManageMods,
+    required this.onOpenContent,
   });
 
   final Instance instance;
@@ -953,6 +1001,10 @@ class _FilesList extends StatefulWidget {
   /// 版本设置 → Mod 管理 is where enabling and deleting happens, so the row opens
   /// that instead of a file manager (the trailing icon still opens the folder).
   final VoidCallback onManageMods;
+
+  /// 资源包 / 光影 / 存档 / 服务器 each open a list screen; the trailing icon still
+  /// opens the folder, so the row is a door and the icon is the shortcut.
+  final void Function(ContentKind kind) onOpenContent;
 
   @override
   State<_FilesList> createState() => _FilesListState();
@@ -1018,14 +1070,32 @@ class _FilesListState extends State<_FilesList> {
                     ),
                     trailingIcon: ShellIcons.openExternal,
                     trailingTooltip: l10n.instanceOpenFolderTooltip,
-                    onPressed: folder.kind == GameFolderKind.mods
-                        ? widget.onManageMods
-                        : () => widget.onOpenFolder(folder.kind),
+                    onPressed: switch (folder.kind) {
+                      GameFolderKind.mods => widget.onManageMods,
+                      GameFolderKind.resourcePacks =>
+                        () => widget.onOpenContent(ContentKind.resourcePacks),
+                      GameFolderKind.shaderPacks => () => widget.onOpenContent(
+                        ContentKind.shaderPacks,
+                      ),
+                      GameFolderKind.saves => () => widget.onOpenContent(
+                        ContentKind.saves,
+                      ),
+                    },
                     onTrailingPressed: () => widget.onOpenFolder(folder.kind),
                   ),
               ],
             );
           },
+        ),
+        ListRow(
+          key: const m3.ValueKey('instance-folder-servers'),
+          leadingIcon: ShellIcons.network,
+          label: l10n.contentServers,
+          supporting: l10n.contentServersHint,
+          trailingIcon: ShellIcons.openExternal,
+          trailingTooltip: l10n.instanceOpenFolderTooltip,
+          onPressed: () => widget.onOpenContent(ContentKind.servers),
+          onTrailingPressed: widget.onOpenRoot,
         ),
         ListRow(
           leadingIcon: ShellIcons.clock,

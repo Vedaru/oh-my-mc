@@ -94,6 +94,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get instanceClone => 'Clone';
 
   @override
+  String instanceCloneFailed(String error) {
+    return 'Clone failed: $error';
+  }
+
+  @override
   String get instanceDelete => 'Delete';
 
   @override
@@ -1016,4 +1021,67 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get diagUnknownBody =>
       'None of the known failure patterns matched. The tail of the log is the place to look: the last exception before the exit is usually the cause.';
+
+  @override
+  String get contentResourcePacks => 'Resource packs';
+
+  @override
+  String get contentShaderPacks => 'Shader packs';
+
+  @override
+  String get contentSaves => 'Worlds';
+
+  @override
+  String get contentServers => 'Servers';
+
+  @override
+  String get contentResourcePacksHint =>
+      'Enabled packs are written to options.txt, which the game reads on start.';
+
+  @override
+  String get contentShaderPacksHint =>
+      'Installed shader packs; pick the active one in game.';
+
+  @override
+  String get contentSavesHint =>
+      'Worlds in this instance. Deleting one is permanent.';
+
+  @override
+  String get contentServersHint =>
+      'The multiplayer server list this instance shows in game.';
+
+  @override
+  String get contentEmptyResourcePacks => 'No resource packs yet.';
+
+  @override
+  String get contentEmptyShaderPacks => 'No shader packs yet.';
+
+  @override
+  String get contentEmptySaves => 'No worlds yet.';
+
+  @override
+  String get contentEmptyServers => 'No servers yet.';
+
+  @override
+  String contentDeleteTitle(Object name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String get contentDeleteBody => 'This cannot be undone.';
+
+  @override
+  String get contentAddServer => 'Add server';
+
+  @override
+  String get contentServerName => 'Name';
+
+  @override
+  String get contentServerAddress => 'Address, e.g. play.example.com';
+
+  @override
+  String get actionDelete => 'Delete';
+
+  @override
+  String get actionSave => 'Save';
 }
