@@ -373,13 +373,37 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get modsSearchHint => 'Filter';
+  String get modsSearchHint => 'Search Modrinth';
 
   @override
   String get modsRefresh => 'Refresh';
 
   @override
   String get modsOpenFolder => 'Open folder';
+
+  @override
+  String get modsSearchTitle => 'Install mods';
+
+  @override
+  String get modsSearchEmpty => 'Nothing matches that.';
+
+  @override
+  String modsSearchFiltered(String loader, String game) {
+    return '$loader · $game — matches only what can load here';
+  }
+
+  @override
+  String get modsSearchNeedsLoader => 'This version cannot take mods';
+
+  @override
+  String get modsSearchVanillaHint =>
+      'Install Fabric, Quilt, Forge or NeoForge for this game version first; mods need a loader.';
+
+  @override
+  String get modsInstall => 'Install';
+
+  @override
+  String get modsGet => 'Get mods';
 
   @override
   String get modsDisabled => 'Off';
@@ -401,9 +425,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get modsEmptyBody =>
       'Drop a .jar into the mods folder, or get one from the download page.';
-
-  @override
-  String get modsEmptyAction => 'Get mods';
 
   @override
   String modsToggleFailed(String reason) {
@@ -805,5 +826,34 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String javaUnavailableDetail(int major, String platform) {
     return 'No Java $major build is published for $platform. You can install one yourself and point the instance at it.';
+  }
+
+  @override
+  String get packImport => 'Import pack';
+
+  @override
+  String get packImporting => 'Importing…';
+
+  @override
+  String packImported(String name, int count) {
+    return 'Imported \"$name\" · $count files';
+  }
+
+  @override
+  String packImportFailed(String error) {
+    return 'Import failed: $error';
+  }
+
+  @override
+  String get packExport => 'Export pack';
+
+  @override
+  String packExported(int count, String path) {
+    return 'Exported $count files to $path';
+  }
+
+  @override
+  String packExportFailed(String error) {
+    return 'Export failed: $error';
   }
 }

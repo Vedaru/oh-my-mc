@@ -67,8 +67,8 @@ wrong: installing wrote files, and nothing pointed the launcher at them.
 | 版本设置 → Mod 管理: read `fabric.mod.json`/`quilt.mod.json`/`mods.toml`/`mcmod.info`, enable/disable by rename, delete, filter | **done** | `lib/core/mods/mod_scanner.dart`, `/instances/:id/mods` |
 | Interrupted installs: journal, resume from the download row and from a refused launch | **done** | `lib/core/install/install_journal.dart`, `InstallController.repair` |
 | 日志: current session **and** every saved session, from disk, with filter/search/copy | **done** | `lib/core/logs/log_files.dart`, `logs/` page, `logs/launch-*.log` |
-| **Mod search/install** (Modrinth/CurseForge, dependencies) | **missing** | - |
-| **Modpack import/export** (`.zip`, `.mrpack`) | **missing** | - |
+| **Mod search/install** (Modrinth, dependencies) | **done** (CurseForge needs a key, not wired) | `lib/core/mods/modrinth.dart`, `mod_installer.dart`, `ui/instances/mod_search_dialog.dart` |
+| **Modpack import/export** (`.zip`, `.mrpack`) | **done** | `lib/core/packs/` (mrpack, importer, exporter), import button on 实例, export on the instance page |
 | **Instance import/export/clone** | **missing** (ARB strings only) | `instanceImport`, `instanceExport`, `instanceClone` |
 | **Crash analysis** | **missing** | - |
 | **Microsoft sign-in, skin** | **missing** | offline identity only |
@@ -125,7 +125,10 @@ CurseForge (needs an API key - a separate decision).
 
 The old plan for this step was: scan first (the three metadata formats → name/version/enabled
 by file extension), enable/disable by renaming `.jar` ↔ `.jar.disabled`, delete.
-Then Modrinth search/install with dependency resolution. CurseForge needs an API key
+Modrinth search/install with dependency resolution **is done** (`mod_search_dialog`),
+with the filters taken from the instance rather than asked for: the loader and game
+version decide what can load, so a search for anything else is a list of mods that
+will not run. CurseForge still needs an API key
 and is a separate decision.
 
 **P4 - packs and instance portability.** `.mrpack`/`.zip` import (parse manifest →

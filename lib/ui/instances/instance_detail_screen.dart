@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart' as m3;
 import 'package:oh_my_mc/ui/components/app_button.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:path/path.dart' as p;
 
 import '../../app/providers.dart';
 import '../../app/router.dart';
@@ -13,6 +15,7 @@ import '../../core/instance/instance.dart';
 import '../../core/instance/memory.dart';
 import '../../core/mc/game_folders.dart';
 import '../../data/instance_providers.dart';
+import '../../data/pack_providers.dart';
 import '../../data/java_providers.dart';
 import '../../data/launch_factory.dart';
 import '../../l10n/l10n.dart';
@@ -143,6 +146,14 @@ class InstanceDetailScreen extends ConsumerWidget {
                   style: AppTheme.title(context),
                   overflow: m3.TextOverflow.ellipsis,
                 ),
+              ),
+              // A pack is how an instance leaves this machine: the data folder
+              // alone is not something a user can hand to anyone.
+              AppButton(
+                key: const m3.ValueKey('instance-export-pack'),
+                onPressed: () => _exportPack(context, ref, instance!),
+                style: AppButtonStyle.text,
+                label: m3.Text(l10n.packExport),
               ),
               AppButton(
                 onPressed: () => _delete(context, ref, instance!),
@@ -326,6 +337,52 @@ class InstanceDetailScreen extends ConsumerWidget {
           ],
         ),
       );
+    }
+  }
+
+  /// Writes the instance to a `.zip` the user chooses, then says where it went.
+  ///
+  /// The directory picker rather than a save dialog: a pack is hundreds of
+  /// megabytes, and `saveFile` takes the bytes in memory.
+  Future<void> _exportPack(
+    BuildContext context,
+    WidgetRef ref,
+    Instance instance,
+  ) async {
+    final l10n = context.l10n;
+    final messenger = m3.ScaffoldMessenger.maybeOf(context);
+    final dir = await FilePicker.getDirectoryPath(dialogTitle: l10n.packExport);
+    if (dir == null) return;
+
+    final stamp = DateTime.now()
+        .toIso8601String()
+        .replaceAll(':', '-')
+        .substring(0, 19);
+    final out = File(p.join(dir, '${instance.id}-$stamp.zip'));
+    try {
+      final count = await exportInstancePack(
+        exporter: ref.read(packExporterProvider),
+        instance: instance,
+        paths: ref.read(launcherPathsProvider),
+        out: out,
+      );
+      messenger
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(
+          m3.SnackBar(
+            content: m3.Text(l10n.packExported(count, out.path)),
+            behavior: m3.SnackBarBehavior.floating,
+          ),
+        );
+    } on Object catch (e) {
+      messenger
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(
+          m3.SnackBar(
+            content: m3.Text(l10n.packExportFailed('$e')),
+            behavior: m3.SnackBarBehavior.floating,
+          ),
+        );
     }
   }
 

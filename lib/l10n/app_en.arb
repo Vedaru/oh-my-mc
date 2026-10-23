@@ -488,15 +488,51 @@
       }
     }
   },
-  "modsSearchHint": "Filter",
+  "modsSearchHint": "Search Modrinth",
   "@modsSearchHint": {
-    "description": "Placeholder of the mod filter field."
+    "description": "Search field hint in the mod search."
   },
   "modsRefresh": "Refresh",
   "@modsRefresh": {
     "description": "Rescans the mods folder."
   },
   "modsOpenFolder": "Open folder",
+  "modsSearchTitle": "Install mods",
+  "@modsSearchTitle": {
+    "description": "Title of the Modrinth search dialog."
+  },
+  "modsSearchEmpty": "Nothing matches that.",
+  "@modsSearchEmpty": {
+    "description": "Shown when a mod search returns no results."
+  },
+  "modsSearchFiltered": "{loader} · {game} — matches only what can load here",
+  "@modsSearchFiltered": {
+    "description": "States the filters the dialog applies.",
+    "placeholders": {
+      "loader": {
+        "type": "String"
+      },
+      "game": {
+        "type": "String"
+      }
+    }
+  },
+  "modsSearchNeedsLoader": "This version cannot take mods",
+  "@modsSearchNeedsLoader": {
+    "description": "Shown for a vanilla instance."
+  },
+  "modsSearchVanillaHint": "Install Fabric, Quilt, Forge or NeoForge for this game version first; mods need a loader.",
+  "@modsSearchVanillaHint": {
+    "description": "Explains why a vanilla instance has no search."
+  },
+  "modsInstall": "Install",
+  "@modsInstall": {
+    "description": "Install action on a mod search result."
+  },
+  "modsGet": "Get mods",
+  "@modsGet": {
+    "description": "Opens the Modrinth search from the mod list."
+  },
   "@modsOpenFolder": {
     "description": "Opens the mods folder in the file manager."
   },
@@ -528,10 +564,6 @@
   "modsEmptyBody": "Drop a .jar into the mods folder, or get one from the download page.",
   "@modsEmptyBody": {
     "description": "Empty state body."
-  },
-  "modsEmptyAction": "Get mods",
-  "@modsEmptyAction": {
-    "description": "Empty state button that goes to the download page."
   },
   "modsToggleFailed": "Could not change the mod: {reason}",
   "@modsToggleFailed": {
@@ -1140,6 +1172,60 @@
         "type": "int"
       },
       "platform": {
+        "type": "String"
+      }
+    }
+  },
+  "packImport": "Import pack",
+  "@packImport": {
+    "description": "Button that imports a modpack file."
+  },
+  "packImporting": "Importing…",
+  "@packImporting": {
+    "description": "State of the import button while files land."
+  },
+  "packImported": "Imported \"{name}\" · {count} files",
+  "@packImported": {
+    "description": "Snackbar after a pack import.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "packImportFailed": "Import failed: {error}",
+  "@packImportFailed": {
+    "description": "Snackbar when a pack import fails.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "packExport": "Export pack",
+  "@packExport": {
+    "description": "Button that writes the instance as a .zip pack."
+  },
+  "packExported": "Exported {count} files to {path}",
+  "@packExported": {
+    "description": "Snackbar after exporting a pack.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "packExportFailed": "Export failed: {error}",
+  "@packExportFailed": {
+    "description": "Snackbar when an export fails.",
+    "placeholders": {
+      "error": {
         "type": "String"
       }
     }

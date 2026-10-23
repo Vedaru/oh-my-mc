@@ -19,6 +19,13 @@ abstract final class Durations {
   /// Deliberate, attention-carrying transitions: page changes, drawers.
   static const Duration slow = Duration(milliseconds: 420);
 
+  /// How long a search field waits after the last keystroke before querying.
+  ///
+  /// Not the same thing as an animation duration, but it lives here for the same
+  /// reason the others do: it is UI timing, and scattering it across widgets is
+  /// what the token rule exists to prevent.
+  static const Duration debounce = Duration(milliseconds: 350);
+
   /// Background ambience that loops; long enough to read as "alive" rather
   /// than "moving".
   static const Duration ambient = Duration(milliseconds: 2400);

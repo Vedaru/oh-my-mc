@@ -32,6 +32,7 @@ class ListRow extends StatelessWidget {
     this.leadingIcon,
     this.supporting = '',
     this.supportingMono = false,
+    this.errorText,
     this.trailingText,
     this.trailingTextKey,
     this.trailingControl,
@@ -54,6 +55,11 @@ class ListRow extends StatelessWidget {
 
   /// Render [supporting] in the monospace face — paths, ids, argv.
   final bool supportingMono;
+
+  /// Replaces [supporting] when the row's action failed: a failure has to be
+  /// visible on the row it belongs to, and in the error colour so it is not read
+  /// as another description.
+  final String? errorText;
 
   /// Metadata at the trailing edge: a count, a duration, a size.
   final String? trailingText;
@@ -114,15 +120,19 @@ class ListRow extends StatelessWidget {
                   maxLines: 1,
                   overflow: m3.TextOverflow.ellipsis,
                 ),
-                if (supporting.isNotEmpty) ...[
+                if (errorText != null || supporting.isNotEmpty) ...[
                   const m3.SizedBox(height: 2),
                   m3.Text(
-                    supporting,
+                    errorText ?? supporting,
                     style:
                         (supportingMono
                                 ? AppTheme.mono(context)
                                 : AppTheme.caption(context))
-                            .copyWith(color: scheme.onSurfaceVariant),
+                            .copyWith(
+                              color: errorText == null
+                                  ? scheme.onSurfaceVariant
+                                  : scheme.error,
+                            ),
                     maxLines: 1,
                     overflow: m3.TextOverflow.ellipsis,
                   ),

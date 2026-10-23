@@ -35,6 +35,12 @@ class ZipEntryReader {
 
   Future<void> close() => _file.close();
 
+  /// Every entry name in the archive, in central-directory order.
+  ///
+  /// Needed by readers that do more than look one file up - a modpack has to
+  /// enumerate `overrides/` to know what else to unpack.
+  List<String> get names => _entries.keys.toList(growable: false);
+
   /// The first of [names] that exists, decoded as UTF-8, or `null`.
   Future<String?> readFirst(List<String> names) async {
     for (final name in names) {
@@ -55,7 +61,10 @@ class ZipEntryReader {
     if (headerData.getUint32(0, Endian.little) != _localSignature) return null;
 
     final method = headerData.getUint16(8, Endian.little);
-    final compressedSize = headerData.getUint32(18, Endian.little);
+    // A local header written with a data descriptor carries zero here; the central
+    // directory always has the real size, so it is the fallback.
+    var compressedSize = headerData.getUint32(18, Endian.little);
+    if (compressedSize == 0) compressedSize = entry.compressedSize;
     final nameLength = headerData.getUint16(26, Endian.little);
     final extraLength = headerData.getUint16(28, Endian.little);
     if (compressedSize == 0 || compressedSize > _length) return null;
@@ -117,9 +126,13 @@ class ZipEntryReader {
       final extraLength = centralData.getUint16(offset + 30, Endian.little);
       final commentLength = centralData.getUint16(offset + 32, Endian.little);
       final localOffset = centralData.getUint32(offset + 42, Endian.little);
+      // Compressed size lives in the central header at offset 20; it is the only
+      // size a data-descriptor entry reliably has.
+      final compressedSize = centralData.getUint32(offset + 20, Endian.little);
       final nameBytes = central.sublist(offset + 46, offset + 46 + nameLength);
       entries[utf8.decode(nameBytes, allowMalformed: true)] = _Entry(
         localOffset,
+        compressedSize,
       );
       offset += 46 + nameLength + extraLength + commentLength;
     }
@@ -128,7 +141,11 @@ class ZipEntryReader {
 }
 
 class _Entry {
-  const _Entry(this.localHeaderOffset);
+  const _Entry(this.localHeaderOffset, this.compressedSize);
 
   final int localHeaderOffset;
+
+  /// From the central directory, which is authoritative even when the local
+  /// header uses a data descriptor.
+  final int compressedSize;
 }

@@ -239,6 +239,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('No mods yet'), findsOneWidget);
+    // One "Get mods", in the header: the empty state no longer repeats it.
     expect(find.text('Get mods'), findsOneWidget);
   });
 

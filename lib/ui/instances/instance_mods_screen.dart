@@ -8,6 +8,7 @@ import 'package:material_ui/material_ui.dart' as m3;
 import '../../app/router.dart';
 import '../../core/instance/instance.dart';
 import '../../core/mods/mod_scanner.dart';
+import '../../core/mods/mc_target.dart';
 import '../../core/net/progress.dart' show formatBytes;
 import '../../data/instance_providers.dart';
 import '../../data/launch_factory.dart';
@@ -21,6 +22,7 @@ import '../components/list_row.dart';
 import '../components/page_body.dart';
 import '../shell/shell_icons.dart';
 import '../theme/app_theme.dart';
+import 'mod_search_dialog.dart';
 
 /// 版本设置 → Mod 管理: the instance's `mods/` folder as a list.
 ///
@@ -131,6 +133,33 @@ class _InstanceModsScreenState extends ConsumerState<InstanceModsScreen> {
       );
   }
 
+  /// Opens the Modrinth search for this instance's loader and game version.
+  void _openSearch(Instance instance) {
+    if (McTarget.fromInstance(instance)?.isModded == false) {
+      // A vanilla instance has nothing to search against: say why instead of
+      // opening a dialog that returns nothing loadable.
+      m3.showDialog<void>(
+        context: context,
+        builder: (context) => AppDialog(
+          title: context.l10n.modsSearchNeedsLoader,
+          content: m3.Text(context.l10n.modsSearchVanillaHint),
+          actions: [
+            AppButton(
+              onPressed: () => m3.Navigator.of(context).pop(),
+              style: AppButtonStyle.text,
+              label: m3.Text(context.l10n.actionClose),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+    m3.showDialog<void>(
+      context: context,
+      builder: (context) => ModSearchDialog(instance: instance),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -166,6 +195,7 @@ class _InstanceModsScreenState extends ConsumerState<InstanceModsScreen> {
             onBack: _close,
             onRefresh: _rescan,
             onOpenFolder: () => _openFolder(instance),
+            onGetMods: () => _openSearch(instance),
             enabled: mods.value?.where((m) => m.enabled).length,
             total: mods.value?.length,
           ),
@@ -188,10 +218,7 @@ class _InstanceModsScreenState extends ConsumerState<InstanceModsScreen> {
                           )
                           .toList();
                 if (list.isEmpty) {
-                  return _Empty(
-                    onOpenFolder: () => _openFolder(instance),
-                    onGoDownload: () => context.go(Routes.download),
-                  );
+                  return _Empty(onOpenFolder: () => _openFolder(instance));
                 }
                 return m3.ListView.builder(
                   itemCount: visible.length,
@@ -218,6 +245,7 @@ class _Header extends StatelessWidget {
     required this.onBack,
     required this.onRefresh,
     required this.onOpenFolder,
+    required this.onGetMods,
     required this.enabled,
     required this.total,
   });
@@ -228,6 +256,7 @@ class _Header extends StatelessWidget {
   final VoidCallback onBack;
   final VoidCallback onRefresh;
   final VoidCallback onOpenFolder;
+  final VoidCallback onGetMods;
   final int? enabled;
   final int? total;
 
@@ -275,6 +304,18 @@ class _Header extends StatelessWidget {
                 leading: const m3.Icon(ShellIcons.search, size: 15),
                 onChanged: (_) => onFilterChanged(),
               ),
+            ),
+            const m3.SizedBox(width: 8),
+            // The one action that adds something: searching Modrinth is the only
+            // way a user gets a mod without visiting a website and finding the
+            // mods folder by hand.
+            AppButton(
+              key: const m3.ValueKey('mods-get'),
+              onPressed: onGetMods,
+              style: AppButtonStyle.filled,
+              size: AppButtonSize.sm,
+              icon: const m3.Icon(ShellIcons.add, size: 14),
+              label: m3.Text(l10n.modsGet),
             ),
             const m3.SizedBox(width: 8),
             AppButton(
@@ -347,10 +388,9 @@ class _ModRow extends StatelessWidget {
 }
 
 class _Empty extends StatelessWidget {
-  const _Empty({required this.onOpenFolder, required this.onGoDownload});
+  const _Empty({required this.onOpenFolder});
 
   final VoidCallback onOpenFolder;
-  final VoidCallback onGoDownload;
 
   @override
   Widget build(BuildContext context) {
@@ -371,6 +411,9 @@ class _Empty extends StatelessWidget {
             textAlign: m3.TextAlign.center,
           ),
           const m3.SizedBox(height: 16),
+          // Only the folder action: "get mods" is a permanent button in the
+          // header, and a second copy in the middle of an empty list is the same
+          // control drawn twice.
           m3.Row(
             mainAxisAlignment: m3.MainAxisAlignment.center,
             children: [
@@ -378,12 +421,6 @@ class _Empty extends StatelessWidget {
                 onPressed: onOpenFolder,
                 style: AppButtonStyle.outlined,
                 label: m3.Text(l10n.modsOpenFolder),
-              ),
-              const m3.SizedBox(width: 8),
-              AppButton(
-                onPressed: onGoDownload,
-                style: AppButtonStyle.filled,
-                label: m3.Text(l10n.modsEmptyAction),
               ),
             ],
           ),

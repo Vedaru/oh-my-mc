@@ -365,13 +365,37 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get modsSearchHint => '筛选';
+  String get modsSearchHint => '搜索 Modrinth';
 
   @override
   String get modsRefresh => '刷新';
 
   @override
   String get modsOpenFolder => '打开文件夹';
+
+  @override
+  String get modsSearchTitle => '安装模组';
+
+  @override
+  String get modsSearchEmpty => '没有匹配的模组。';
+
+  @override
+  String modsSearchFiltered(String loader, String game) {
+    return '$loader · $game — 只显示能在这里加载的';
+  }
+
+  @override
+  String get modsSearchNeedsLoader => '这个版本无法安装模组';
+
+  @override
+  String get modsSearchVanillaHint =>
+      '请先为这个游戏版本安装 Fabric、Quilt、Forge 或 NeoForge，模组需要加载器。';
+
+  @override
+  String get modsInstall => '安装';
+
+  @override
+  String get modsGet => '获取模组';
 
   @override
   String get modsDisabled => '已禁用';
@@ -392,9 +416,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get modsEmptyBody => '把 .jar 放进 mods 文件夹，或从下载页获取。';
-
-  @override
-  String get modsEmptyAction => '去获取模组';
 
   @override
   String modsToggleFailed(String reason) {
@@ -780,5 +801,34 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String javaUnavailableDetail(int major, String platform) {
     return 'Mojang 没有为 $platform 发布 Java $major。你可以自行安装，并在实例设置中指向它。';
+  }
+
+  @override
+  String get packImport => '导入整合包';
+
+  @override
+  String get packImporting => '正在导入…';
+
+  @override
+  String packImported(String name, int count) {
+    return '已导入「$name」· $count 个文件';
+  }
+
+  @override
+  String packImportFailed(String error) {
+    return '导入失败：$error';
+  }
+
+  @override
+  String get packExport => '导出整合包';
+
+  @override
+  String packExported(int count, String path) {
+    return '已导出 $count 个文件到 $path';
+  }
+
+  @override
+  String packExportFailed(String error) {
+    return '导出失败：$error';
   }
 }

@@ -313,6 +313,20 @@ the current gap table and the ordered backlog. Two rules from it bind new code:
   off the screen. One line goes to the console (`launch: java · N classpath
   entries · main`), the exact command line goes to `<data>/logs/launch-*.log`
   with `--accessToken` masked.
+- **Mod search filters come from the instance.** `McTarget.fromInstance` reads the
+  loader off the instance, not out of its `versionId` (which is the *game* version);
+  reading the id calls every Fabric instance vanilla. A vanilla instance gets an
+  explanation instead of a search box, because a field that can only return
+  unloadable mods is a control that lies.
+- **Dependencies: `required` only, breadth-first, visited-set.** Optional
+  dependencies are suggestions; installing them silently is how a launcher ships a
+  mod list nobody asked for. A cycle is common enough that a naive recursion hangs.
+  `tool/smoke_modrinth.dart` resolves Iris (which needs Sodium) against the real
+  API - run it when the response shapes are in doubt.
+- **A pack import creates the instance first, then unpacks into it** (`inspect` →
+  `create` → `import`): the instance id is the directory name, so it has to exist,
+  and the pack's own name is what the instance should be called. Pack paths are
+  refused when they escape the game directory.
 - **Logs are files, and the page reads them.** `ProcessLaunchHandle` writes every
   console line to `<data>/logs/launch-<timestamp>-<version>.log` (stderr prefixed
   with `! ` so the errors filter survives a restart) and the full argv too; the

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +10,8 @@ import '../../app/router.dart';
 import '../../core/instance/instance.dart';
 import '../../data/install_providers.dart';
 import '../../data/instance_providers.dart';
+import '../../data/launch_factory.dart';
+import '../../data/pack_providers.dart';
 import '../../data/launch_providers.dart';
 import '../../l10n/l10n.dart';
 import '../components/app_banner.dart';
@@ -18,6 +22,9 @@ import '../shell/shell_icons.dart';
 import '../theme/app_theme.dart';
 import 'instance_card.dart';
 import '../components/app_text_field.dart';
+
+import 'package:file_picker/file_picker.dart';
+
 import '../components/app_dialog.dart';
 
 /// The instance grid.
@@ -247,6 +254,11 @@ class _Grid extends StatelessWidget {
                     .copyWith(color: scheme.onSurfaceVariant),
               ),
               const m3.SizedBox(width: 12),
+              // Importing a pack is the other way an instance appears, and it is
+              // why this button sits next to "New instance" rather than inside it:
+              // it is not a variant of creating one by hand.
+              const _ImportButton(),
+              const m3.SizedBox(width: 8),
               AppButton(
                 onPressed: onCreate,
                 style: AppButtonStyle.filled,
@@ -640,6 +652,76 @@ class _GridSkeleton extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// 导入整合包: pick a `.mrpack` or a pack this launcher exported, and turn it into
+/// an instance.
+///
+/// Its own widget because it is the only part of the page with state: the button
+/// has to turn into "importing" while files land, and a page that rebuilt around
+/// that would lose the grid's scroll position.
+class _ImportButton extends ConsumerStatefulWidget {
+  const _ImportButton();
+
+  @override
+  ConsumerState<_ImportButton> createState() => _ImportButtonState();
+}
+
+class _ImportButtonState extends ConsumerState<_ImportButton> {
+  var _importing = false;
+
+  Future<void> _import() async {
+    final l10n = context.l10n;
+    final files = await FilePicker.pickFiles(
+      dialogTitle: l10n.packImport,
+      type: FileType.custom,
+      allowedExtensions: const ['mrpack', 'zip'],
+    );
+    final path = files.isEmpty ? null : files.first.path;
+    if (path == null || !mounted) return;
+
+    setState(() => _importing = true);
+    try {
+      final result = await importPackAsInstance(
+        importer: ref.read(packImporterProvider),
+        instances: ref.read(instanceListProvider.notifier),
+        paths: ref.read(launcherPathsProvider),
+        file: File(path),
+      );
+      if (!mounted) return;
+      _toast(
+        l10n.packImported(result.instance.name, result.imported.written.length),
+      );
+    } on Object catch (e) {
+      if (!mounted) return;
+      _toast(l10n.packImportFailed('$e'));
+    } finally {
+      if (mounted) setState(() => _importing = false);
+    }
+  }
+
+  void _toast(String message) {
+    m3.ScaffoldMessenger.maybeOf(context)
+      ?..hideCurrentSnackBar()
+      ..showSnackBar(
+        m3.SnackBar(
+          content: m3.Text(message),
+          behavior: m3.SnackBarBehavior.floating,
+        ),
+      );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return AppButton(
+      key: const m3.ValueKey('instances-import-pack'),
+      onPressed: _importing ? null : _import,
+      style: AppButtonStyle.outlined,
+      icon: const m3.Icon(ShellIcons.folder, size: 15),
+      label: m3.Text(_importing ? l10n.packImporting : l10n.packImport),
     );
   }
 }

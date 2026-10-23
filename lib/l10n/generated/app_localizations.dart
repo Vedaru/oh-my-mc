@@ -764,10 +764,10 @@ abstract class AppLocalizations {
   /// **'{enabled} of {total} enabled'**
   String modsCounts(int enabled, int total);
 
-  /// Placeholder of the mod filter field.
+  /// Search field hint in the mod search.
   ///
   /// In en, this message translates to:
-  /// **'Filter'**
+  /// **'Search Modrinth'**
   String get modsSearchHint;
 
   /// Rescans the mods folder.
@@ -781,6 +781,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open folder'**
   String get modsOpenFolder;
+
+  /// Title of the Modrinth search dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Install mods'**
+  String get modsSearchTitle;
+
+  /// Shown when a mod search returns no results.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing matches that.'**
+  String get modsSearchEmpty;
+
+  /// States the filters the dialog applies.
+  ///
+  /// In en, this message translates to:
+  /// **'{loader} · {game} — matches only what can load here'**
+  String modsSearchFiltered(String loader, String game);
+
+  /// Shown for a vanilla instance.
+  ///
+  /// In en, this message translates to:
+  /// **'This version cannot take mods'**
+  String get modsSearchNeedsLoader;
+
+  /// Explains why a vanilla instance has no search.
+  ///
+  /// In en, this message translates to:
+  /// **'Install Fabric, Quilt, Forge or NeoForge for this game version first; mods need a loader.'**
+  String get modsSearchVanillaHint;
+
+  /// Install action on a mod search result.
+  ///
+  /// In en, this message translates to:
+  /// **'Install'**
+  String get modsInstall;
+
+  /// Opens the Modrinth search from the mod list.
+  ///
+  /// In en, this message translates to:
+  /// **'Get mods'**
+  String get modsGet;
 
   /// Trailing state of a disabled mod.
   ///
@@ -817,12 +859,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Drop a .jar into the mods folder, or get one from the download page.'**
   String get modsEmptyBody;
-
-  /// Empty state button that goes to the download page.
-  ///
-  /// In en, this message translates to:
-  /// **'Get mods'**
-  String get modsEmptyAction;
 
   /// Shown when renaming a jar fails.
   ///
@@ -1429,6 +1465,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No Java {major} build is published for {platform}. You can install one yourself and point the instance at it.'**
   String javaUnavailableDetail(int major, String platform);
+
+  /// Button that imports a modpack file.
+  ///
+  /// In en, this message translates to:
+  /// **'Import pack'**
+  String get packImport;
+
+  /// State of the import button while files land.
+  ///
+  /// In en, this message translates to:
+  /// **'Importing…'**
+  String get packImporting;
+
+  /// Snackbar after a pack import.
+  ///
+  /// In en, this message translates to:
+  /// **'Imported \"{name}\" · {count} files'**
+  String packImported(String name, int count);
+
+  /// Snackbar when a pack import fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Import failed: {error}'**
+  String packImportFailed(String error);
+
+  /// Button that writes the instance as a .zip pack.
+  ///
+  /// In en, this message translates to:
+  /// **'Export pack'**
+  String get packExport;
+
+  /// Snackbar after exporting a pack.
+  ///
+  /// In en, this message translates to:
+  /// **'Exported {count} files to {path}'**
+  String packExported(int count, String path);
+
+  /// Snackbar when an export fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Export failed: {error}'**
+  String packExportFailed(String error);
 }
 
 class _AppLocalizationsDelegate

@@ -16,6 +16,8 @@ import 'package:oh_my_mc/core/install/version_installer.dart';
 import 'package:oh_my_mc/core/net/progress.dart';
 import 'package:oh_my_mc/core/logs/log_files.dart';
 import 'package:oh_my_mc/data/log_providers.dart';
+import 'package:oh_my_mc/core/mods/modrinth.dart';
+import 'package:oh_my_mc/data/modrinth_providers.dart';
 import 'package:oh_my_mc/data/launch_providers.dart';
 import 'package:oh_my_mc/core/launch/launch_handle.dart';
 import 'package:oh_my_mc/data/instance_providers.dart';
@@ -187,7 +189,10 @@ void main() {
       // A dialog is part of the screen it belongs to: capture it open rather than
       // only photographing the resting page.
       await tester.tap(find.byKey(w.ValueKey(openKey)));
-      await tester.pumpAndSettle();
+      // Bounded pumps, not `pumpAndSettle`: a dialog with an autofocused field
+      // has a blinking cursor, which is an animation that never settles.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
     }
 
     if (scrollDown > 0) {
@@ -353,6 +358,54 @@ void main() {
 
   testWidgets('download', (tester) async {
     await shoot(tester, '/download', 'download');
+  });
+
+  testWidgets('mods search', (tester) async {
+    await shoot(
+      tester,
+      '/instances/fabric/mods',
+      'mods-search',
+      instances: const [
+        Instance(
+          id: 'fabric',
+          name: 'Fabulously Optimized',
+          versionId: '1.20.1',
+          loader: LoaderKind.fabric,
+          loaderVersion: '0.16.9',
+        ),
+      ],
+      overrides: [
+        modSearchProvider.overrideWith(
+          (ref, query) async => const [
+            ModrinthProject(
+              id: 'sodium',
+              slug: 'sodium',
+              title: 'Sodium',
+              description:
+                  'Modern rendering engine and the standard for performance',
+              downloads: 48000000,
+            ),
+            ModrinthProject(
+              id: 'lithium',
+              slug: 'lithium',
+              title: 'Lithium',
+              description:
+                  'No-compromises game logic and performance optimization',
+              downloads: 31000000,
+            ),
+            ModrinthProject(
+              id: 'iris',
+              slug: 'iris',
+              title: 'Iris Shaders',
+              description:
+                  'A modern shaders mod compatible with OptiFine packs',
+              downloads: 27000000,
+            ),
+          ],
+        ),
+      ],
+      openKey: 'mods-get',
+    );
   });
 
   testWidgets('logs sessions', (tester) async {
