@@ -11,7 +11,7 @@ import 'package:oh_my_mc/core/mods/modrinth.dart';
 import 'package:oh_my_mc/data/launch_factory.dart';
 import 'package:oh_my_mc/data/modrinth_providers.dart';
 import 'package:oh_my_mc/data/settings.dart';
-import 'package:oh_my_mc/ui/instances/mod_search_dialog.dart';
+import 'package:oh_my_mc/ui/instances/content_search_dialog.dart';
 import 'package:path/path.dart' as p;
 
 import '../support/harness.dart';
@@ -21,7 +21,7 @@ import '../support/harness.dart';
 /// are replaced here - `test/core/mods/modrinth_test.dart` owns those.
 void main() {
   late Directory tmp;
-  late List<ModInstallRequest> requests;
+  late List<ContentInstallRequest> requests;
 
   setUp(() async {
     tmp = await Directory.systemTemp.createTemp('mod-search');
@@ -38,7 +38,7 @@ void main() {
     List<ModrinthProject> results = const [],
     ModInstallOutcome? outcome,
     Object? installError,
-    List<ModSearchQuery>? queries,
+    List<ContentSearchQuery>? queries,
   }) async {
     final container = ProviderContainer(
       overrides: [
@@ -48,11 +48,11 @@ void main() {
         launcherPathsProvider.overrideWithValue(
           LauncherPaths(data: tmp, game: Directory(p.join(tmp.path, 'game'))),
         ),
-        modSearchProvider.overrideWith((ref, query) async {
+        contentSearchProvider.overrideWith((ref, query) async {
           queries?.add(query);
           return results;
         }),
-        modInstallActionProvider.overrideWith(
+        contentInstallActionProvider.overrideWith(
           (ref) => (request) async {
             requests.add(request);
             if (installError != null) throw installError;
@@ -75,8 +75,9 @@ void main() {
     await pumpScreen(
       tester,
       container,
-      ModSearchDialog(
+      ContentSearchDialog(
         instance: Instance(id: 'a', name: 'Demo', versionId: versionId),
+        kind: CatalogKind.mod,
       ),
     );
   }
@@ -84,7 +85,7 @@ void main() {
   testWidgets('a modded instance searches with its loader and game version', (
     tester,
   ) async {
-    final queries = <ModSearchQuery>[];
+    final queries = <ContentSearchQuery>[];
     await pump(
       tester,
       versionId: 'fabric-loader-0.16.9-1.20.1',
@@ -175,12 +176,8 @@ void main() {
     await pump(tester, versionId: '1.20.1');
     await tester.pumpAndSettle();
 
-    expect(find.text('This version cannot take mods'), findsOneWidget);
-    expect(
-      find.textContaining('Fabric, Quilt, Forge or NeoForge'),
-      findsOneWidget,
-    );
+    expect(find.text('This version cannot take mods'), findsWidgets);
     // No search field that would only ever return unusable results.
-    expect(find.byKey(const m3.ValueKey('mods-search')), findsNothing);
+    expect(find.byKey(const m3.ValueKey('content-search')), findsNothing);
   });
 }

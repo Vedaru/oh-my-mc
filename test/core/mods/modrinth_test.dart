@@ -176,7 +176,10 @@ void main() {
       );
       final installer = ModInstaller();
 
-      final outcome = await installer.install(plans: plans, modsDir: mods.path);
+      final outcome = await installer.install(
+        plans: plans,
+        directory: mods.path,
+      );
 
       expect(outcome.failed, isEmpty);
       expect(outcome.installed, ['sodium-1.0.jar', 'indium-1.0.jar']);
@@ -206,7 +209,7 @@ void main() {
 
         final outcome = await ModInstaller().install(
           plans: plans,
-          modsDir: mods.path,
+          directory: mods.path,
         );
 
         expect(outcome.installed, isEmpty);
@@ -238,7 +241,7 @@ void main() {
 
         final outcome = await ModInstaller().install(
           plans: plans,
-          modsDir: mods.path,
+          directory: mods.path,
         );
 
         expect(outcome.failed.keys, ['broken.jar']);

@@ -1921,6 +1921,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Download source'**
   String get sourceTitle;
+
+  /// Catalogue name for mods.
+  ///
+  /// In en, this message translates to:
+  /// **'Mods'**
+  String get catalogMods;
+
+  /// Catalogue name for resource packs.
+  ///
+  /// In en, this message translates to:
+  /// **'Resource packs'**
+  String get catalogResourcePacks;
+
+  /// Catalogue name for shaders.
+  ///
+  /// In en, this message translates to:
+  /// **'Shaders'**
+  String get catalogShaders;
+
+  /// Catalogue name for data packs.
+  ///
+  /// In en, this message translates to:
+  /// **'Data packs'**
+  String get catalogDataPacks;
+
+  /// Hint in the catalogue search field.
+  ///
+  /// In en, this message translates to:
+  /// **'Search Modrinth'**
+  String get catalogSearchHint;
+
+  /// Shown when a catalogue search returns nothing.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing matches that.'**
+  String get catalogEmpty;
+
+  /// Install action on a catalogue result.
+  ///
+  /// In en, this message translates to:
+  /// **'Install'**
+  String get catalogInstall;
+
+  /// Shown when a vanilla instance opens the mod catalogue.
+  ///
+  /// In en, this message translates to:
+  /// **'This version cannot take mods'**
+  String get catalogNeedsLoader;
+
+  /// Shown when no world exists or none was chosen.
+  ///
+  /// In en, this message translates to:
+  /// **'A data pack belongs to a world. Create or open a world first.'**
+  String get catalogNeedsWorld;
+
+  /// No description provided for @catalogUnknownVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'The game version could not be read from this instance.'**
+  String get catalogUnknownVersion;
+
+  /// Title of the world picker for data packs.
+  ///
+  /// In en, this message translates to:
+  /// **'Which world?'**
+  String get catalogPickWorld;
+
+  /// States the filters a mod search applies.
+  ///
+  /// In en, this message translates to:
+  /// **'{loader} · {game} — matches only what can load here'**
+  String catalogFilteredLoader(String loader, String game);
+
+  /// States the game version filter.
+  ///
+  /// In en, this message translates to:
+  /// **'{game} — matches only what can load here'**
+  String catalogFilteredGame(String game);
+
+  /// Shown when no instance is selected.
+  ///
+  /// In en, this message translates to:
+  /// **'Select an instance on the Launch page first: content installs into one.'**
+  String get catalogNoTarget;
+
+  /// Button that imports a world archive.
+  ///
+  /// In en, this message translates to:
+  /// **'Import world (.zip)'**
+  String get catalogImportWorld;
+
+  /// State of the world import button.
+  ///
+  /// In en, this message translates to:
+  /// **'Importing…'**
+  String get catalogImporting;
+
+  /// Snackbar after a world import.
+  ///
+  /// In en, this message translates to:
+  /// **'Imported “{name}”'**
+  String catalogWorldImported(String name);
+
+  /// Snackbar when a world import fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Import failed: {error}'**
+  String catalogWorldImportFailed(String error);
+
+  /// Shows which instance receives the content.
+  ///
+  /// In en, this message translates to:
+  /// **'Installing into “{name}”'**
+  String catalogTarget(String name);
 }
 
 class _AppLocalizationsDelegate

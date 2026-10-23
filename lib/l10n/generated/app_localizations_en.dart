@@ -1098,4 +1098,74 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sourceTitle => 'Download source';
+
+  @override
+  String get catalogMods => 'Mods';
+
+  @override
+  String get catalogResourcePacks => 'Resource packs';
+
+  @override
+  String get catalogShaders => 'Shaders';
+
+  @override
+  String get catalogDataPacks => 'Data packs';
+
+  @override
+  String get catalogSearchHint => 'Search Modrinth';
+
+  @override
+  String get catalogEmpty => 'Nothing matches that.';
+
+  @override
+  String get catalogInstall => 'Install';
+
+  @override
+  String get catalogNeedsLoader => 'This version cannot take mods';
+
+  @override
+  String get catalogNeedsWorld =>
+      'A data pack belongs to a world. Create or open a world first.';
+
+  @override
+  String get catalogUnknownVersion =>
+      'The game version could not be read from this instance.';
+
+  @override
+  String get catalogPickWorld => 'Which world?';
+
+  @override
+  String catalogFilteredLoader(String loader, String game) {
+    return '$loader · $game — matches only what can load here';
+  }
+
+  @override
+  String catalogFilteredGame(String game) {
+    return '$game — matches only what can load here';
+  }
+
+  @override
+  String get catalogNoTarget =>
+      'Select an instance on the Launch page first: content installs into one.';
+
+  @override
+  String get catalogImportWorld => 'Import world (.zip)';
+
+  @override
+  String get catalogImporting => 'Importing…';
+
+  @override
+  String catalogWorldImported(String name) {
+    return 'Imported “$name”';
+  }
+
+  @override
+  String catalogWorldImportFailed(String error) {
+    return 'Import failed: $error';
+  }
+
+  @override
+  String catalogTarget(String name) {
+    return 'Installing into “$name”';
+  }
 }

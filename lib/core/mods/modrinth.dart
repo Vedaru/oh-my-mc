@@ -193,17 +193,19 @@ class ModrinthClient {
 
   Future<List<ModrinthProject>> search(
     String query, {
+    String projectType = 'mod',
     String? gameVersion,
     String? loader,
     int limit = 20,
     CancelToken? cancel,
   }) async {
-    // `project_type:mod` keeps resource packs and shaders out of a mod search;
-    // the version and loader facets are what make the results installable.
+    // The type facet keeps shaders out of a resource pack search. The loader facet
+    // only applies to mods: a resource pack, a shader or a datapack is not built for
+    // Fabric or Forge, and filtering by loader returns nothing for them.
     final facets = <String>[
-      '["project_type:mod"]',
+      '["project_type:$projectType"]',
       if (gameVersion != null) '["versions:$gameVersion"]',
-      if (loader != null) '["categories:$loader"]',
+      if (loader != null && projectType == 'mod') '["categories:$loader"]',
     ];
     final uri = _base.replace(
       path: '/v2/search',
@@ -227,13 +229,16 @@ class ModrinthClient {
     String projectId, {
     required String gameVersion,
     String? loader,
+    String projectType = 'mod',
     CancelToken? cancel,
   }) async {
     final uri = _base.replace(
       path: '/v2/project/$projectId/version',
       queryParameters: {
         'game_versions': jsonEncode([gameVersion]),
-        if (loader != null) 'loaders': jsonEncode([loader]),
+        // Same rule as search: only mods have a loader tag.
+        if (loader != null && projectType == 'mod')
+          'loaders': jsonEncode([loader]),
       },
     );
     final body = await _getJson(uri, cancel: cancel);
@@ -258,6 +263,7 @@ class ModrinthClient {
     required String title,
     required String gameVersion,
     String? loader,
+    String projectType = 'mod',
     CancelToken? cancel,
     void Function(String projectId)? onProject,
   }) async {
@@ -277,6 +283,7 @@ class ModrinthClient {
         item.id,
         gameVersion: gameVersion,
         loader: loader,
+        projectType: projectType,
         cancel: cancel,
       );
       final file = version.primaryFile;

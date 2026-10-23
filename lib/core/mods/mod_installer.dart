@@ -26,11 +26,12 @@ class ModInstallOutcome {
   bool get isClean => failed.isEmpty;
 }
 
-/// Downloads resolved mod files into a `mods/` directory.
+/// Downloads resolved files into a directory - `mods/`, `resourcepacks/`,
+/// `shaderpacks/`, `<world>/datapacks/`.
 ///
 /// Deliberately dumb about *what* to install: `ModrinthClient.resolve` owns the
-/// dependency graph and this only moves bytes, which is what makes the network
-/// part testable against a local server.
+/// dependency graph and this only moves bytes, which is what makes the network part
+/// testable against a local server.
 class ModInstaller {
   ModInstaller({HttpClient? client}) : _client = client ?? HttpClient();
 
@@ -38,11 +39,11 @@ class ModInstaller {
 
   Future<ModInstallOutcome> install({
     required List<ModInstallPlan> plans,
-    required String modsDir,
+    required String directory,
     CancelToken? cancel,
     void Function(int done, int total, String fileName)? onProgress,
   }) async {
-    final dir = Directory(modsDir);
+    final dir = Directory(directory);
     await dir.create(recursive: true);
 
     final installed = <String>[];
@@ -53,7 +54,7 @@ class ModInstaller {
       final plan = plans[i];
       cancel?.throwIfCancelled('mod download');
       final name = p.basename(plan.fileName);
-      final target = p.join(modsDir, name);
+      final target = p.join(directory, name);
       onProgress?.call(i, plans.length, name);
 
       // A mod that is present and disabled is still installed: writing a second

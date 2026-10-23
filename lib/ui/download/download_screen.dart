@@ -19,6 +19,7 @@ import '../shell/shell_icons.dart';
 import '../theme/app_theme.dart';
 import '../components/app_switch.dart';
 import '../components/app_text_field.dart';
+import 'download_content_bar.dart';
 
 /// One manifest entry, flattened for the widget layer.
 ///
@@ -93,6 +94,13 @@ class _DownloadScreenState extends ConsumerState<DownloadScreen> {
         crossAxisAlignment: m3.CrossAxisAlignment.stretch,
         children: [
           PageTitle(l10n.navDownload),
+          // Before the version list: "mods / resource packs / shaders / data packs"
+          // is what most visits to 下载 are about once a version is installed.
+          //
+          // Hidden while an install is running: the panel below it is the thing to
+          // watch then, and on a short window the two together push the list out of
+          // the viewport.
+          if (install is InstallIdle) const DownloadContentBar(),
           _Toolbar(
             search: _search,
             snapshots: _snapshots,

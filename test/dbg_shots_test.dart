@@ -440,7 +440,7 @@ void main() {
         ),
       ],
       overrides: [
-        modSearchProvider.overrideWith(
+        contentSearchProvider.overrideWith(
           (ref, query) async => const [
             ModrinthProject(
               id: 'sodium',

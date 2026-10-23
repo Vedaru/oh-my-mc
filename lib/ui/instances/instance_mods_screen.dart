@@ -13,6 +13,7 @@ import '../../core/net/progress.dart' show formatBytes;
 import '../../data/instance_providers.dart';
 import '../../data/launch_factory.dart';
 import '../../data/mods_providers.dart';
+import '../../data/modrinth_providers.dart';
 import '../../l10n/l10n.dart';
 import '../components/app_button.dart';
 import '../components/app_dialog.dart';
@@ -22,7 +23,7 @@ import '../components/list_row.dart';
 import '../components/page_body.dart';
 import '../shell/shell_icons.dart';
 import '../theme/app_theme.dart';
-import 'mod_search_dialog.dart';
+import 'content_search_dialog.dart';
 
 /// 版本设置 → Mod 管理: the instance's `mods/` folder as a list.
 ///
@@ -154,9 +155,11 @@ class _InstanceModsScreenState extends ConsumerState<InstanceModsScreen> {
       );
       return;
     }
-    m3.showDialog<void>(
+    showContentSearch(
       context: context,
-      builder: (context) => ModSearchDialog(instance: instance),
+      ref: ref,
+      instance: instance,
+      kind: CatalogKind.mod,
     );
   }
 

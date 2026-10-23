@@ -1065,4 +1065,71 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get sourceTitle => '下载源';
+
+  @override
+  String get catalogMods => '模组';
+
+  @override
+  String get catalogResourcePacks => '资源包';
+
+  @override
+  String get catalogShaders => '光影';
+
+  @override
+  String get catalogDataPacks => '数据包';
+
+  @override
+  String get catalogSearchHint => '搜索 Modrinth';
+
+  @override
+  String get catalogEmpty => '没有匹配的内容。';
+
+  @override
+  String get catalogInstall => '安装';
+
+  @override
+  String get catalogNeedsLoader => '这个版本无法安装模组';
+
+  @override
+  String get catalogNeedsWorld => '数据包属于某一个存档。请先创建或打开一个存档。';
+
+  @override
+  String get catalogUnknownVersion => '读不出这个实例的游戏版本。';
+
+  @override
+  String get catalogPickWorld => '安装到哪个存档？';
+
+  @override
+  String catalogFilteredLoader(String loader, String game) {
+    return '$loader · $game — 只显示能在这里加载的';
+  }
+
+  @override
+  String catalogFilteredGame(String game) {
+    return '$game — 只显示能在这里加载的';
+  }
+
+  @override
+  String get catalogNoTarget => '先在「启动」里选一个实例：内容要装进某个实例。';
+
+  @override
+  String get catalogImportWorld => '导入世界（.zip）';
+
+  @override
+  String get catalogImporting => '正在导入…';
+
+  @override
+  String catalogWorldImported(String name) {
+    return '已导入「$name」';
+  }
+
+  @override
+  String catalogWorldImportFailed(String error) {
+    return '导入失败：$error';
+  }
+
+  @override
+  String catalogTarget(String name) {
+    return '安装到「$name」';
+  }
 }

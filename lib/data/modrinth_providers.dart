@@ -1,9 +1,40 @@
-import 'dart:io';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
 
+import '../core/game/content.dart';
+import '../core/instance/instance.dart';
 import '../core/mods/mod_installer.dart';
 import '../core/mods/modrinth.dart';
+import 'launch_factory.dart';
+
+/// The catalogues the download page offers, and what each installs into.
+///
+/// `datapack` is the odd one: a datapack belongs to a *world*, not to a version, so
+/// its target directory is inside a save and the caller has to choose which one.
+enum CatalogKind {
+  mod('mod', 'mods'),
+  resourcePack('resourcepack', 'resourcepacks'),
+  shader('shader', 'shaderpacks'),
+  datapack('datapack', 'datapacks');
+
+  const CatalogKind(this.modrinthType, this.folderName);
+
+  /// Modrinth's `project_type` value.
+  final String modrinthType;
+
+  /// Directory under the instance's game root - or, for a datapack, under a world.
+  final String folderName;
+
+  /// Where an install for [instance] lands, or null when the target depends on a
+  /// world the caller has not chosen yet.
+  String? targetFor(Instance instance, LauncherPaths paths, {String? world}) {
+    final root = paths.gamePathsFor(instance).root;
+    if (this == CatalogKind.datapack) {
+      return world == null ? null : p.join(root, 'saves', world, folderName);
+    }
+    return p.join(root, folderName);
+  }
+}
 
 /// Shared client: Modrinth asks clients to identify themselves and rate-limits
 /// anonymous ones, so one connection pool for the whole app is the polite shape.
@@ -19,41 +50,39 @@ final modInstallerProvider = Provider<ModInstaller>((ref) {
   return installer;
 });
 
-/// A search, as a value the Ui can key a provider on.
-class ModSearchQuery {
-  const ModSearchQuery({
+/// A search, as a value the UI can key a provider on.
+class ContentSearchQuery {
+  const ContentSearchQuery({
     required this.text,
+    required this.kind,
     required this.gameVersion,
     this.loader,
   });
 
   final String text;
+  final CatalogKind kind;
   final String gameVersion;
   final String? loader;
 
   @override
   bool operator ==(Object other) =>
-      other is ModSearchQuery &&
+      other is ContentSearchQuery &&
       other.text == text &&
+      other.kind == kind &&
       other.gameVersion == gameVersion &&
       other.loader == loader;
 
   @override
-  int get hashCode => Object.hash(text, gameVersion, loader);
-
-  ModSearchQuery copyWith({String? text}) => ModSearchQuery(
-    text: text ?? this.text,
-    gameVersion: gameVersion,
-    loader: loader,
-  );
+  int get hashCode => Object.hash(text, kind, gameVersion, loader);
 }
 
 /// Results for one query. Auto-disposed so leaving the dialog drops the page.
-final modSearchProvider = FutureProvider.autoDispose
-    .family<List<ModrinthProject>, ModSearchQuery>((ref, query) async {
+final contentSearchProvider = FutureProvider.autoDispose
+    .family<List<ModrinthProject>, ContentSearchQuery>((ref, query) async {
       final client = ref.watch(modrinthClientProvider);
       return client.search(
         query.text,
+        projectType: query.kind.modrinthType,
         gameVersion: query.gameVersion,
         loader: query.loader,
       );
@@ -61,59 +90,56 @@ final modSearchProvider = FutureProvider.autoDispose
 
 /// One install request: what the search dialog asks for, and what a test can
 /// answer without a network.
-class ModInstallRequest {
-  const ModInstallRequest({
+class ContentInstallRequest {
+  const ContentInstallRequest({
     required this.project,
+    required this.kind,
     required this.gameVersion,
-    required this.modsDir,
+    required this.target,
     this.loader,
+    this.enablePack = false,
   });
 
   final ModrinthProject project;
+  final CatalogKind kind;
   final String gameVersion;
   final String? loader;
-  final Directory modsDir;
+
+  /// Absolute directory the files land in.
+  final String target;
+
+  /// Turn an installed resource pack on in `options.txt`.
+  final bool enablePack;
 }
 
 /// The install action, behind a provider so the UI can be tested without
-/// downloading jars: the dialog's job is to show progress and failures, not to
-/// move bytes.
-final modInstallActionProvider =
-    Provider<Future<ModInstallOutcome> Function(ModInstallRequest request)>((
-      ref,
-    ) {
-      return (request) => installModrinthProject(
-        client: ref.read(modrinthClientProvider),
-        installer: ref.read(modInstallerProvider),
-        project: request.project,
-        gameVersion: request.gameVersion,
-        loader: request.loader,
-        modsDir: request.modsDir,
-      );
-    });
+/// downloading jars: the dialog's job is to show progress and failures, not to move
+/// bytes.
+final contentInstallActionProvider =
+    Provider<Future<ModInstallOutcome> Function(ContentInstallRequest request)>(
+      (ref) {
+        return (request) async {
+          final client = ref.read(modrinthClientProvider);
+          final plans = await client.resolve(
+            projectId: request.project.id,
+            title: request.project.title,
+            gameVersion: request.gameVersion,
+            loader: request.loader,
+            projectType: request.kind.modrinthType,
+          );
+          final outcome = await ref
+              .read(modInstallerProvider)
+              .install(plans: plans, directory: request.target);
 
-/// Installs one project and its required dependencies into a mods directory.
-///
-/// A function rather than a provider method: it is a one-shot action with a
-/// result the caller shows, not state something else watches.
-Future<ModInstallOutcome> installModrinthProject({
-  required ModrinthClient client,
-  required ModInstaller installer,
-  required ModrinthProject project,
-  required String gameVersion,
-  String? loader,
-  required Directory modsDir,
-  void Function(int done, int total)? onProgress,
-}) async {
-  final plans = await client.resolve(
-    projectId: project.id,
-    title: project.title,
-    gameVersion: gameVersion,
-    loader: loader,
-  );
-  return installer.install(
-    plans: plans,
-    modsDir: modsDir.path,
-    onProgress: (done, total, _) => onProgress?.call(done, total),
-  );
-}
+          // A resource pack that lands in the folder but stays off is a download the
+          // user has to finish by hand, two menus deep in a screen the game hides.
+          if (request.enablePack && outcome.installed.isNotEmpty) {
+            final content = GameContent(p.dirname(request.target));
+            for (final name in outcome.installed) {
+              await content.setResourcePackEnabled(name, true);
+            }
+          }
+          return outcome;
+        };
+      },
+    );

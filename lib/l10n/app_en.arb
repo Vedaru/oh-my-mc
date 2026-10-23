@@ -1540,5 +1540,109 @@
   "sourceTitle": "Download source",
   "@sourceTitle": {
     "description": "Heading above the download source choice."
+  },
+  "catalogMods": "Mods",
+  "@catalogMods": {
+    "description": "Catalogue name for mods."
+  },
+  "catalogResourcePacks": "Resource packs",
+  "@catalogResourcePacks": {
+    "description": "Catalogue name for resource packs."
+  },
+  "catalogShaders": "Shaders",
+  "@catalogShaders": {
+    "description": "Catalogue name for shaders."
+  },
+  "catalogDataPacks": "Data packs",
+  "@catalogDataPacks": {
+    "description": "Catalogue name for data packs."
+  },
+  "catalogSearchHint": "Search Modrinth",
+  "@catalogSearchHint": {
+    "description": "Hint in the catalogue search field."
+  },
+  "catalogEmpty": "Nothing matches that.",
+  "@catalogEmpty": {
+    "description": "Shown when a catalogue search returns nothing."
+  },
+  "catalogInstall": "Install",
+  "@catalogInstall": {
+    "description": "Install action on a catalogue result."
+  },
+  "catalogNeedsLoader": "This version cannot take mods",
+  "@catalogNeedsLoader": {
+    "description": "Shown when a vanilla instance opens the mod catalogue."
+  },
+  "catalogNeedsWorld": "A data pack belongs to a world. Create or open a world first.",
+  "@catalogNeedsWorld": {
+    "description": "Shown when no world exists or none was chosen."
+  },
+  "catalogUnknownVersion": "The game version could not be read from this instance.",
+  "@catalogUnknownVersion": {
+    "description": null
+  },
+  "catalogPickWorld": "Which world?",
+  "@catalogPickWorld": {
+    "description": "Title of the world picker for data packs."
+  },
+  "catalogFilteredLoader": "{loader} · {game} — matches only what can load here",
+  "@catalogFilteredLoader": {
+    "description": "States the filters a mod search applies.",
+    "placeholders": {
+      "loader": {
+        "type": "String"
+      },
+      "game": {
+        "type": "String"
+      }
+    }
+  },
+  "catalogFilteredGame": "{game} — matches only what can load here",
+  "@catalogFilteredGame": {
+    "description": "States the game version filter.",
+    "placeholders": {
+      "game": {
+        "type": "String"
+      }
+    }
+  },
+  "catalogNoTarget": "Select an instance on the Launch page first: content installs into one.",
+  "@catalogNoTarget": {
+    "description": "Shown when no instance is selected."
+  },
+  "catalogImportWorld": "Import world (.zip)",
+  "@catalogImportWorld": {
+    "description": "Button that imports a world archive."
+  },
+  "catalogImporting": "Importing…",
+  "@catalogImporting": {
+    "description": "State of the world import button."
+  },
+  "catalogWorldImported": "Imported “{name}”",
+  "@catalogWorldImported": {
+    "description": "Snackbar after a world import.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "catalogWorldImportFailed": "Import failed: {error}",
+  "@catalogWorldImportFailed": {
+    "description": "Snackbar when a world import fails.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "catalogTarget": "Installing into “{name}”",
+  "@catalogTarget": {
+    "description": "Shows which instance receives the content.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   }
 }

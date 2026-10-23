@@ -45,7 +45,7 @@ Future<void> main(List<String> args) async {
 
     final outcome = await installer.install(
       plans: plans,
-      modsDir: dir.path,
+      directory: dir.path,
       onProgress: (done, total, name) {
         if (name.isNotEmpty) stdout.writeln('  [$done/$total] $name');
       },
