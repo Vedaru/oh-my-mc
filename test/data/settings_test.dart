@@ -183,6 +183,7 @@ void main() {
         'fastestSource': base.copyWith(fastestSource: 'bmclapi'),
         'backgroundPath': base.copyWith(backgroundPath: '/pictures/wall.png'),
         'backgroundDim': base.copyWith(backgroundDim: 0.9),
+        'microsoftClientId': base.copyWith(microsoftClientId: 'abc-123'),
       };
 
       // Every key the store can write must be covered here, or a new field can slip

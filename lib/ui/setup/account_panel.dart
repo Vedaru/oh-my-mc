@@ -9,6 +9,7 @@ import '../components/app_button.dart';
 import '../components/app_text_field.dart';
 import '../components/empty_state.dart';
 import '../components/list_row.dart';
+import '../accounts/microsoft_sign_in_dialog.dart';
 import '../shell/shell_icons.dart';
 import '../theme/app_theme.dart';
 
@@ -73,6 +74,17 @@ class AccountPanel extends ConsumerWidget {
                 icon: const m3.Icon(ShellIcons.add, size: 14),
                 label: m3.Text(l10n.accountAdd),
               ),
+              const m3.SizedBox(width: 8),
+              AppButton(
+                key: const m3.ValueKey('account-add-microsoft'),
+                // Outlined for the same reason as the one above: both add an account,
+                // and neither is the page's primary action (starting the game is).
+                onPressed: () => MicrosoftSignInDialog.show(context),
+                style: AppButtonStyle.outlined,
+                size: AppButtonSize.sm,
+                icon: const m3.Icon(ShellIcons.cloud, size: 14),
+                label: m3.Text(l10n.accountAddMicrosoft),
+              ),
             ],
           ),
         ),
@@ -116,7 +128,11 @@ class _AccountRow extends ConsumerWidget {
       // by the radio at the trailing edge. It used to be both - a tick on the left and a
       // switch on the right - which is two answers to one question, and a switch claims
       // each account has its own on/off rather than there being one choice.
-      leadingIcon: account.isOffline ? ShellIcons.account : ShellIcons.cloud,
+      leadingIcon: switch (account.kind) {
+        AccountKind.offline => ShellIcons.account,
+        AccountKind.microsoft => ShellIcons.cloud,
+        AccountKind.thirdParty => ShellIcons.lan,
+      },
       label: account.name,
       // Kind and server, not the uuid: a hex prefix tells a user nothing, and two
       // accounts cannot share a name, so there is nothing to disambiguate.

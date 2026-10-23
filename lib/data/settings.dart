@@ -38,6 +38,7 @@ class AppSettings {
     this.backgroundPath,
     this.backgroundDim = defaultBackgroundDim,
     this.playerName = defaultPlayerName,
+    this.microsoftClientId = '',
     this.memoryMb = defaultMemoryMb,
     this.javaDirs = const [],
     this.downloadSource = SourcePreference.auto,
@@ -80,6 +81,14 @@ class AppSettings {
   /// launch is always offline, which requires a name and nothing else.
   final String playerName;
 
+  /// The Azure application id Microsoft sign-in authenticates as.
+  ///
+  /// Empty by default and deliberately so: an app id belongs to the launcher that
+  /// registered it (Prism and MultiMC each have their own), so shipping someone else's
+  /// would be signing users in as a different application. The 账户 page asks for one
+  /// the first time a user tries Microsoft sign-in.
+  final String microsoftClientId;
+
   /// Global heap cap, used when an instance has no override.
   final int memoryMb;
 
@@ -110,6 +119,7 @@ class AppSettings {
     'backgroundPath': ?backgroundPath,
     'backgroundDim': backgroundDim,
     'playerName': playerName,
+    'microsoftClientId': microsoftClientId,
     'memoryMb': memoryMb,
     // A list, so it is stored as JSON in a single string key: the settings store
     // writes scalars, and one key per directory would leak the list's length into
@@ -143,6 +153,7 @@ class AppSettings {
       // A blank or implausible name would make the game refuse to start or,
       // worse, start with an empty name; clamp it back to the default instead.
       playerName: _validPlayerName(map['playerName']),
+      microsoftClientId: (map['microsoftClientId'] as String?)?.trim() ?? '',
       memoryMb: _validMemoryMb(map['memoryMb']),
       javaDirs: _validJavaDirs(map['javaDirs']),
       downloadSource: _enumByName(
@@ -166,6 +177,7 @@ class AppSettings {
     double? backgroundDim,
     bool clearBackground = false,
     String? playerName,
+    String? microsoftClientId,
     int? memoryMb,
     List<String>? javaDirs,
     SourcePreference? downloadSource,
@@ -179,6 +191,7 @@ class AppSettings {
         : backgroundPath ?? this.backgroundPath,
     backgroundDim: backgroundDim ?? this.backgroundDim,
     playerName: playerName ?? this.playerName,
+    microsoftClientId: microsoftClientId ?? this.microsoftClientId,
     memoryMb: memoryMb ?? this.memoryMb,
     javaDirs: javaDirs ?? this.javaDirs,
     downloadSource: downloadSource ?? this.downloadSource,

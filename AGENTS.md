@@ -180,6 +180,13 @@ directory and `test/shots/` are now git-ignored.)
   page: they are one surface, separated by tone. Below 560 px of height the rail drops to
   `labelType.none` (icons + tooltips): seven labelled destinations no longer fit, and a destination
   clipped off the bottom is one nobody can click. The width stays 88 px either way.
+- **A signed-in account is a token with an expiry, not a name.** A Microsoft session is
+  five services deep (MSA → XBL → XSTS → Minecraft services → profile), the game token
+  lives ~24 h and the refresh token months, so `Account` carries `refreshToken`/
+  `expiresAt` and `AccountRefresher` renews *before* a launch. Renewal failure returns the
+  old account: a launch that works with a stale token beats one that refuses. The Azure
+  app id is `AppSettings.microsoftClientId`, empty by default and asked for in the sign-in
+  dialog - it is per-launcher, so a build cannot ship one.
 - **The rail carries the seven things a session starts from**: 启动, 实例, 账户, 联机, 下载, 日志, 设置.
   账户 and 联机 are destinations, not settings sections: an account is what every launch depends on,
   and joining a friend is something you do while playing - both were 设置 sections (通用, 网络) that

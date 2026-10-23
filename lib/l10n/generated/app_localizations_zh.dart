@@ -1200,4 +1200,26 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get lanNeverScanned => '还没有扫描。先在游戏里「对局域网开放」一个存档，再在这里找它。';
+
+  @override
+  String get accountAddMicrosoft => '微软账户';
+
+  @override
+  String get microsoftSignIn => '用微软账户登录';
+
+  @override
+  String get microsoftPreparing => '正在向微软申请代码…';
+
+  @override
+  String get microsoftCodeHint => '在打开的微软页面上输入这串代码：';
+
+  @override
+  String get microsoftWaiting => '等你确认…这个窗口可以一直开着。';
+
+  @override
+  String get microsoftNeedsClientId => '微软登录需要一个 Azure 应用 ID。';
+
+  @override
+  String get microsoftClientIdHint =>
+      '启动器要向微软表明自己是谁，这需要一个在你自己的 Azure 账号里注册的应用 ID（官方启动器用的是它们自己的）。把 ID 填进来就会记住。';
 }

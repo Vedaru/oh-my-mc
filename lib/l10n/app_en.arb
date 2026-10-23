@@ -1749,5 +1749,33 @@
   "lanNeverScanned": "Not scanned yet. Open a world in the game with \"Open to LAN\", then find it here.",
   "@lanNeverScanned": {
     "description": "Empty state on the multiplayer page before the first LAN scan."
+  },
+  "accountAddMicrosoft": "Microsoft account",
+  "@accountAddMicrosoft": {
+    "description": "Button that starts Microsoft sign-in."
+  },
+  "microsoftSignIn": "Sign in with Microsoft",
+  "@microsoftSignIn": {
+    "description": "Dialog title for Microsoft sign-in."
+  },
+  "microsoftPreparing": "Asking Microsoft for a code…",
+  "@microsoftPreparing": {
+    "description": "Shown while the device code is being requested."
+  },
+  "microsoftCodeHint": "Type this code on the Microsoft page that opens:",
+  "@microsoftCodeHint": {
+    "description": "Introduces the device code the user must type."
+  },
+  "microsoftWaiting": "Waiting for you to confirm… this window can stay open.",
+  "@microsoftWaiting": {
+    "description": "Shown while polling Microsoft for the sign-in result."
+  },
+  "microsoftNeedsClientId": "Microsoft sign-in needs an Azure application id.",
+  "@microsoftNeedsClientId": {
+    "description": "Explains that an Azure app id is required."
+  },
+  "microsoftClientIdHint": "A launcher identifies itself to Microsoft with an app id registered in your own Azure account (the official launchers use theirs). Paste one here and it is remembered.",
+  "@microsoftClientIdHint": {
+    "description": "Explains where an Azure app id comes from."
   }
 }

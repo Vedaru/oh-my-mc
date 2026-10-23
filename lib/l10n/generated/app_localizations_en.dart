@@ -1249,4 +1249,29 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get lanNeverScanned =>
       'Not scanned yet. Open a world in the game with \"Open to LAN\", then find it here.';
+
+  @override
+  String get accountAddMicrosoft => 'Microsoft account';
+
+  @override
+  String get microsoftSignIn => 'Sign in with Microsoft';
+
+  @override
+  String get microsoftPreparing => 'Asking Microsoft for a code…';
+
+  @override
+  String get microsoftCodeHint =>
+      'Type this code on the Microsoft page that opens:';
+
+  @override
+  String get microsoftWaiting =>
+      'Waiting for you to confirm… this window can stay open.';
+
+  @override
+  String get microsoftNeedsClientId =>
+      'Microsoft sign-in needs an Azure application id.';
+
+  @override
+  String get microsoftClientIdHint =>
+      'A launcher identifies itself to Microsoft with an app id registered in your own Azure account (the official launchers use theirs). Paste one here and it is remembered.';
 }

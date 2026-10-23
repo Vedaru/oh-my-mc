@@ -2161,6 +2161,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not scanned yet. Open a world in the game with \"Open to LAN\", then find it here.'**
   String get lanNeverScanned;
+
+  /// Button that starts Microsoft sign-in.
+  ///
+  /// In en, this message translates to:
+  /// **'Microsoft account'**
+  String get accountAddMicrosoft;
+
+  /// Dialog title for Microsoft sign-in.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with Microsoft'**
+  String get microsoftSignIn;
+
+  /// Shown while the device code is being requested.
+  ///
+  /// In en, this message translates to:
+  /// **'Asking Microsoft for a code…'**
+  String get microsoftPreparing;
+
+  /// Introduces the device code the user must type.
+  ///
+  /// In en, this message translates to:
+  /// **'Type this code on the Microsoft page that opens:'**
+  String get microsoftCodeHint;
+
+  /// Shown while polling Microsoft for the sign-in result.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for you to confirm… this window can stay open.'**
+  String get microsoftWaiting;
+
+  /// Explains that an Azure app id is required.
+  ///
+  /// In en, this message translates to:
+  /// **'Microsoft sign-in needs an Azure application id.'**
+  String get microsoftNeedsClientId;
+
+  /// Explains where an Azure app id comes from.
+  ///
+  /// In en, this message translates to:
+  /// **'A launcher identifies itself to Microsoft with an app id registered in your own Azure account (the official launchers use theirs). Paste one here and it is remembered.'**
+  String get microsoftClientIdHint;
 }
 
 class _AppLocalizationsDelegate

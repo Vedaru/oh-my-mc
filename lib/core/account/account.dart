@@ -11,6 +11,12 @@ enum AccountKind {
   /// A third-party authentication server (authlib-injector / Yggdrasil-compatible).
   /// The session comes from that server; the launch gets its `accessToken` and `uuid`.
   thirdParty,
+
+  /// A real Microsoft account. The game only accepts it with a
+  /// `services.minecraft.accessToken` that expires in about a day, so this kind carries
+  /// the refresh token and the expiry the others do not need: a token that has quietly
+  /// died is the difference between "it just works tomorrow" and "login again".
+  microsoft,
 }
 
 /// One identity the launcher can start the game as.
@@ -27,6 +33,8 @@ class Account {
     this.server,
     this.accessToken,
     this.uuid,
+    this.refreshToken,
+    this.expiresAt,
   });
 
   /// Stable id for the account itself (not the player uuid): renames keep the account.
@@ -47,7 +55,28 @@ class Account {
   /// The uuid the server assigned, when there is one. Offline accounts derive it.
   final String? uuid;
 
+  /// The token to trade for a new [accessToken] once it expires. Microsoft accounts
+  /// only; it is never sent to the game.
+  final String? refreshToken;
+
+  /// When [accessToken] stops being accepted. Null means "no known expiry".
+  final DateTime? expiresAt;
+
   bool get isOffline => kind == AccountKind.offline;
+
+  /// A Microsoft session is refreshed a little early rather than exactly on the dot:
+  /// the clock that matters is the server's, and a launch that starts one second before
+  /// expiry fails during the handshake instead of fetching a new token.
+  bool get needsRefresh {
+    if (kind != AccountKind.microsoft) return false;
+    final expiry = expiresAt;
+    if (expiry == null) return false;
+    return DateTime.now().isAfter(expiry.subtract(const Duration(minutes: 5)));
+  }
+
+  /// Whether this account can still be used without the user signing in again.
+  bool get canRefresh =>
+      kind == AccountKind.microsoft && (refreshToken?.isNotEmpty ?? false);
 
   /// What the game is told. An offline account's UUID is `OfflinePlayer:<name>` hashed,
   /// which is what the game itself does in offline mode.
@@ -60,17 +89,25 @@ class Account {
   String get describe => switch (kind) {
     AccountKind.offline => '$name · 离线',
     AccountKind.thirdParty => server == null ? name : '$name · $server',
+    AccountKind.microsoft => '$name · Microsoft',
   };
 
-  Account copyWith({String? name, String? accessToken, String? uuid}) =>
-      Account(
-        id: id,
-        name: name ?? this.name,
-        kind: kind,
-        server: server,
-        accessToken: accessToken ?? this.accessToken,
-        uuid: uuid ?? this.uuid,
-      );
+  Account copyWith({
+    String? name,
+    String? accessToken,
+    String? uuid,
+    String? refreshToken,
+    DateTime? expiresAt,
+  }) => Account(
+    id: id,
+    name: name ?? this.name,
+    kind: kind,
+    server: server,
+    accessToken: accessToken ?? this.accessToken,
+    uuid: uuid ?? this.uuid,
+    refreshToken: refreshToken ?? this.refreshToken,
+    expiresAt: expiresAt ?? this.expiresAt,
+  );
 
   Map<String, Object?> toJson() => {
     'id': id,
@@ -79,6 +116,8 @@ class Account {
     if (server != null) 'server': server,
     if (accessToken != null) 'accessToken': accessToken,
     if (uuid != null) 'uuid': uuid,
+    if (refreshToken != null) 'refreshToken': refreshToken,
+    if (expiresAt != null) 'expiresAt': expiresAt!.toUtc().toIso8601String(),
   };
 
   factory Account.fromJson(Map<String, Object?> json) => Account(
@@ -86,11 +125,14 @@ class Account {
     name: json['name'] as String? ?? '',
     kind: switch (json['kind']) {
       'thirdParty' => AccountKind.thirdParty,
+      'microsoft' => AccountKind.microsoft,
       _ => AccountKind.offline,
     },
     server: json['server'] as String?,
     accessToken: json['accessToken'] as String?,
     uuid: json['uuid'] as String?,
+    refreshToken: json['refreshToken'] as String?,
+    expiresAt: DateTime.tryParse(json['expiresAt'] as String? ?? '')?.toLocal(),
   );
 
   /// A uuid the game recognises for [name] in offline mode.

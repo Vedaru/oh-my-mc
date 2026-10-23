@@ -381,5 +381,12 @@
   "navAccounts": "账户",
   "navNetwork": "联机",
   "lanNoGateway": "没有路由器响应 UPnP，端口没能打开。可能是路由器关闭了 UPnP。",
-  "lanNeverScanned": "还没有扫描。先在游戏里「对局域网开放」一个存档，再在这里找它。"
+  "lanNeverScanned": "还没有扫描。先在游戏里「对局域网开放」一个存档，再在这里找它。",
+  "accountAddMicrosoft": "微软账户",
+  "microsoftSignIn": "用微软账户登录",
+  "microsoftPreparing": "正在向微软申请代码…",
+  "microsoftCodeHint": "在打开的微软页面上输入这串代码：",
+  "microsoftWaiting": "等你确认…这个窗口可以一直开着。",
+  "microsoftNeedsClientId": "微软登录需要一个 Azure 应用 ID。",
+  "microsoftClientIdHint": "启动器要向微软表明自己是谁，这需要一个在你自己的 Azure 账号里注册的应用 ID（官方启动器用的是它们自己的）。把 ID 填进来就会记住。"
 }

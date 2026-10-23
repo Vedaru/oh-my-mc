@@ -8,6 +8,7 @@ import 'package:path/path.dart' as p;
 import '../app/providers.dart';
 import '../core/account/account.dart';
 import 'account_providers.dart';
+import 'microsoft_providers.dart';
 import '../core/instance/instance.dart';
 import '../core/mc/arch_compat.dart';
 import '../core/launch/join_target.dart';
@@ -87,11 +88,15 @@ LaunchHandle Function(Instance, {JoinTarget? join}) realLaunchHandleFactory(
         '${DateTime.now().toIso8601String().replaceAll(':', '-').substring(0, 19)}'
         '-${instance.versionId.replaceAll(RegExp(r'[/\\:]'), '_')}.log',
       ),
-      prepare: () => prepareInstanceLaunch(
+      // A Microsoft token lasts about a day; renewing it here is what makes "it still
+      // works tomorrow" true without asking the user to sign in again.
+      prepare: () async => prepareInstanceLaunch(
         instance: instance,
         paths: paths,
         settings: settings,
-        account: account,
+        account: account == null
+            ? null
+            : await ref.read(accountRefresherProvider).refreshIfNeeded(account),
         join: join,
       ),
     );

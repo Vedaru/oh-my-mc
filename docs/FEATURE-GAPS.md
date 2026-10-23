@@ -11,7 +11,7 @@ Axolotl / Modrinth App（本项目主要参照）。
 | 功能 | PCL2 | Prism | HMCL | Axolotl | 我们 | 说明 |
 | --- | --- | --- | --- | --- | --- | --- |
 | 离线账户（多账户、可切换） | 有 | 有 | 有 | 有 | **有** | `core/account/account.dart` + `data/account_store.dart`：账户列表存 `<data>/accounts.json`（写临时文件再改名），启动用的就是选中的那个；uuid 按 `OfflinePlayer:<name>` 派生，旧版单名字会迁移成第一个账户 |
-| 微软登录（OAuth 设备码） | 有 | 有 | 有 | 有 | **缺** | 需要 Azure client id，代码里没有任何 auth 模块；`launch_factory` 只透传 `--accessToken` |
+| 微软登录（OAuth 设备码） | 有 | 有 | 有 | 有 | **有** | `core/account/microsoft.dart` 走完 MSA → XBL → XSTS → Minecraft 服务 → 玩家档案；令牌到期自动续期（`AccountRefresher`，启动前）。需要用户自备 Azure 应用 ID（每个启动器注册自己的，不能随包发） |
 | 第三方认证（authlib-injector / Yggdrasil） | 有 | 有 | 有 | 部分 | **半** | 账户模型已支持 `AccountKind.thirdParty`（自带 token/uuid，启动时透传），缺的是登录流程与 `authlib-injector` 的 javaagent 注入；这条**不需要注册任何凭据**，是最容易接的下一环 |
 | 多账户并存与切换 | 有 | 有 | 有 | 有 | **有** | 设置 → 账户：列表、切换、删除（删除只影响启动器） |
 | 皮肤查看 / 更换 / 离线皮肤 | 有 | 有 | 有 | 有 | **缺** | 无 `skin` 模块；设置里没有外观身份相关项 |
@@ -87,6 +87,6 @@ Axolotl / Modrinth App（本项目主要参照）。
 4. **资源包 / 光影的更新检查** — 复用模组那套 sha1 认领，成本低。
 5. **实例分组 / 备注 / 图标、截图浏览、世界复制与游戏规则** — 体验补齐，无外部依赖。
 6. **日志分享、崩溃报告导出、托盘与单实例、快捷键、快捷启动、便携模式** — 工程化与桌面集成。
-7. **CurseForge、微软登录、实验室** — 需要 API key / client id / 独立立项，排在最后。
+7. **CurseForge、实验室** — 需要 API key / 独立立项，排在最后。（微软登录已实现，只差用户填自己的 Azure 应用 ID。）
 
-已经做完、不再列进差距的：版本安装（原版 / Fabric / Quilt / Forge / NeoForge）、断点续装、Java 探测与自供、镜像测速换源、联机（LAN + UPnP，独立的「联机」页）、账户与联机提为左侧目的地、崩溃诊断、模组安装与更新、世界备份还原、内容页分区分页、壁纸与主题、中英双语。
+微软账户登录（设备码 + XBOX/XSTS + Minecraft 服务，令牌自动续期；需要一个自己的 Azure 应用 ID）、已经做完、不再列进差距的：版本安装（原版 / Fabric / Quilt / Forge / NeoForge）、断点续装、Java 探测与自供、镜像测速换源、联机（LAN + UPnP，独立的「联机」页）、账户与联机提为左侧目的地、崩溃诊断、模组安装与更新、世界备份还原、内容页分区分页、壁纸与主题、中英双语。

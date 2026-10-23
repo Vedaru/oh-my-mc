@@ -77,7 +77,8 @@ wrong: installing wrote files, and nothing pointed the launcher at them.
 | **Modpack import/export** (`.zip`, `.mrpack`) | **done** | `lib/core/packs/` (mrpack, importer, exporter), import button on 实例, export on the instance page |
 | **Instance import/export/clone** | **done** | `instance_cloner.dart` (clone button on the instance page), `pack_providers.dart` (export/import) |
 | **Crash analysis** | **done** | `lib/core/diagnostics/crash_analyzer.dart`, `crash_card.dart`, `crash_copy.dart` |
-| **Microsoft sign-in, skin** | **missing** | offline identity only |
+| **Microsoft sign-in** | **done** (device code; needs your own Azure app id) | `core/account/microsoft.dart` |
+| **Skin / cape** | **missing** | needs a signed-in session; next in this area |
 | 资源包 / 光影 / 存档 / 服务器 management (list, toggle, delete, add) | **done** | `lib/core/game/content.dart`, `options_txt.dart`, `nbt.dart`, `ui/instances/content_screen.dart` |
 | 数据包 (datapacks) | **done** | `CatalogKind.datapack` + a world picker; installed into `<save>/datapacks/` |
 | 下载 → 资源包 / 光影 / 数据包 catalogues (Modrinth) | **done** | `content_search_dialog.dart`, `CatalogKind`, `download_content_bar.dart` |
@@ -145,8 +146,10 @@ and is a separate decision.
 resolve loader → install → download overrides), export, and instance clone/export
 as a zip. Import/export strings already exist.
 
-**P5 - accounts.** Microsoft device-code auth (the OAuth flow PCL uses), token
-refresh, skin. Offline stays first-class.
+**P5 - accounts.** Microsoft device-code auth is implemented (`MicrosoftAuth`:
+device code, XBL, XSTS with the XErr sentences, Minecraft services, profile, and a
+`refresh` that `AccountRefresher` calls before a launch). Skins and capes remain - they
+need the signed-in token and the skin upload endpoint. Offline stays first-class.
 
 **P6 - diagnostics (done).** Crash analyser over the log tail: `CrashAnalyzer`
 maps the tail (and the exit code) to a `DiagnosisKind` and the actions that fix it -
