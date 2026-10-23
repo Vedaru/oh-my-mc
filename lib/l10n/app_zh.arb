@@ -364,5 +364,16 @@
   "downloadUninstall": "卸载",
   "downloadUninstallTitle": "卸载 {version}？",
   "downloadUninstallBody": "只删除这个版本自己的文件；共享库和资源会保留，使用它的实例也不会被删除——它们会显示缺少版本。",
-  "downloadUninstallDone": "已卸载 {version}"
+  "downloadUninstallDone": "已卸载 {version}",
+  "setupAccounts": "账户",
+  "accountOffline": "离线",
+  "accountThirdParty": "第三方认证",
+  "accountAdd": "添加离线账户",
+  "accountNameHint": "3-16 位字母、数字或下划线",
+  "accountActiveHint": "启动游戏时使用的账户；世界存档归属于它的 uuid。",
+  "accountEmpty": "还没有账户",
+  "accountEmptyHint": "添加一个离线账户，指定游戏里显示的名字。",
+  "accountRemove": "删除账户",
+  "accountRemoveTitle": "删除账户 {name}？",
+  "accountRemoveBody": "只是启动器忘掉它；世界、服务器和模组都不受影响。"
 }

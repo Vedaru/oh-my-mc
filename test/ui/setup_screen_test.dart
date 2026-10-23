@@ -8,6 +8,8 @@ import 'package:oh_my_mc/app/providers.dart';
 import 'package:oh_my_mc/data/instance_providers.dart';
 import 'package:oh_my_mc/data/instance_store.dart';
 import 'package:oh_my_mc/data/java_providers.dart';
+import 'package:oh_my_mc/data/account_providers.dart';
+import 'package:oh_my_mc/data/account_store.dart';
 import 'package:oh_my_mc/data/settings.dart';
 import 'package:oh_my_mc/data/launch_factory.dart';
 import 'package:oh_my_mc/ui/motion/motion.dart';
@@ -60,13 +62,18 @@ void main() {
         instanceStoreProvider.overrideWith(
           (ref) => MemoryInstanceStore(const []),
         ),
+        // Accounts are read from a file in production; a real file read never
+        // completes under the fake clock.
+        accountStoreProvider.overrideWithValue(MemoryAccountStore()),
       ],
     );
     addTearDown(container.dispose);
 
     // Real directory IO does not complete under the test binding's fake clock,
-    // so the list is resolved first and the widget then reads a ready value.
+    // so the lists that touch it are resolved first and the widget then reads a
+    // ready value.
     await tester.runAsync(() => container.read(javaRuntimesProvider.future));
+    await tester.runAsync(() => container.read(accountListProvider.future));
 
     await pumpScreen(
       tester,
@@ -201,41 +208,41 @@ void main() {
     expect(find.byKey(const ValueKey('setup-motion')), findsNothing);
   });
 
-  testWidgets('a valid player name is stored', (tester) async {
-    final container = await pump(tester, section: 'launch');
-
-    await tester.enterText(
-      find.byKey(const ValueKey('setup-player-name')),
-      'Steve_1',
-    );
-    await tester.testTextInput.receiveAction(TextInputAction.done);
-    await tester.pumpAndSettle();
-
-    expect(container.read(appSettingsProvider).playerName, 'Steve_1');
-  });
-
-  testWidgets('an invalid player name reverts instead of being stored', (
+  testWidgets('an offline account is added and becomes the active one', (
     tester,
   ) async {
-    final container = await pump(tester, section: 'launch');
+    final container = await pump(tester, section: 'accounts');
 
-    // Too short and containing a space: the game would reject it, and the store
-    // would silently substitute "Player", which reads as a lost edit.
+    await tester.tap(find.byKey(const ValueKey('account-add')));
+    await tester.pumpAndSettle();
     await tester.enterText(
-      find.byKey(const ValueKey('setup-player-name')),
-      'a b',
+      find.byKey(const ValueKey('account-name')),
+      'Steve_1',
     );
-    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('account-create')));
     await tester.pumpAndSettle();
 
-    expect(container.read(appSettingsProvider).playerName, 'Player');
-    final field = tester.widget<m3.TextField>(
-      find.descendant(
-        of: find.byKey(const ValueKey('setup-player-name')),
-        matching: find.byType(m3.TextField),
-      ),
+    final list = container.read(accountListProvider).value!;
+    expect(list.accounts.map((a) => a.name), contains('Steve_1'));
+    expect(list.active?.name, 'Steve_1');
+  });
+
+  testWidgets('the game would reject a bad name, so the dialog does too', (
+    tester,
+  ) async {
+    await pump(tester, section: 'accounts');
+
+    await tester.tap(find.byKey(const ValueKey('account-add')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const ValueKey('account-name')), 'a b');
+    await tester.pumpAndSettle();
+
+    // Save stays disabled: a name the game will refuse must not become an account.
+    final save = tester.widget<m3.TextButton>(
+      find.byKey(const ValueKey('account-create')),
     );
-    expect(field.controller!.text, 'Player');
+    expect(save.onPressed, isNull);
   });
 
   testWidgets('the memory slider persists the value it was released on', (
@@ -273,15 +280,10 @@ void main() {
       AccentChoice.green,
     );
 
-    // The player name lives in 启动, not 外观: switch sections and check it there.
-    await tester.tap(find.byKey(const ValueKey('setup-section-launch')));
+    // Identity lives in 账户 now: the stored name seeds the first account, so an
+    // update does not rename anyone.
+    await tester.tap(find.byKey(const ValueKey('setup-section-accounts')));
     await tester.pumpAndSettle();
-    final field = tester.widget<m3.TextField>(
-      find.descendant(
-        of: find.byKey(const ValueKey('setup-player-name')),
-        matching: find.byType(m3.TextField),
-      ),
-    );
-    expect(field.controller!.text, 'Alex');
+    expect(find.text('Alex'), findsWidgets);
   });
 }

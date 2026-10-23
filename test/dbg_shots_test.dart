@@ -15,6 +15,9 @@ import 'package:oh_my_mc/core/mods/mod_scanner.dart';
 import 'package:oh_my_mc/core/mods/update_checker.dart';
 import 'package:oh_my_mc/core/net/cancellation.dart';
 import 'package:oh_my_mc/core/net/version_manifest.dart';
+import 'package:oh_my_mc/core/account/account.dart';
+import 'package:oh_my_mc/data/account_providers.dart';
+import 'package:oh_my_mc/data/account_store.dart';
 import 'package:oh_my_mc/data/install_providers.dart';
 import 'package:oh_my_mc/core/install/version_installer.dart';
 import 'package:oh_my_mc/core/net/progress.dart';
@@ -410,6 +413,35 @@ void main() {
       overrides: [
         installControllerProvider.overrideWith(_ShotFailedInstall.new),
         installLogProvider.overrideWith(_ShotFailedLog.new),
+      ],
+    );
+  });
+
+  testWidgets('setup accounts', (tester) async {
+    await shoot(
+      tester,
+      '/setup',
+      'setup-accounts',
+      openKey: 'setup-section-accounts',
+      overrides: [
+        accountStoreProvider.overrideWithValue(
+          MemoryAccountStore(
+            const AccountList(
+              accounts: [
+                Account(id: 'offline-Survival', name: 'Survival'),
+                Account(id: 'a2', name: 'Alex'),
+                Account(
+                  id: 'tp',
+                  name: 'Builder',
+                  kind: AccountKind.thirdParty,
+                  server: 'https://auth.example.net/api',
+                  uuid: '11111111-2222-3333-4444-555555555555',
+                ),
+              ],
+              activeId: 'offline-Survival',
+            ),
+          ),
+        ),
       ],
     );
   });

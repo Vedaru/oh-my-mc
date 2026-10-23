@@ -1190,4 +1190,42 @@ class AppLocalizationsEn extends AppLocalizations {
   String downloadUninstallDone(String version) {
     return '$version uninstalled';
   }
+
+  @override
+  String get setupAccounts => 'Accounts';
+
+  @override
+  String get accountOffline => 'Offline';
+
+  @override
+  String get accountThirdParty => 'Third-party';
+
+  @override
+  String get accountAdd => 'Add offline account';
+
+  @override
+  String get accountNameHint => '3-16 letters, digits or underscore';
+
+  @override
+  String get accountActiveHint =>
+      'The account the game starts as. Its uuid is what a world belongs to.';
+
+  @override
+  String get accountEmpty => 'No accounts yet';
+
+  @override
+  String get accountEmptyHint =>
+      'Add an offline account to pick a name the game will use.';
+
+  @override
+  String get accountRemove => 'Remove account';
+
+  @override
+  String accountRemoveTitle(String name) {
+    return 'Remove $name?';
+  }
+
+  @override
+  String get accountRemoveBody =>
+      'Only the launcher forgets it. Worlds, servers and mods are untouched.';
 }

@@ -9,6 +9,7 @@ import 'package:oh_my_mc/core/mc/host.dart';
 import 'package:oh_my_mc/core/mc/install_plan.dart';
 import 'package:oh_my_mc/core/mc/java_manager.dart';
 import 'package:oh_my_mc/core/mc/launch_service.dart';
+import 'package:oh_my_mc/core/account/account.dart';
 import 'package:oh_my_mc/data/launch_factory.dart';
 import 'package:oh_my_mc/data/settings.dart';
 import 'package:path/path.dart' as p;
@@ -120,12 +121,18 @@ void main() {
     test('matches the vanilla offline formula for a known name', () {
       // Values cross-checked against the output of the vanilla server's own
       // offline UUID derivation.
-      expect(offlineUuid('Notch'), 'b50ad385-829d-3141-a216-7e7d7539ba7f');
-      expect(offlineUuid('Player'), 'a01e3843-e521-3998-958a-f459800e4d11');
+      expect(
+        Account.offlineUuid('Notch'),
+        'b50ad385-829d-3141-a216-7e7d7539ba7f',
+      );
+      expect(
+        Account.offlineUuid('Player'),
+        'a01e3843-e521-3998-958a-f459800e4d11',
+      );
     });
 
     test('is a well-formed v3 UUID', () {
-      final uuid = offlineUuid('Anyone');
+      final uuid = Account.offlineUuid('Anyone');
       expect(
         RegExp(
           r'^[0-9a-f]{8}-[0-9a-f]{4}-3[0-9a-f]{3}-[89ab][0-9a-f]{3}-'
@@ -137,8 +144,8 @@ void main() {
     });
 
     test('is stable and name-sensitive', () {
-      expect(offlineUuid('Alice'), offlineUuid('Alice'));
-      expect(offlineUuid('Alice'), isNot(offlineUuid('alice')));
+      expect(Account.offlineUuid('Alice'), Account.offlineUuid('Alice'));
+      expect(Account.offlineUuid('Alice'), isNot(Account.offlineUuid('alice')));
     });
   });
 

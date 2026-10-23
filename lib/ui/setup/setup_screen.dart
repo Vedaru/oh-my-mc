@@ -16,6 +16,7 @@ import '../components/section_drawer.dart';
 import '../components/section_page.dart';
 import '../shell/shell_icons.dart';
 import '../theme/app_theme.dart';
+import 'account_panel.dart';
 import 'java_panel.dart';
 import 'about_panel.dart';
 import 'network_panel.dart';
@@ -23,7 +24,6 @@ import '../components/app_accent_picker.dart';
 import '../components/app_button.dart';
 import '../components/app_radio_group.dart';
 import '../components/app_slider.dart';
-import '../components/app_text_field.dart';
 
 /// The settings screen: a section list on the left, one section on the right.
 ///
@@ -42,7 +42,15 @@ class SetupScreen extends ConsumerStatefulWidget {
 }
 
 /// The sections, in the order they appear in the list.
-enum SetupSection { general, appearance, launch, java, network, about }
+enum SetupSection {
+  accounts,
+  general,
+  appearance,
+  launch,
+  java,
+  network,
+  about,
+}
 
 class _SetupScreenState extends ConsumerState<SetupScreen> {
   var _section = SetupSection.general;
@@ -91,6 +99,11 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
     AppLocalizations l10n,
     SetupSection section,
   ) => switch (section) {
+    SetupSection.accounts => SectionDestination(
+      key: 'setup-section-accounts',
+      label: l10n.setupAccounts,
+      icon: ShellIcons.account,
+    ),
     SetupSection.general => SectionDestination(
       key: 'setup-section-general',
       label: l10n.setupSectionGeneral,
@@ -132,6 +145,12 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
     final notifier = ref.read(appSettingsProvider.notifier);
 
     return switch (section) {
+      // Accounts first: it is the only section that changes who you are, and the one
+      // people come to settings for most often.
+      SetupSection.accounts => _Section(
+        title: l10n.setupAccounts,
+        children: const [AccountPanel()],
+      ),
       SetupSection.general => _Section(
         title: l10n.setupLanguage,
         children: [
@@ -196,10 +215,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
       ),
       SetupSection.launch => _Section(
         title: l10n.setupLaunch,
-        children: [
-          _PlayerNameRow(settings: settings),
-          _GlobalMemoryRow(settings: settings),
-        ],
+        children: [_GlobalMemoryRow(settings: settings)],
       ),
       SetupSection.java => _Section(
         title: l10n.setupJava,
@@ -330,77 +346,6 @@ class _Choice<T> extends StatelessWidget {
   }
 }
 
-/// Offline name, shown to other players. Validated by the same rule the store
-/// applies on load, so an in-game rejection cannot come from this field.
-class _PlayerNameRow extends ConsumerStatefulWidget {
-  const _PlayerNameRow({required this.settings});
-
-  final AppSettings settings;
-
-  @override
-  ConsumerState<_PlayerNameRow> createState() => _PlayerNameRowState();
-}
-
-class _PlayerNameRowState extends ConsumerState<_PlayerNameRow> {
-  late final _controller = TextEditingController(
-    text: widget.settings.playerName,
-  );
-  final _focus = FocusNode();
-
-  static final _valid = RegExp(r'^[A-Za-z0-9_]{3,16}$');
-
-  @override
-  void initState() {
-    super.initState();
-    _focus.addListener(_commitOnBlur);
-  }
-
-  @override
-  void dispose() {
-    _focus.removeListener(_commitOnBlur);
-    _focus.dispose();
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _commitOnBlur() {
-    if (!_focus.hasFocus) _commit();
-  }
-
-  void _commit() {
-    final name = _controller.text.trim();
-    if (name == widget.settings.playerName) return;
-    // An invalid name reverts rather than being stored: the store would fall
-    // back to "Player", which looks like the edit was silently lost.
-    if (!_valid.hasMatch(name)) {
-      _controller.text = widget.settings.playerName;
-      return;
-    }
-    ref
-        .read(appSettingsProvider.notifier)
-        .set(widget.settings.copyWith(playerName: name));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    return _SettingRow(
-      label: l10n.setupPlayerName,
-      hint: l10n.setupPlayerNameHint,
-      child: m3.SizedBox(
-        width: 260,
-        child: AppTextField(
-          key: const m3.ValueKey('setup-player-name'),
-          controller: _controller,
-          focusNode: _focus,
-          onSubmitted: (_) => _commit(),
-        ),
-      ),
-    );
-  }
-}
-
-/// The heap cap used when an instance has no override of its own.
 class _GlobalMemoryRow extends ConsumerStatefulWidget {
   const _GlobalMemoryRow({required this.settings});
 

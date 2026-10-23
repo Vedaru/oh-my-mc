@@ -1,13 +1,13 @@
 import 'dart:convert';
 
-import 'package:crypto/crypto.dart';
-
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 
 import '../app/providers.dart';
+import '../core/account/account.dart';
+import 'account_providers.dart';
 import '../core/instance/instance.dart';
 import '../core/mc/arch_compat.dart';
 import '../core/launch/launch_handle.dart';
@@ -70,6 +70,9 @@ LaunchHandle Function(Instance) realLaunchHandleFactory(Ref ref) {
     // screen now rather than what was on screen when the shell was created.
     final paths = ref.read(launcherPathsProvider);
     final settings = ref.read(appSettingsProvider);
+    // Read at launch time, like the settings: switching accounts and pressing Play
+    // must start the game as the account on screen.
+    final account = ref.read(activeAccountProvider);
     return ProcessLaunchHandle(
       // One file per session under `<data>/logs`: the console ring is bounded and
       // dies with the window, so a crash two restarts ago is only diagnosable from
@@ -85,6 +88,7 @@ LaunchHandle Function(Instance) realLaunchHandleFactory(Ref ref) {
         instance: instance,
         paths: paths,
         settings: settings,
+        account: account,
       ),
     );
   };
@@ -97,6 +101,7 @@ Future<LaunchOutcome> prepareInstanceLaunch({
   required AppSettings settings,
   JavaManager? javaManager,
   RuleContext? host,
+  Account? account,
 }) async {
   // Resources always come from the shared tree: the installer writes there even
   // when the instance is isolated, because libraries and assets are identical
@@ -178,6 +183,7 @@ Future<LaunchOutcome> prepareInstanceLaunch({
       instance: instance,
       settings: settings,
       version: version,
+      account: account,
     ),
     java: java,
   );
@@ -189,14 +195,15 @@ LaunchRequest buildLaunchRequest({
   required Instance instance,
   required AppSettings settings,
   required VersionJson version,
+  Account? account,
 }) => LaunchRequest(
   versionId: version.jar ?? version.id,
-  playerName: settings.playerName,
-  // Offline mode: the UUID is derived from the name the way the game does it
-  // offline (`OfflinePlayer:<name>`), so worlds and inventories stay stable
-  // across launcher restarts. Microsoft sign-in replaces both later.
-  uuid: offlineUuid(settings.playerName),
-  accessToken: '0',
+  // The account is the identity; `settings.playerName` is only the seed a fresh
+  // install starts from. An offline account derives its uuid from the name, a
+  // third-party one carries the uuid and token its server issued.
+  playerName: account?.name ?? settings.playerName,
+  uuid: account?.effectiveUuid ?? Account.offlineUuid(settings.playerName),
+  accessToken: account?.effectiveAccessToken ?? '0',
   versionType: version.type,
   memoryMb: instance.memoryMb ?? settings.memoryMb,
   extraJvmArgs: instance.jvmArgs,
@@ -250,25 +257,4 @@ JavaRuntime? _lowest(List<JavaRuntime> runtimes) {
   final sorted = [...runtimes]
     ..sort((a, b) => a.majorVersion.compareTo(b.majorVersion));
   return sorted.first;
-}
-
-/// The offline UUID every launcher and the vanilla server agree on.
-///
-/// Derived with `crypto`'s MD5 rather than a hand-rolled implementation: this is
-/// the one hash in the app, and a subtly wrong one would silently give the user
-/// a different identity on every server.
-String offlineUuid(String name) {
-  final hash = md5.convert(utf8.encode('OfflinePlayer:$name')).bytes;
-  final chars = [
-    for (final byte in hash)
-      ...byte.toRadixString(16).padLeft(2, '0').split(''),
-  ];
-  // Bytes 6 and 8 hold the version and variant nibbles, so patch the hex digit
-  // at char 12 and 16. Splicing strings is what got this wrong the first time.
-  chars[12] = '3';
-  chars[16] = ((int.parse(chars[16], radix: 16) & 0x3) | 0x8).toRadixString(16);
-  final hex = chars.join();
-  return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-'
-      '${hex.substring(12, 16)}-${hex.substring(16, 20)}-'
-      '${hex.substring(20)}';
 }

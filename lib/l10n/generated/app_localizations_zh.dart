@@ -1147,4 +1147,39 @@ class AppLocalizationsZh extends AppLocalizations {
   String downloadUninstallDone(String version) {
     return '已卸载 $version';
   }
+
+  @override
+  String get setupAccounts => '账户';
+
+  @override
+  String get accountOffline => '离线';
+
+  @override
+  String get accountThirdParty => '第三方认证';
+
+  @override
+  String get accountAdd => '添加离线账户';
+
+  @override
+  String get accountNameHint => '3-16 位字母、数字或下划线';
+
+  @override
+  String get accountActiveHint => '启动游戏时使用的账户；世界存档归属于它的 uuid。';
+
+  @override
+  String get accountEmpty => '还没有账户';
+
+  @override
+  String get accountEmptyHint => '添加一个离线账户，指定游戏里显示的名字。';
+
+  @override
+  String get accountRemove => '删除账户';
+
+  @override
+  String accountRemoveTitle(String name) {
+    return '删除账户 $name？';
+  }
+
+  @override
+  String get accountRemoveBody => '只是启动器忘掉它；世界、服务器和模组都不受影响。';
 }

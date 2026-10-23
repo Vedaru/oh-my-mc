@@ -30,6 +30,7 @@ abstract final class ShellIcons {
 
   static const instance = m3.Icons.inventory_2;
   static const add = m3.Icons.add;
+  static const account = m3.Icons.person_outline;
   static const clock = m3.Icons.schedule;
   static const warning = m3.Icons.warning_amber;
   static const error = m3.Icons.error_outline;

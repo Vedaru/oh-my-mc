@@ -2059,6 +2059,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{version} uninstalled'**
   String downloadUninstallDone(String version);
+
+  /// Settings section for launcher accounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Accounts'**
+  String get setupAccounts;
+
+  /// Label for an offline account.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get accountOffline;
+
+  /// Label for an authlib-injector style account.
+  ///
+  /// In en, this message translates to:
+  /// **'Third-party'**
+  String get accountThirdParty;
+
+  /// Button that adds an offline account.
+  ///
+  /// In en, this message translates to:
+  /// **'Add offline account'**
+  String get accountAdd;
+
+  /// The rule for a Minecraft player name.
+  ///
+  /// In en, this message translates to:
+  /// **'3-16 letters, digits or underscore'**
+  String get accountNameHint;
+
+  /// Explains that the active account is the identity a world belongs to.
+  ///
+  /// In en, this message translates to:
+  /// **'The account the game starts as. Its uuid is what a world belongs to.'**
+  String get accountActiveHint;
+
+  /// Empty state title for the account list.
+  ///
+  /// In en, this message translates to:
+  /// **'No accounts yet'**
+  String get accountEmpty;
+
+  /// Empty state body for the account list.
+  ///
+  /// In en, this message translates to:
+  /// **'Add an offline account to pick a name the game will use.'**
+  String get accountEmptyHint;
+
+  /// Removes an account.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove account'**
+  String get accountRemove;
+
+  /// Confirmation title for removing an account.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name}?'**
+  String accountRemoveTitle(String name);
+
+  /// Explains that removing an account keeps the data.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the launcher forgets it. Worlds, servers and mods are untouched.'**
+  String get accountRemoveBody;
 }
 
 class _AppLocalizationsDelegate

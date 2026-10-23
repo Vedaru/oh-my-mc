@@ -10,11 +10,22 @@ Axolotl / Modrinth App（本项目主要参照）。
 
 | 功能 | PCL2 | Prism | HMCL | Axolotl | 我们 | 说明 |
 | --- | --- | --- | --- | --- | --- | --- |
-| 离线账户（改名即换身份） | 有 | 有 | 有 | 有 | **半** | 只有 `AppSettings.playerName` 一个名字，没有「账户」这个概念：不能存多个身份，也没有 UUID 派生 |
+| 离线账户（多账户、可切换） | 有 | 有 | 有 | 有 | **有** | `core/account/account.dart` + `data/account_store.dart`：账户列表存 `<data>/accounts.json`（写临时文件再改名），启动用的就是选中的那个；uuid 按 `OfflinePlayer:<name>` 派生，旧版单名字会迁移成第一个账户 |
 | 微软登录（OAuth 设备码） | 有 | 有 | 有 | 有 | **缺** | 需要 Azure client id，代码里没有任何 auth 模块；`launch_factory` 只透传 `--accessToken` |
-| 第三方认证（authlib-injector / Yggdrasil） | 有 | 有 | 有 | 部分 | **缺** | 这条**不需要注册任何凭据**：给定 API 根地址就能登录，是账户体系里最容易先落地的一环 |
-| 多账户并存与切换 | 有 | 有 | 有 | 有 | **缺** | 与上一条同一套模型 |
+| 第三方认证（authlib-injector / Yggdrasil） | 有 | 有 | 有 | 部分 | **半** | 账户模型已支持 `AccountKind.thirdParty`（自带 token/uuid，启动时透传），缺的是登录流程与 `authlib-injector` 的 javaagent 注入；这条**不需要注册任何凭据**，是最容易接的下一环 |
+| 多账户并存与切换 | 有 | 有 | 有 | 有 | **有** | 设置 → 账户：列表、切换、删除（删除只影响启动器） |
 | 皮肤查看 / 更换 / 离线皮肤 | 有 | 有 | 有 | 有 | **缺** | 无 `skin` 模块；设置里没有外观身份相关项 |
+
+### HMCL 独有、我们还没有的安装目标
+
+| 功能 | 说明 | 我们 |
+| --- | --- | --- |
+| Legacy Fabric | 1.8 以前的 Fabric，HMCL 支持 | **缺** |
+| OptiFine 自动安装 | HMCL 会自动装（含 Forge + OptiFine 组合） | **缺**（可以只引导到官网，但那是半个功能） |
+| Cleanroom | 1.12.2 的 Forge 分支 | **缺** |
+| LiteLoader | 已停止维护，HMCL 仍列出 | **缺**（低优先级） |
+| 插件系统（`plugins/`） | HMCL 3.6 起有插件 API，可加页签、认证方式 | **缺**，且是架构性能力，不是单个功能 |
+| 界面音效 / 自定义声音 | HMCL 有音效开关与自定义 | **缺**（低优先级） |
 
 ## 内容
 

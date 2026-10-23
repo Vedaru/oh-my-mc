@@ -1676,5 +1676,54 @@
         "type": "String"
       }
     }
+  },
+  "setupAccounts": "Accounts",
+  "@setupAccounts": {
+    "description": "Settings section for launcher accounts."
+  },
+  "accountOffline": "Offline",
+  "@accountOffline": {
+    "description": "Label for an offline account."
+  },
+  "accountThirdParty": "Third-party",
+  "@accountThirdParty": {
+    "description": "Label for an authlib-injector style account."
+  },
+  "accountAdd": "Add offline account",
+  "@accountAdd": {
+    "description": "Button that adds an offline account."
+  },
+  "accountNameHint": "3-16 letters, digits or underscore",
+  "@accountNameHint": {
+    "description": "The rule for a Minecraft player name."
+  },
+  "accountActiveHint": "The account the game starts as. Its uuid is what a world belongs to.",
+  "@accountActiveHint": {
+    "description": "Explains that the active account is the identity a world belongs to."
+  },
+  "accountEmpty": "No accounts yet",
+  "@accountEmpty": {
+    "description": "Empty state title for the account list."
+  },
+  "accountEmptyHint": "Add an offline account to pick a name the game will use.",
+  "@accountEmptyHint": {
+    "description": "Empty state body for the account list."
+  },
+  "accountRemove": "Remove account",
+  "@accountRemove": {
+    "description": "Removes an account."
+  },
+  "accountRemoveTitle": "Remove {name}?",
+  "@accountRemoveTitle": {
+    "description": "Confirmation title for removing an account.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "accountRemoveBody": "Only the launcher forgets it. Worlds, servers and mods are untouched.",
+  "@accountRemoveBody": {
+    "description": "Explains that removing an account keeps the data."
   }
 }
