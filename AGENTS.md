@@ -187,6 +187,13 @@ directory and `test/shots/` are now git-ignored.)
   world only deletes, a data pack belongs to one world - so a single list with a kind filter is a list
   that has to explain itself. Sections use `SectionDrawer` (an MD3 `NavigationDrawer`), the same
   control 设置 uses; do not hand-roll a column of rows for a section list.
+- **One frame for section pages.** `SectionPage` owns the heading row (fixed 48 px, icon in a fixed
+  32 px slot), the section list (`SectionDrawer`, panel hugging its items) and the body pane (24 px
+  gutter, 1200 px cap). 设置 and an instance's page used to lay this out themselves and disagreed by
+  16 px in both axes, so the same list "moved" between pages. Do not hand-build that shape again.
+- **An empty list is an `EmptyState`, not a sentence.** A bare grey line at the top of a pane reads as
+  a page that failed to load; the M3 empty pattern is a mark, the sentence, why, and the action that
+  fixes it.
 - **A card is one filled surface**: `surfaceContainerLow`, 16 px radius, no outline; only a selected
   item carries a border. Boxed cards on a dark surface read as unrelated panels.
 - **No shadows, no glows.** Material 3 expresses elevation as *tone*: a raised surface is

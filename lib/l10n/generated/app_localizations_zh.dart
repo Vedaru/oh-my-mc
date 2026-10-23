@@ -1053,4 +1053,29 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get actionSave => '保存';
+
+  @override
+  String get contentEmptyModsHint => '把 jar 拖进模组文件夹，或者从 Modrinth 安装一个。';
+
+  @override
+  String get contentEmptyHint => '用上面的按钮安装，或者打开文件夹把文件放进去。';
+
+  @override
+  String get worldBackup => '备份存档';
+
+  @override
+  String worldBackupDone(String name) {
+    return '已备份到 $name';
+  }
+
+  @override
+  String worldBackupFailed(String error) {
+    return '备份失败：$error';
+  }
+
+  @override
+  String get actionRefresh => '刷新';
+
+  @override
+  String get serverOffline => '无响应';
 }

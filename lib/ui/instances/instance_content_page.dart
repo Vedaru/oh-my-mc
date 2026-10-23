@@ -1,17 +1,22 @@
+import 'dart:io';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart' as m3;
 import 'package:path/path.dart' as p;
 
 import '../../core/game/content.dart';
+import '../../core/game/world_backup.dart';
 import '../../core/instance/instance.dart';
 import '../../core/mods/mod_scanner.dart';
 import '../../data/game_content_provider.dart';
 import '../../data/launch_factory.dart';
 import '../../data/mods_providers.dart';
+import '../../data/server_providers.dart';
 import '../../data/modrinth_providers.dart';
 import '../../l10n/l10n.dart';
 import '../components/app_button.dart';
+import '../components/empty_state.dart';
 import '../components/list_row.dart';
 import '../components/open_folder.dart';
 import '../shell/shell_icons.dart';
@@ -154,6 +159,14 @@ class _InstanceContentPageState extends ConsumerState<InstanceContentPage> {
                 label: m3.Text(l10n.instanceOpenFolderTooltip),
               ),
               if (widget.kind == InstanceContentKind.servers) ...[
+                m3.IconButton(
+                  key: const m3.ValueKey('servers-refresh'),
+                  onPressed: () => ref.invalidate(serverPingProvider),
+                  icon: const m3.Icon(ShellIcons.refresh, size: 18),
+                  tooltip: l10n.actionRefresh,
+                ),
+              ],
+              if (widget.kind == InstanceContentKind.servers) ...[
                 const m3.SizedBox(width: 8),
                 AppButton(
                   key: const m3.ValueKey('content-add-server'),
@@ -226,7 +239,13 @@ class _ModList extends ConsumerWidget {
       loading: () => const m3.Center(child: m3.CircularProgressIndicator()),
       error: (error, _) => m3.SelectableText('$error'),
       data: (entries) {
-        if (entries.isEmpty) return _Empty(message: l10n.contentEmptyMods);
+        if (entries.isEmpty) {
+          return EmptyState(
+            icon: ShellIcons.mods,
+            message: l10n.contentEmptyMods,
+            hint: l10n.contentEmptyModsHint,
+          );
+        }
         return m3.ListView(
           padding: m3.EdgeInsets.zero,
           children: [
@@ -242,6 +261,17 @@ class _ModList extends ConsumerWidget {
                 trailingControl: m3.Row(
                   mainAxisSize: m3.MainAxisSize.min,
                   children: [
+                    m3.IconButton(
+                      onPressed: () async {
+                        await ref.read(modsRepositoryProvider).delete(mod);
+                        ref.invalidate(instanceModsProvider(instance.id));
+                      },
+                      icon: const m3.Icon(ShellIcons.trash, size: 18),
+                      visualDensity: m3.VisualDensity.compact,
+                      tooltip: l10n.actionDelete,
+                    ),
+                    const m3.SizedBox(width: 4),
+                    // The row's state is the last thing at the edge.
                     m3.Switch(
                       value: mod.enabled,
                       onChanged: (value) async {
@@ -250,14 +280,6 @@ class _ModList extends ConsumerWidget {
                             .setEnabled(mod, value);
                         ref.invalidate(instanceModsProvider(instance.id));
                       },
-                    ),
-                    m3.IconButton(
-                      onPressed: () async {
-                        await ref.read(modsRepositoryProvider).delete(mod);
-                        ref.invalidate(instanceModsProvider(instance.id));
-                      },
-                      icon: const m3.Icon(ShellIcons.trash, size: 16),
-                      tooltip: l10n.actionDelete,
                     ),
                   ],
                 ),
@@ -343,6 +365,36 @@ class _GameContentPageState extends ConsumerState<_GameContentPage> {
     await _load();
   }
 
+  /// A world is the one thing here that cannot be downloaded again, so it gets a
+  /// copy before it gets a delete.
+  Future<void> _backUpWorld(ContentEntry entry) async {
+    final l10n = context.l10n;
+    final messenger = m3.ScaffoldMessenger.maybeOf(context);
+    try {
+      final backup = await const WorldBackupService().backUp(
+        Directory(entry.path),
+        backupsDir: Directory(p.join(widget.root, 'backups')),
+      );
+      messenger
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(
+          m3.SnackBar(
+            content: m3.Text(l10n.worldBackupDone(backup.fileName)),
+            behavior: m3.SnackBarBehavior.floating,
+          ),
+        );
+    } on Object catch (e) {
+      messenger
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(
+          m3.SnackBar(
+            content: m3.Text(l10n.worldBackupFailed('$e')),
+            behavior: m3.SnackBarBehavior.floating,
+          ),
+        );
+    }
+  }
+
   Future<void> _delete(ContentEntry entry) async {
     final l10n = context.l10n;
     final confirmed = await m3.showDialog<bool>(
@@ -375,7 +427,11 @@ class _GameContentPageState extends ConsumerState<_GameContentPage> {
       return const m3.Center(child: m3.CircularProgressIndicator());
     }
     if (entries.isEmpty) {
-      return _Empty(message: _emptyMessage(context.l10n));
+      return EmptyState(
+        icon: _iconFor(widget.kind),
+        message: _emptyMessage(context.l10n),
+        hint: context.l10n.contentEmptyHint,
+      );
     }
 
     return m3.ListView(
@@ -385,27 +441,53 @@ class _GameContentPageState extends ConsumerState<_GameContentPage> {
           ListRow(
             key: m3.ValueKey('content-${entry.name}'),
             leadingIcon: _iconFor(widget.kind),
+            leadingImage: ref
+                .watch(
+                  contentIconProvider((
+                    path: entry.path,
+                    isDirectory: entry.isDirectory,
+                  )),
+                )
+                .value,
             label: entry.name,
-            supporting: [
-              entry.detail,
-              formatContentSize(entry.sizeBytes),
-            ].whereType<String>().join(' · '),
+            // A server row's second line is the server's own answer; everything
+            // else gets the data the file system has.
+            supporting: widget.kind == InstanceContentKind.servers
+                ? ''
+                : [
+                    entry.detail,
+                    formatContentSize(entry.sizeBytes),
+                  ].whereType<String>().join(' · '),
+            supportingWidget: widget.kind == InstanceContentKind.servers
+                ? _ServerStatus(address: entry.path)
+                : null,
             trailingControl: m3.Row(
               mainAxisSize: m3.MainAxisSize.min,
               children: [
                 // Only a resource pack has a state the launcher can write: Iris keeps
                 // the active shader in its own config, and a world or a server has no
                 // "off".
-                if (widget.kind == InstanceContentKind.resourcePacks)
+                if (widget.kind == InstanceContentKind.worlds)
+                  m3.IconButton(
+                    key: m3.ValueKey('world-backup-${entry.name}'),
+                    onPressed: () => _backUpWorld(entry),
+                    icon: const m3.Icon(ShellIcons.backup, size: 18),
+                    visualDensity: m3.VisualDensity.compact,
+                    tooltip: context.l10n.worldBackup,
+                  ),
+                m3.IconButton(
+                  onPressed: () => _delete(entry),
+                  icon: const m3.Icon(ShellIcons.trash, size: 18),
+                  visualDensity: m3.VisualDensity.compact,
+                  tooltip: context.l10n.actionDelete,
+                ),
+                if (widget.kind == InstanceContentKind.resourcePacks) ...[
+                  const m3.SizedBox(width: 4),
                   m3.Switch(
                     value: entry.enabled,
                     onChanged: (value) => _toggle(entry, value),
                   ),
-                m3.IconButton(
-                  onPressed: () => _delete(entry),
-                  icon: const m3.Icon(ShellIcons.trash, size: 16),
-                  tooltip: context.l10n.actionDelete,
-                ),
+                ],
               ],
             ),
           ),
@@ -476,24 +558,6 @@ class _WorldPicker extends ConsumerWidget {
           ),
         );
       },
-    );
-  }
-}
-
-class _Empty extends StatelessWidget {
-  const _Empty({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return m3.Padding(
-      padding: const m3.EdgeInsets.symmetric(vertical: 32),
-      child: m3.Text(
-        message,
-        style: AppTheme.body(context)
-            .copyWith(color: m3.Theme.of(context).colorScheme.onSurfaceVariant),
-      ),
     );
   }
 }
@@ -596,4 +660,90 @@ extension InstanceContentKindData on InstanceContentKind {
     // something you name, not download.
     InstanceContentKind.worlds || InstanceContentKind.servers => null,
   };
+}
+
+/// A server's answer, on the row it belongs to: a status dot, the MOTD, the players
+/// and the round trip.
+///
+/// The row is a launcher's only chance to say "this server is up" - a name and an IP
+/// without an answer is a bookmark, not a server list. A pending ping shows nothing
+/// rather than a spinner per row: five rows of spinners is five things moving on a
+/// page that has nothing to say yet.
+class _ServerStatus extends ConsumerWidget {
+  const _ServerStatus({required this.address});
+
+  final String address;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = m3.Theme.of(context).colorScheme;
+    final ping = ref.watch(serverPingProvider(address));
+
+    return ping.when(
+      loading: () => m3.Text(
+        address,
+        style: AppTheme.caption(context)
+            .copyWith(color: scheme.onSurfaceVariant),
+        maxLines: 1,
+        overflow: m3.TextOverflow.ellipsis,
+      ),
+      error: (error, _) => _line(context, scheme.error, '$error'),
+      data: (result) {
+        final status = result.status;
+        final latency = status?.latencyMs;
+        if (status == null) {
+          return _line(
+            context,
+            scheme.onSurfaceVariant,
+            [
+              address,
+              result.error ?? '',
+            ].where((s) => s.isNotEmpty).join(' · '),
+            dot: scheme.outline,
+          );
+        }
+        return _line(
+          context,
+          scheme.onSurfaceVariant,
+          [
+            if (status.motd.isNotEmpty) status.motd,
+            status.players,
+            if (latency != null) '$latency ms',
+            if (status.version != null) status.version!,
+          ].join(' · '),
+          dot: scheme.primary,
+        );
+      },
+    );
+  }
+
+  Widget _line(
+    BuildContext context,
+    m3.Color color,
+    String text, {
+    m3.Color? dot,
+  }) {
+    return m3.Row(
+      children: [
+        if (dot != null) ...[
+          // A 6 px dot, the way every server list marks reachability: small enough to
+          // be a marker, present enough to answer "is it up" before reading the text.
+          m3.Container(
+            width: 6,
+            height: 6,
+            decoration: m3.BoxDecoration(color: dot, shape: m3.BoxShape.circle),
+          ),
+          const m3.SizedBox(width: 6),
+        ],
+        m3.Expanded(
+          child: m3.Text(
+            text,
+            style: AppTheme.caption(context).copyWith(color: color),
+            maxLines: 1,
+            overflow: m3.TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
 }

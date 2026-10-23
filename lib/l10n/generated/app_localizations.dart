@@ -1909,6 +1909,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save'**
   String get actionSave;
+
+  /// Second line of the empty mod list.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag a jar into the mods folder, or install one from Modrinth.'**
+  String get contentEmptyModsHint;
+
+  /// Second line of any empty content list.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the button above to add one, or open the folder and drop a file in.'**
+  String get contentEmptyHint;
+
+  /// Tooltip of the button that zips a world.
+  ///
+  /// In en, this message translates to:
+  /// **'Back up'**
+  String get worldBackup;
+
+  /// Snackbar after a world backup, with the file name.
+  ///
+  /// In en, this message translates to:
+  /// **'Backed up to {name}'**
+  String worldBackupDone(String name);
+
+  /// Snackbar when a world backup failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup failed: {error}'**
+  String worldBackupFailed(String error);
+
+  /// Refresh a list that reads live state (server pings).
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get actionRefresh;
+
+  /// Shown where a server's MOTD would be when it did not answer.
+  ///
+  /// In en, this message translates to:
+  /// **'No answer'**
+  String get serverOffline;
 }
 
 class _AppLocalizationsDelegate

@@ -1093,4 +1093,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get actionSave => 'Save';
+
+  @override
+  String get contentEmptyModsHint =>
+      'Drag a jar into the mods folder, or install one from Modrinth.';
+
+  @override
+  String get contentEmptyHint =>
+      'Use the button above to add one, or open the folder and drop a file in.';
+
+  @override
+  String get worldBackup => 'Back up';
+
+  @override
+  String worldBackupDone(String name) {
+    return 'Backed up to $name';
+  }
+
+  @override
+  String worldBackupFailed(String error) {
+    return 'Backup failed: $error';
+  }
+
+  @override
+  String get actionRefresh => 'Refresh';
+
+  @override
+  String get serverOffline => 'No answer';
 }

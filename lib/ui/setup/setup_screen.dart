@@ -8,6 +8,7 @@ import '../../data/settings.dart';
 import '../../l10n/l10n.dart';
 import '../motion/motion.dart';
 import '../components/section_drawer.dart';
+import '../components/section_page.dart';
 import '../shell/shell_icons.dart';
 import '../theme/app_theme.dart';
 import 'java_panel.dart';
@@ -15,7 +16,6 @@ import 'about_panel.dart';
 import 'network_panel.dart';
 import '../components/app_accent_picker.dart';
 import '../components/app_radio_group.dart';
-import '../components/page_body.dart';
 import '../components/app_slider.dart';
 import '../components/app_text_field.dart';
 
@@ -45,41 +45,28 @@ class _SetupScreenState extends State<SetupScreen> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
-    return PageBody(
-      // Not scrollable: the section list stays put while one section scrolls, which
-      // is what keeps "where am I" answerable on a short window.
-      scrollable: false,
-      child: m3.Column(
-        crossAxisAlignment: m3.CrossAxisAlignment.stretch,
-        children: [
-          PageTitle(l10n.navSetup),
-          m3.Expanded(
-            child: m3.Row(
-              crossAxisAlignment: m3.CrossAxisAlignment.stretch,
-              children: [
-                SectionDrawer(
-                  selectedIndex: _section.index,
-                  onSelected: (index) =>
-                      setState(() => _section = SetupSection.values[index]),
-                  destinations: [
-                    for (final section in SetupSection.values)
-                      _destination(l10n, section),
-                  ],
-                ),
-                const m3.SizedBox(width: 16),
-                m3.Expanded(
-                  child: m3.SingleChildScrollView(
-                    // Keyed by section so switching sections starts at the top
-                    // instead of inheriting the previous section's scroll offset.
-                    key: m3.ValueKey('setup-${_section.name}'),
-                    padding: const m3.EdgeInsets.only(bottom: 24),
-                    child: MotionEntrance(children: [_body(context, _section)]),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+    return SectionPage(
+      // Same frame as an instance's page: heading, section list, one section. The
+      // list stays put while the section scrolls, which is what keeps "where am I"
+      // answerable on a short window.
+      title: l10n.navSetup,
+      mark: m3.Icon(
+        ShellIcons.settings,
+        size: 22,
+        color: m3.Theme.of(context).colorScheme.primary,
+      ),
+      selectedIndex: _section.index,
+      onSelected: (index) =>
+          setState(() => _section = SetupSection.values[index]),
+      destinations: [
+        for (final section in SetupSection.values) _destination(l10n, section),
+      ],
+      bodyScrollable: true,
+      body: m3.KeyedSubtree(
+        // Keyed by section so switching starts at the top instead of inheriting the
+        // previous section's scroll offset.
+        key: m3.ValueKey('setup-${_section.name}'),
+        child: MotionEntrance(children: [_body(context, _section)]),
       ),
     );
   }

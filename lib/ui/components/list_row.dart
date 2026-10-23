@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/widgets.dart';
 import 'package:material_ui/material_ui.dart' as m3;
 
@@ -30,7 +32,9 @@ class ListRow extends StatelessWidget {
     super.key,
     this.labelKey,
     this.leadingIcon,
+    this.leadingImage,
     this.supporting = '',
+    this.supportingWidget,
     this.supportingMono = false,
     this.errorText,
     this.trailingText,
@@ -50,8 +54,17 @@ class ListRow extends StatelessWidget {
 
   final m3.IconData? leadingIcon;
 
+  /// An image for the leading slot - a pack's `pack.png`, a world's `icon.png`. Takes
+  /// the place of [leadingIcon] when present, and is rendered at the same 18 px so the
+  /// row's text still starts at the same x in every list.
+  final Uint8List? leadingImage;
+
   /// Optional second line: a path, a status, a description. One line, truncated.
   final String supporting;
+
+  /// A live second line - a server's MOTD and ping - when the text would have to be
+  /// composed from an async answer. Takes the place of [supporting].
+  final Widget? supportingWidget;
 
   /// Render [supporting] in the monospace face — paths, ids, argv.
   final bool supportingMono;
@@ -92,7 +105,23 @@ class ListRow extends StatelessWidget {
       padding: const m3.EdgeInsets.symmetric(horizontal: 8, vertical: 10),
       builder: (hovered) => m3.Row(
         children: [
-          if (leadingIcon != null) ...[
+          if (leadingImage != null) ...[
+            const m3.SizedBox(width: 4),
+            m3.ClipRRect(
+              borderRadius: m3.BorderRadius.circular(4),
+              child: m3.Image.memory(
+                leadingImage!,
+                width: 18,
+                height: 18,
+                fit: m3.BoxFit.cover,
+                // A pack whose pack.png is not an image must not paint a red box down
+                // the list: fall back to nothing and let the row read as text.
+                errorBuilder: (context, error, stack) =>
+                    const m3.SizedBox(width: 18, height: 18),
+              ),
+            ),
+            const m3.SizedBox(width: 12),
+          ] else if (leadingIcon != null) ...[
             const m3.SizedBox(width: 4),
             m3.Icon(
               leadingIcon,
@@ -120,22 +149,27 @@ class ListRow extends StatelessWidget {
                   maxLines: 1,
                   overflow: m3.TextOverflow.ellipsis,
                 ),
-                if (errorText != null || supporting.isNotEmpty) ...[
+                if (errorText != null ||
+                    supporting.isNotEmpty ||
+                    supportingWidget != null) ...[
                   const m3.SizedBox(height: 2),
-                  m3.Text(
-                    errorText ?? supporting,
-                    style:
-                        (supportingMono
-                                ? AppTheme.mono(context)
-                                : AppTheme.caption(context))
-                            .copyWith(
-                              color: errorText == null
-                                  ? scheme.onSurfaceVariant
-                                  : scheme.error,
-                            ),
-                    maxLines: 1,
-                    overflow: m3.TextOverflow.ellipsis,
-                  ),
+                  if (errorText == null && supportingWidget != null)
+                    supportingWidget!
+                  else
+                    m3.Text(
+                      errorText ?? supporting,
+                      style:
+                          (supportingMono
+                                  ? AppTheme.mono(context)
+                                  : AppTheme.caption(context))
+                              .copyWith(
+                                color: errorText == null
+                                    ? scheme.onSurfaceVariant
+                                    : scheme.error,
+                              ),
+                      maxLines: 1,
+                      overflow: m3.TextOverflow.ellipsis,
+                    ),
                 ],
               ],
             ),

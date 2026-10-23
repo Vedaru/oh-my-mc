@@ -55,6 +55,9 @@ wrong: installing wrote files, and nothing pointed the launcher at them.
 | 下载: version list (release/snapshot/old) + install queue + progress | **done** | `lib/ui/download/`, `lib/data/install_providers.dart` |
 | 下载完成即出现在启动页 | **done** | `InstallController.install` → `InstanceListController.ensureForVersion` |
 | 版本设置: reachable from the card and from 版本设置 button | **done** | `/instances/:id`, MD3 navigation drawer: 概览 / 模组 / 资源包 / 光影 / 存档 / 服务器 / 数据包 / 设置 |
+| 服务器列表 ping（MOTD / 在线人数 / 延迟） | **done** | `lib/core/server/server_ping.dart`（1.7+ 握手 + pre-1.7 legacy 回退）、`serverPingProvider`，行内显示状态点/人数/延迟，可刷新 |
+| 存档备份（zip） | **done** | `lib/core/game/world_backup.dart`：备份到 `<instance>/backups/`、还原为新存档（拒绝覆盖）；`restore` 已测 |
+| 资源包/光影/存档图标 | **done** | `ContentIcons`：zip 内 `pack.png` / 存档 `icon.png`，超过 256 KB 不解析 |
 | 版本设置 content pages: one page per kind, as Prism arranges its instance window | **done** | `lib/ui/instances/instance_content_page.dart` — mods (switch + delete), resource packs (switch writes `options.txt`), shaders (no switch), worlds, servers (add/delete), data packs (pick a world first) |
 | 设置 as sections rather than one long page | **done** | `lib/ui/setup/setup_screen.dart` (`SetupSection`) |
 | 版本设置: Java (path + detect + download), memory, JVM/game args, isolation | **done** | `instance_detail_screen.dart`, `lib/ui/setup/java_panel.dart` |

@@ -1531,5 +1531,43 @@
   },
   "@actionSave": {
     "description": "Confirm button that saves the form."
+  },
+  "contentEmptyModsHint": "Drag a jar into the mods folder, or install one from Modrinth.",
+  "@contentEmptyModsHint": {
+    "description": "Second line of the empty mod list."
+  },
+  "contentEmptyHint": "Use the button above to add one, or open the folder and drop a file in.",
+  "@contentEmptyHint": {
+    "description": "Second line of any empty content list."
+  },
+  "worldBackup": "Back up",
+  "@worldBackup": {
+    "description": "Tooltip of the button that zips a world."
+  },
+  "worldBackupDone": "Backed up to {name}",
+  "@worldBackupDone": {
+    "description": "Snackbar after a world backup, with the file name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "worldBackupFailed": "Backup failed: {error}",
+  "@worldBackupFailed": {
+    "description": "Snackbar when a world backup failed.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "actionRefresh": "Refresh",
+  "@actionRefresh": {
+    "description": "Refresh a list that reads live state (server pings)."
+  },
+  "serverOffline": "No answer",
+  "@serverOffline": {
+    "description": "Shown where a server's MOTD would be when it did not answer."
   }
 }

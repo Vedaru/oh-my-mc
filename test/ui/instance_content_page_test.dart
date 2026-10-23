@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart' show Size, ValueKey;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart' as m3;
 import 'package:oh_my_mc/app/providers.dart';
@@ -11,7 +12,9 @@ import 'package:oh_my_mc/core/mods/mod_scanner.dart';
 import 'package:oh_my_mc/data/game_content_provider.dart';
 import 'package:oh_my_mc/data/instance_providers.dart';
 import 'package:oh_my_mc/data/instance_store.dart';
+import 'package:oh_my_mc/core/server/server_ping.dart';
 import 'package:oh_my_mc/data/mods_providers.dart';
+import 'package:oh_my_mc/data/server_providers.dart';
 import 'package:oh_my_mc/data/launch_factory.dart';
 import 'package:oh_my_mc/data/settings.dart';
 import 'package:oh_my_mc/ui/components/app_button.dart';
@@ -75,6 +78,7 @@ void main() {
   );
 
   late _FakeContent content;
+  // Overridden per test below; the default pings nothing.
 
   ContentEntry entry(String name, {bool enabled = false, String? detail}) =>
       ContentEntry(
@@ -102,6 +106,7 @@ void main() {
   Future<ProviderContainer> pump(
     WidgetTester tester, {
     String section = 'overview',
+    List<Override> overrides = const [],
   }) async {
     final container = ProviderContainer(
       overrides: [
@@ -125,6 +130,7 @@ void main() {
         instanceModsProvider.overrideWith(
           (ref, id) async => const <ModEntry>[],
         ),
+        ...overrides,
       ],
     );
     addTearDown(container.dispose);
@@ -234,6 +240,56 @@ void main() {
     // The pack from the previous section is gone: switching sections switches lists.
     expect(find.text('Pack A.zip'), findsNothing);
     expect(find.text('Terralith.zip'), findsOneWidget);
+  });
+
+  testWidgets('a server row shows whether the server is up', (tester) async {
+    content.byKind[ContentKind.servers] = [
+      ContentEntry(
+        name: 'SMP',
+        path: 'mc.example.net:25565',
+        isDirectory: false,
+      ),
+    ];
+    await pump(
+      tester,
+      section: 'servers',
+      overrides: [
+        serverPingerProvider.overrideWithValue(
+          (address) async => const ServerPing.ok(
+            ServerStatus(
+              motd: 'A Quiet Place',
+              online: 7,
+              max: 20,
+              latencyMs: 42,
+            ),
+          ),
+        ),
+      ],
+    );
+
+    // The row answers "is it up" before the user reads anything else.
+    expect(find.textContaining('A Quiet Place'), findsOneWidget);
+    expect(find.textContaining('7/20'), findsOneWidget);
+    expect(find.textContaining('42 ms'), findsOneWidget);
+  });
+
+  testWidgets('a server that does not answer says so, on its own row', (
+    tester,
+  ) async {
+    content.byKind[ContentKind.servers] = [
+      ContentEntry(name: 'Dead', path: '10.0.0.1:25565', isDirectory: false),
+    ];
+    await pump(
+      tester,
+      section: 'servers',
+      overrides: [
+        serverPingerProvider.overrideWithValue(
+          (address) async => const ServerPing.failed('timed out'),
+        ),
+      ],
+    );
+
+    expect(find.textContaining('timed out'), findsOneWidget);
   });
 
   testWidgets('a server is added as a name and an address, not a download', (

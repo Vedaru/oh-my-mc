@@ -22,7 +22,7 @@ import '../../l10n/l10n.dart';
 import '../components/app_banner.dart';
 import '../components/list_row.dart';
 import '../components/section_drawer.dart';
-import '../motion/motion.dart';
+import '../components/section_page.dart';
 import '../shell/shell_icons.dart';
 import '../theme/app_theme.dart';
 import 'args_field.dart';
@@ -158,121 +158,78 @@ class _InstanceDetailScreenState extends ConsumerState<InstanceDetailScreen> {
       );
     }
 
-    return MotionEntrance(
-      children: [
-        m3.Padding(
-          padding: const m3.EdgeInsets.fromLTRB(8, 12, 16, 8),
-          child: m3.Row(
-            children: [
-              m3.IconButton(
-                onPressed: () => _close(context),
-                icon: const m3.Icon(ShellIcons.back),
-                tooltip: l10n.actionBack,
+    return SectionPage(
+      // The heading is the instance itself: back, icon, name, and the loader/version
+      // as a subtitle. Play is the page's one filled action, and clone / export /
+      // delete stay in the menu.
+      mark: m3.Hero(
+        tag: instanceHeroTag(instance.id),
+        child: m3.Icon(
+          instance.loader.isModded ? ShellIcons.addon : ShellIcons.instance,
+          size: 22,
+          color: scheme.primary,
+        ),
+      ),
+      title: instance.displayName,
+      subtitle: [
+        instance.versionId,
+        if (instance.loader.isModded) instance.loader.label,
+      ].join(' · '),
+      actions: m3.Row(
+        mainAxisSize: m3.MainAxisSize.min,
+        children: [
+          AppButton(
+            key: const m3.ValueKey('instance-play'),
+            onPressed: () =>
+                ref.read(launchControllerProvider.notifier).launch(instance!),
+            style: AppButtonStyle.filled,
+            icon: const m3.Icon(ShellIcons.play, size: 14),
+            label: m3.Text(l10n.actionLaunch),
+          ),
+          const m3.SizedBox(width: 8),
+          m3.PopupMenuButton<String>(
+            key: const m3.ValueKey('instance-more'),
+            tooltip: l10n.actionMore,
+            onSelected: (choice) => switch (choice) {
+              'clone' => _clone(context, ref, instance!),
+              'export' => _exportPack(context, ref, instance!),
+              'delete' => _delete(context, ref, instance!),
+              _ => null,
+            },
+            itemBuilder: (context) => [
+              m3.PopupMenuItem(
+                value: 'clone',
+                child: m3.Text(l10n.instanceClone),
               ),
-              const m3.SizedBox(width: 4),
-              m3.Hero(
-                tag: instanceHeroTag(instance.id),
-                child: m3.Icon(
-                  instance.loader.isModded
-                      ? ShellIcons.addon
-                      : ShellIcons.instance,
-                  size: 22,
-                  color: scheme.primary,
-                ),
+              m3.PopupMenuItem(
+                value: 'export',
+                child: m3.Text(l10n.packExport),
               ),
-              const m3.SizedBox(width: 10),
-              m3.Expanded(
-                child: m3.Text(
-                  instance.displayName,
-                  style: AppTheme.title(context),
-                  overflow: m3.TextOverflow.ellipsis,
-                ),
-              ),
-              // One primary action per page, and the management actions in a menu:
-              // clone / export / delete are low-frequency and delete is destructive,
-              // so they do not get to sit next to the thing a user came here to do.
-              AppButton(
-                key: const m3.ValueKey('instance-play'),
-                onPressed: () => ref
-                    .read(launchControllerProvider.notifier)
-                    .launch(instance!),
-                style: AppButtonStyle.filled,
-                icon: const m3.Icon(ShellIcons.play, size: 14),
-                label: m3.Text(l10n.actionLaunch),
-              ),
-              const m3.SizedBox(width: 8),
-              m3.PopupMenuButton<String>(
-                key: const m3.ValueKey('instance-more'),
-                tooltip: l10n.actionMore,
-                onSelected: (choice) => switch (choice) {
-                  'clone' => _clone(context, ref, instance!),
-                  'export' => _exportPack(context, ref, instance!),
-                  'delete' => _delete(context, ref, instance!),
-                  _ => null,
-                },
-                itemBuilder: (context) => [
-                  m3.PopupMenuItem(
-                    value: 'clone',
-                    child: m3.Text(l10n.instanceClone),
-                  ),
-                  m3.PopupMenuItem(
-                    value: 'export',
-                    child: m3.Text(l10n.packExport),
-                  ),
-                  const m3.PopupMenuDivider(),
-                  m3.PopupMenuItem(
-                    value: 'delete',
-                    child: m3.Text(l10n.instanceDelete),
-                  ),
-                ],
-                child: const m3.Padding(
-                  padding: m3.EdgeInsets.all(8),
-                  child: m3.Icon(ShellIcons.more, size: 18),
-                ),
+              const m3.PopupMenuDivider(),
+              m3.PopupMenuItem(
+                value: 'delete',
+                child: m3.Text(l10n.instanceDelete),
               ),
             ],
-          ),
-        ),
-        m3.Expanded(
-          // The pane beside the drawer needs its own right margin: the row above ends
-          // at the window edge, and a list's trailing controls would be clipped there.
-          child: m3.Padding(
-            padding: m3.EdgeInsets.only(right: 24),
-            child: m3.Row(
-              crossAxisAlignment: m3.CrossAxisAlignment.stretch,
-              children: [
-                SectionDrawer(
-                  selectedIndex: _section.index,
-                  onSelected: (index) =>
-                      setState(() => _section = DetailSection.values[index]),
-                  destinations: [
-                    for (final section in DetailSection.values)
-                      _destination(l10n, section),
-                  ],
-                ),
-                const m3.SizedBox(width: 16),
-                m3.Expanded(
-                  // Two kinds of section: the forms (概览, 设置) scroll, and the content
-                  // sections are lists that fill the pane themselves. Wrapping a list in
-                  // a scroll view gives it unbounded height, which its `Expanded` cannot
-                  // live with.
-                  child: _isFormSection
-                      ? m3.SingleChildScrollView(
-                          key: m3.ValueKey('detail-${_section.name}'),
-                          padding: const m3.EdgeInsets.only(bottom: 16),
-                          child: _sectionBody(context, instance),
-                        )
-                      : m3.Padding(
-                          key: m3.ValueKey('detail-${_section.name}'),
-                          padding: const m3.EdgeInsets.only(bottom: 16),
-                          child: _sectionBody(context, instance),
-                        ),
-                ),
-              ],
+            child: const m3.Padding(
+              padding: m3.EdgeInsets.all(8),
+              child: m3.Icon(ShellIcons.more, size: 18),
             ),
           ),
-        ),
+        ],
+      ),
+      selectedIndex: _section.index,
+      onSelected: (index) =>
+          setState(() => _section = DetailSection.values[index]),
+      destinations: [
+        for (final section in DetailSection.values) _destination(l10n, section),
       ],
+      // 概览 and 设置 are forms; the content sections are lists that fill the pane.
+      bodyScrollable: _isFormSection,
+      body: m3.KeyedSubtree(
+        key: m3.ValueKey('detail-${_section.name}'),
+        child: _sectionBody(context, instance),
+      ),
     );
   }
 
@@ -682,7 +639,10 @@ class _Row extends StatelessWidget {
       crossAxisAlignment: m3.CrossAxisAlignment.start,
       children: [
         m3.SizedBox(
-          width: 180,
+          // 220 fits the longest label ("Separate game folder") on one line and lets
+          // its hint wrap to two: at 180 the label itself wrapped, which made the row
+          // taller than the control it describes.
+          width: 220,
           child: m3.Column(
             crossAxisAlignment: m3.CrossAxisAlignment.start,
             children: [
@@ -781,7 +741,8 @@ class _NameRowState extends State<_NameRow> {
         key: const m3.ValueKey('instance-name'),
         controller: _controller,
         focusNode: _focus,
-        label: context.l10n.instanceNameLabel,
+        // The row's label already names this field: a floating label saying "Name"
+        // again directly above it is the same word twice.
         hint: context.l10n.instanceNameHint,
         onSubmitted: (_) => _commit(),
       ),

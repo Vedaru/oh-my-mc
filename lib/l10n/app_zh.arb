@@ -339,5 +339,12 @@
   "contentAddServer": "Add a server",
   "contentServerName": "名称",
   "contentServerAddress": "地址",
-  "actionSave": "保存"
+  "actionSave": "保存",
+  "contentEmptyModsHint": "把 jar 拖进模组文件夹，或者从 Modrinth 安装一个。",
+  "contentEmptyHint": "用上面的按钮安装，或者打开文件夹把文件放进去。",
+  "worldBackup": "备份存档",
+  "worldBackupDone": "已备份到 {name}",
+  "worldBackupFailed": "备份失败：{error}",
+  "actionRefresh": "刷新",
+  "serverOffline": "无响应"
 }

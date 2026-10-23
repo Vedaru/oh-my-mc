@@ -23,6 +23,8 @@ import 'package:oh_my_mc/core/diagnostics/lan_discovery.dart';
 import 'package:oh_my_mc/core/diagnostics/network_info.dart';
 import 'package:oh_my_mc/data/diagnostics_providers.dart';
 import 'package:oh_my_mc/core/game/content.dart';
+import 'package:oh_my_mc/core/server/server_ping.dart';
+import 'package:oh_my_mc/data/server_providers.dart';
 import 'package:oh_my_mc/data/game_content_provider.dart';
 import 'package:oh_my_mc/core/update/update_check.dart';
 import 'package:oh_my_mc/ui/setup/about_panel.dart';
@@ -249,6 +251,9 @@ void main() {
       // has a blinking cursor, which is an animation that never settles.
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
+      // A section whose rows read something asynchronous (a server's ping) needs one
+      // more frame after the answer lands, or the shot captures the pending state.
+      await tester.pump(const Duration(milliseconds: 400));
     }
 
     if (scrollDown > 0) {
@@ -398,6 +403,61 @@ void main() {
       '/download',
       'download',
       instances: [_instance('mc', 'mc', '1.20.1')],
+    );
+  });
+
+  testWidgets('instance servers', (tester) async {
+    await shoot(
+      tester,
+      '/instances/a',
+      'instance-servers',
+      instances: [_instance('a', 'Survival', '1.20.1')],
+      openKey: 'detail-section-servers',
+      overrides: [
+        gameContentProvider.overrideWith(
+          (ref) =>
+              (root) => _ShotContent(),
+        ),
+        serverPingerProvider.overrideWithValue(
+          (address) async => switch (address) {
+            'play.example.net' => const ServerPing.ok(
+              ServerStatus(
+                motd: 'A Quiet Place to Build',
+                online: 12,
+                max: 40,
+                latencyMs: 38,
+                version: '1.20.1',
+              ),
+            ),
+            'mods.example.net:25566' => const ServerPing.ok(
+              ServerStatus(
+                motd: 'Create: Above and Beyond',
+                online: 4,
+                max: 10,
+                latencyMs: 91,
+                version: '1.19.2',
+              ),
+            ),
+            _ => const ServerPing.failed('timed out'),
+          },
+        ),
+      ],
+    );
+  });
+
+  testWidgets('instance worlds', (tester) async {
+    await shoot(
+      tester,
+      '/instances/a',
+      'instance-worlds',
+      instances: [_instance('a', 'Survival', '1.20.1')],
+      openKey: 'detail-section-worlds',
+      overrides: [
+        gameContentProvider.overrideWith(
+          (ref) =>
+              (root) => _ShotContent(),
+        ),
+      ],
     );
   });
 
@@ -845,6 +905,31 @@ class _ShotContent extends GameContent {
         sizeBytes: 3 * 1024 * 1024,
         enabled: false,
       ),
+    ],
+    ContentKind.saves => const [
+      ContentEntry(
+        name: 'Survival',
+        path: '/shot/saves/Survival',
+        isDirectory: true,
+        sizeBytes: 214 * 1024 * 1024,
+        detail: 'played 2 h ago',
+      ),
+      ContentEntry(
+        name: 'Creative Test',
+        path: '/shot/saves/Creative Test',
+        isDirectory: true,
+        sizeBytes: 48 * 1024 * 1024,
+        detail: 'played 6 d ago',
+      ),
+    ],
+    ContentKind.servers => const [
+      ContentEntry(name: 'SMP', path: 'play.example.net', isDirectory: false),
+      ContentEntry(
+        name: 'Modded',
+        path: 'mods.example.net:25566',
+        isDirectory: false,
+      ),
+      ContentEntry(name: 'LAN', path: '192.168.1.20:25565', isDirectory: false),
     ],
     _ => const [],
   };

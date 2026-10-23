@@ -44,6 +44,7 @@ abstract final class ShellIcons {
   static const addon = m3.Icons.extension;
   static const back = m3.Icons.arrow_back;
   static const refresh = m3.Icons.refresh;
+  static const backup = m3.Icons.archive_outlined;
   static const close = m3.Icons.close;
   static const copy = m3.Icons.content_copy;
   static const openExternal = m3.Icons.open_in_new;

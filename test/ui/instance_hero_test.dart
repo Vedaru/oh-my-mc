@@ -94,7 +94,9 @@ void main() {
     await tester.tap(find.text('Demo'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(ShellIcons.back));
+    // The page has no back button: the rail is the navigation, and a back arrow in the
+    // heading would push the page's mark out of the slot every drawer lines up on.
+    await tester.tap(find.text('Instances'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 120));
 
