@@ -36,6 +36,7 @@ class AppSettings {
     this.language = LanguagePreference.system,
     this.accent = AccentChoice.blue,
     this.backgroundPath,
+    this.backgroundDim = defaultBackgroundDim,
     this.playerName = defaultPlayerName,
     this.memoryMb = defaultMemoryMb,
     this.javaDirs = const [],
@@ -67,6 +68,13 @@ class AppSettings {
   /// from the user's disk, so a path can go stale; [AppShell] falls back to the surface
   /// when it cannot be loaded.
   final String? backgroundPath;
+
+  /// How much of the surface wash covers the wallpaper, 0-1. **This is a taste, not a
+  /// rule**: the default leaves a photo clearly visible, and the slider is what makes
+  /// "the picture is too dark / too loud" fixable without a code change.
+  final double backgroundDim;
+
+  static const defaultBackgroundDim = 0.55;
 
   /// Offline profile name. Microsoft sign-in is a later milestone; until then a
   /// launch is always offline, which requires a name and nothing else.
@@ -100,6 +108,7 @@ class AppSettings {
     'language': language.name,
     'accent': accent.name,
     'backgroundPath': ?backgroundPath,
+    'backgroundDim': backgroundDim,
     'playerName': playerName,
     'memoryMb': memoryMb,
     // A list, so it is stored as JSON in a single string key: the settings store
@@ -130,6 +139,7 @@ class AppSettings {
         AccentChoice.blue,
       ),
       backgroundPath: _validBackgroundPath(map['backgroundPath']),
+      backgroundDim: _validDim(map['backgroundDim']),
       // A blank or implausible name would make the game refuse to start or,
       // worse, start with an empty name; clamp it back to the default instead.
       playerName: _validPlayerName(map['playerName']),
@@ -153,6 +163,7 @@ class AppSettings {
     LanguagePreference? language,
     AccentChoice? accent,
     String? backgroundPath,
+    double? backgroundDim,
     bool clearBackground = false,
     String? playerName,
     int? memoryMb,
@@ -166,6 +177,7 @@ class AppSettings {
     backgroundPath: clearBackground
         ? null
         : backgroundPath ?? this.backgroundPath,
+    backgroundDim: backgroundDim ?? this.backgroundDim,
     playerName: playerName ?? this.playerName,
     memoryMb: memoryMb ?? this.memoryMb,
     javaDirs: javaDirs ?? this.javaDirs,
@@ -222,6 +234,21 @@ int _validMemoryMb(Object? raw) {
   };
   if (value == null || value < kMinMemoryMb || value > kMaxMemoryMb) {
     return AppSettings.defaultMemoryMb;
+  }
+  return value;
+}
+
+/// A wash strength. Out of range is corruption, and the default is safer than a
+/// wallpaper the launcher cannot make readable.
+double _validDim(Object? raw) {
+  final value = switch (raw) {
+    double value => value,
+    int value => value.toDouble(),
+    String value => double.tryParse(value),
+    _ => null,
+  };
+  if (value == null || value.isNaN || value < 0 || value > 1) {
+    return AppSettings.defaultBackgroundDim;
   }
   return value;
 }

@@ -12,6 +12,7 @@ import 'package:oh_my_mc/l10n/l10n.dart';
 import 'package:oh_my_mc/l10n/generated/app_localizations.dart';
 import 'package:oh_my_mc/ui/launch/crash_card.dart';
 import 'package:oh_my_mc/ui/launch/crash_copy.dart';
+import 'package:oh_my_mc/ui/network/lan_panel.dart';
 import 'package:oh_my_mc/ui/setup/network_panel.dart';
 
 import '../support/harness.dart';
@@ -43,6 +44,8 @@ void main() {
       WidgetTester tester, {
       List<LanInterface> interfaces = const [],
       List<SpeedSample> samples = const [],
+      // Two panels now: the LAN half is 联机, the speed test is 设置 → 网络.
+      Widget panel = const LanPanel(),
     }) async {
       final test = _ScriptedSpeedTest(samples);
       final container = ProviderContainer(
@@ -61,7 +64,7 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
 
-      await pumpScreen(tester, container, const NetworkPanel());
+      await pumpScreen(tester, container, panel);
       await tester.pumpAndSettle();
     }
 
@@ -97,6 +100,7 @@ void main() {
     ) async {
       await pump(
         tester,
+        panel: const NetworkPanel(),
         samples: const [
           SpeedSample(
             name: 'Mojang',

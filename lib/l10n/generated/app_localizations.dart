@@ -1277,7 +1277,7 @@ abstract class AppLocalizations {
   /// Explanation above the network diagnostics in settings.
   ///
   /// In en, this message translates to:
-  /// **'Measures the CDNs the launcher downloads from, and shows the address to share for LAN play.'**
+  /// **'Measures the mirrors the launcher downloads from, and which one installs use.'**
   String get settingsNetworkHint;
 
   /// Button that measures mirror throughput.
@@ -2060,12 +2060,6 @@ abstract class AppLocalizations {
   /// **'{version} uninstalled'**
   String downloadUninstallDone(String version);
 
-  /// Settings section for launcher accounts.
-  ///
-  /// In en, this message translates to:
-  /// **'Accounts'**
-  String get setupAccounts;
-
   /// Label for an offline account.
   ///
   /// In en, this message translates to:
@@ -2125,6 +2119,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Only the launcher forgets it. Worlds, servers and mods are untouched.'**
   String get accountRemoveBody;
+
+  /// Tooltip/action that launches the game into this server.
+  ///
+  /// In en, this message translates to:
+  /// **'Join'**
+  String get serverJoin;
+
+  /// How strongly the page wash covers the wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallpaper dim'**
+  String get setupBackgroundDim;
+
+  /// Explains the wallpaper dim slider.
+  ///
+  /// In en, this message translates to:
+  /// **'Higher hides more of the picture and makes text easier to read.'**
+  String get setupBackgroundDimHint;
+
+  /// Rail destination: who the game starts as.
+  ///
+  /// In en, this message translates to:
+  /// **'Accounts'**
+  String get navAccounts;
+
+  /// Rail destination: LAN worlds and port mapping.
+  ///
+  /// In en, this message translates to:
+  /// **'Multiplayer'**
+  String get navNetwork;
+
+  /// Shown when router discovery finds nothing to map the port on.
+  ///
+  /// In en, this message translates to:
+  /// **'No UPnP gateway answered, so the port could not be opened. Your router may have UPnP disabled.'**
+  String get lanNoGateway;
+
+  /// Empty state on the multiplayer page before the first LAN scan.
+  ///
+  /// In en, this message translates to:
+  /// **'Not scanned yet. Open a world in the game with \"Open to LAN\", then find it here.'**
+  String get lanNeverScanned;
 }
 
 class _AppLocalizationsDelegate

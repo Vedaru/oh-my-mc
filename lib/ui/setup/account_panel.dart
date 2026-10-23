@@ -112,7 +112,11 @@ class _AccountRow extends ConsumerWidget {
 
     return ListRow(
       key: m3.ValueKey('account-${account.id}'),
-      leadingIcon: active ? ShellIcons.checkCircle : ShellIcons.account,
+      // The leading icon is the account *kind*; "which one is active" is answered once,
+      // by the radio at the trailing edge. It used to be both - a tick on the left and a
+      // switch on the right - which is two answers to one question, and a switch claims
+      // each account has its own on/off rather than there being one choice.
+      leadingIcon: account.isOffline ? ShellIcons.account : ShellIcons.cloud,
       label: account.name,
       // Kind and server, not the uuid: a hex prefix tells a user nothing, and two
       // accounts cannot share a name, so there is nothing to disambiguate.
@@ -142,11 +146,17 @@ class _AccountRow extends ConsumerWidget {
             ),
           ),
           const m3.SizedBox(width: 4),
-          m3.Switch(
-            value: active,
-            onChanged: (value) {
-              if (value) notifier.activate(account.id);
-            },
+          // A one-of-N choice, so a radio - not a switch, which would claim each
+          // account has its own on/off. One `RadioGroup` per row with a single `true`
+          // value: the row's group value is `true` only while it is the active account,
+          // which is what fills the dot.
+          m3.RadioGroup<bool?>(
+            groupValue: active ? true : null,
+            onChanged: (_) => notifier.activate(account.id),
+            child: m3.Radio<bool?>(
+              key: m3.ValueKey('account-active-${account.id}'),
+              value: true,
+            ),
           ),
         ],
       ),

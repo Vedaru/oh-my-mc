@@ -696,7 +696,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsNetworkTitle => '网络';
 
   @override
-  String get settingsNetworkHint => '测量启动器用到的下载源速度，并显示局域网联机要用的地址。';
+  String get settingsNetworkHint => '测一测启动器下载用的各个源有多快，以及安装时用哪一个。';
 
   @override
   String get settingsSpeedTest => '测试下载速度';
@@ -1149,9 +1149,6 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get setupAccounts => '账户';
-
-  @override
   String get accountOffline => '离线';
 
   @override
@@ -1182,4 +1179,25 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get accountRemoveBody => '只是启动器忘掉它；世界、服务器和模组都不受影响。';
+
+  @override
+  String get serverJoin => '加入';
+
+  @override
+  String get setupBackgroundDim => '背景压暗';
+
+  @override
+  String get setupBackgroundDimHint => '数值越高，图片越不明显、文字越清楚。';
+
+  @override
+  String get navAccounts => '账户';
+
+  @override
+  String get navNetwork => '联机';
+
+  @override
+  String get lanNoGateway => '没有路由器响应 UPnP，端口没能打开。可能是路由器关闭了 UPnP。';
+
+  @override
+  String get lanNeverScanned => '还没有扫描。先在游戏里「对局域网开放」一个存档，再在这里找它。';
 }

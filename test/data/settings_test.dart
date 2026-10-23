@@ -181,6 +181,8 @@ void main() {
           downloadSource: SourcePreference.bmclapi,
         ),
         'fastestSource': base.copyWith(fastestSource: 'bmclapi'),
+        'backgroundPath': base.copyWith(backgroundPath: '/pictures/wall.png'),
+        'backgroundDim': base.copyWith(backgroundDim: 0.9),
       };
 
       // Every key the store can write must be covered here, or a new field can slip
@@ -189,6 +191,7 @@ void main() {
       final full = base.copyWith(
         fastestSource: 'official',
         javaDirs: const ['/opt/jdk'],
+        backgroundPath: '/pictures/wall.png',
       );
       expect(variants.keys.toSet(), full.toMap().keys.toSet());
 

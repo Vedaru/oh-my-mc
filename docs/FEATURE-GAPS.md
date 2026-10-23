@@ -59,7 +59,7 @@ Axolotl / Modrinth App（本项目主要参照）。
 | --- | --- | --- | --- | --- | --- | --- |
 | 服务器列表 ping（MOTD / 人数 / 延迟） | 有 | 有 | 有 | 有 | **有** | `core/server/server_ping.dart`（1.7+ 与 pre-1.7） |
 | 服务器增删 | 有 | 有 | 有 | 有 | **有** | 写 `servers.dat` |
-| **直接加入服务器**（`--server` / `--port`） | 有 | 有 | 有 | 有 | **缺** | 启动参数里没有这一项；实现成本很低（`launch_plan` 加两个 flag） |
+| **直接加入服务器**（`--server` / `--port`） | 有 | 有 | 有 | 有 | **有** | `join_target.dart`（`host[:port]`，IPv6 保留方括号）+ 服务器行 `server-join-*` |
 | open to LAN 检测 / 端口映射 | 有 | 部分 | 有 | 部分 | **有** | `lan_discovery.dart` + `upnp.dart` |
 | 服务器收藏 / 分组 | 有 | 有 | 有 | 有 | **缺** | `servers.dat` 本身没有分组字段，需要自有侧表 |
 
@@ -89,4 +89,4 @@ Axolotl / Modrinth App（本项目主要参照）。
 6. **日志分享、崩溃报告导出、托盘与单实例、快捷键、快捷启动、便携模式** — 工程化与桌面集成。
 7. **CurseForge、微软登录、实验室** — 需要 API key / client id / 独立立项，排在最后。
 
-已经做完、不再列进差距的：版本安装（原版 / Fabric / Quilt / Forge / NeoForge）、断点续装、Java 探测与自供、镜像测速换源、联机（LAN + UPnP）、崩溃诊断、模组安装与更新、世界备份还原、内容页分区分页、壁纸与主题、中英双语。
+已经做完、不再列进差距的：版本安装（原版 / Fabric / Quilt / Forge / NeoForge）、断点续装、Java 探测与自供、镜像测速换源、联机（LAN + UPnP，独立的「联机」页）、账户与联机提为左侧目的地、崩溃诊断、模组安装与更新、世界备份还原、内容页分区分页、壁纸与主题、中英双语。

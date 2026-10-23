@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/widgets.dart';
 import 'package:material_ui/material_ui.dart' as m3;
@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/providers.dart';
+import '../../data/wallpaper_provider.dart';
 import '../../app/router.dart';
 import '../../l10n/l10n.dart';
 import 'shell_icons.dart';
@@ -45,6 +46,19 @@ List<ShellDestination> destinationsFor(AppLocalizations l10n) => [
     location: Routes.instances,
     label: (l) => l.navInstances,
     icon: ShellIcons.forRoute(Routes.instances),
+  ),
+  // Accounts and multiplayer sit above 下载: both are things a session starts with,
+  // and both were settings sections nobody found (账户 was 设置 → 通用, 联机 was
+  // 设置 → 网络 next to the speed test).
+  ShellDestination(
+    location: Routes.accounts,
+    label: (l) => l.navAccounts,
+    icon: ShellIcons.forRoute(Routes.accounts),
+  ),
+  ShellDestination(
+    location: Routes.network,
+    label: (l) => l.navNetwork,
+    icon: ShellIcons.forRoute(Routes.network),
   ),
   ShellDestination(
     location: Routes.download,
@@ -108,6 +122,9 @@ class AppShell extends ConsumerWidget {
             _Background(
               key: const m3.ValueKey('shell-background'),
               path: background,
+              dim: ref.watch(
+                appSettingsProvider.select((s) => s.backgroundDim),
+              ),
             ),
           m3.Row(
             children: [
@@ -118,7 +135,13 @@ class AppShell extends ConsumerWidget {
                 // two-character labels. The width stays constant, so the body's
                 // constraints still do not depend on a control inside the rail -
                 // this is a fixed-width rail, not a collapsible one.
-                labelType: m3.NavigationRailLabelType.all,
+                // Icons only when the window is short enough that seven labelled
+                // destinations no longer fit: the rail would otherwise overflow, and a
+                // clipped destination is a destination the user cannot reach. MD3's
+                // icon-only rail is the same control, and its tooltips keep the names.
+                labelType: m3.MediaQuery.sizeOf(context).height < 560
+                    ? m3.NavigationRailLabelType.none
+                    : m3.NavigationRailLabelType.all,
                 minWidth: 88,
                 selectedIndex: selected,
                 onDestinationSelected: (index) =>
@@ -143,30 +166,53 @@ class AppShell extends ConsumerWidget {
 /// A picture behind the whole shell, under a scrim.
 ///
 /// The scrim is the design decision: a launcher is text over whatever the user picked,
-/// and text over a bright screenshot is unreadable. It is a `surface` wash at 88%, so
-/// the wallpaper shows as tone and hue rather than as content, and the M3 surface
-/// colours the pages are built from still hold their relationships.
+/// and text over a bright screenshot is unreadable. It is a `surface` wash whose
+/// strength the user chooses (设置 → 外观 → 背景压暗), dense at the top where headings
+/// sit and lighter towards the bottom.
 ///
-/// A path that no longer resolves paints nothing - the user may have moved the file,
-/// and a missing wallpaper must not leave the launcher blank.
-class _Background extends StatelessWidget {
-  const _Background({required this.path, super.key});
+/// The picture is **blurred**: a sharp photo behind a list competes with the list. Blur
+/// keeps the colour and the mood and drops the detail that made rows hard to read.
+///
+/// It is painted from a decoded `ui.Image` ([wallpaperImageProvider]) rather than through
+/// `Image.file`, because that widget paints nothing at all until its decode lands - which
+/// is exactly what "the wallpaper does not work" looks like.
+class _Background extends ConsumerWidget {
+  const _Background({required this.path, required this.dim, super.key});
 
   final String path;
 
+  /// How much of the surface wash covers the picture (0 = raw wallpaper).
+  final double dim;
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final scheme = m3.Theme.of(context).colorScheme;
+    final image = ref.watch(wallpaperImageProvider(path)).value;
+
     return m3.Positioned.fill(
       child: m3.Stack(
         fit: m3.StackFit.expand,
         children: [
-          m3.Image.file(
-            File(path),
-            fit: m3.BoxFit.cover,
-            errorBuilder: (context, error, stack) => const m3.SizedBox.shrink(),
+          if (image != null)
+            m3.ImageFiltered(
+              imageFilter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+              // No `color:` here: `RawImage` blends it with `BlendMode.srcIn` by
+              // default, which paints the image *as* a solid surface-coloured rectangle -
+              // the wallpaper was being replaced by the background colour it sat on.
+              child: m3.RawImage(image: image, fit: m3.BoxFit.cover),
+            ),
+          m3.DecoratedBox(
+            decoration: m3.BoxDecoration(
+              gradient: m3.LinearGradient(
+                begin: m3.Alignment.topLeft,
+                end: m3.Alignment.bottomRight,
+                colors: [
+                  scheme.surface.withValues(alpha: (dim + 0.12).clamp(0, 1)),
+                  scheme.surface.withValues(alpha: dim),
+                ],
+              ),
+            ),
           ),
-          m3.ColoredBox(color: scheme.surface.withValues(alpha: 0.88)),
         ],
       ),
     );
@@ -175,10 +221,10 @@ class _Background extends StatelessWidget {
 
 /// Maps a location to a rail index.
 ///
-/// A prefix test, not equality: `/instances/:id` is a child route and must
-/// highlight the Instances item, which is the whole reason this is a function
-/// with a test rather than an `indexOf`. An unknown path falls back to 0 so a
-/// stale deep link still highlights something sane.
+/// A prefix test, not equality: `/instances/:id` is a child route and must highlight the
+/// Instances item, which is the whole reason this is a function with a test rather than
+/// an `indexOf`. An unknown path falls back to 0 so a stale deep link still highlights
+/// something sane.
 int selectedIndexFor(List<ShellDestination> destinations, String location) {
   var best = 0;
   var bestLength = 0;

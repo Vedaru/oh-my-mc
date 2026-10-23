@@ -5,6 +5,7 @@ import 'dart:io';
 
 import 'package:material_ui/material_ui.dart' as m3;
 import 'package:flutter/services.dart';
+import 'package:flutter/painting.dart' show decodeImageFromList;
 import 'package:flutter/widgets.dart' as w;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:oh_my_mc/ui/theme/app_theme.dart';
@@ -19,6 +20,7 @@ import 'package:oh_my_mc/core/account/account.dart';
 import 'package:oh_my_mc/data/account_providers.dart';
 import 'package:oh_my_mc/data/account_store.dart';
 import 'package:oh_my_mc/data/install_providers.dart';
+import 'package:oh_my_mc/data/wallpaper_provider.dart';
 import 'package:oh_my_mc/core/install/version_installer.dart';
 import 'package:oh_my_mc/core/net/progress.dart';
 import 'package:oh_my_mc/core/logs/log_files.dart';
@@ -417,12 +419,42 @@ void main() {
     );
   });
 
-  testWidgets('setup accounts', (tester) async {
+  // A wallpaper the review can actually judge: a checked-in gradient fixture, so the
+  // shot shows how much of the picture survives the scrim over a real page.
+  testWidgets('wallpaper', (tester) async {
+    final wallpaper = p.join(
+      Directory.current.path,
+      'test/fixtures/wallpaper.png',
+    );
+    // The shell paints a decoded `ui.Image`; decode it here, in real async, so the
+    // frame has the picture in it. Without this the shot would "prove" the wallpaper
+    // does not work, which is exactly the bug it exists to catch.
+    final image = await tester.runAsync(() async {
+      final bytes = await File(wallpaper).readAsBytes();
+      return decodeImageFromList(bytes);
+    });
     await shoot(
       tester,
-      '/setup',
-      'setup-accounts',
-      openKey: 'setup-section-accounts',
+      '/instances',
+      'wallpaper',
+      instances: [
+        _instance('a', 'Survival', '1.20.1', loader: LoaderKind.fabric),
+        _instance('b', 'Creative', '1.21'),
+      ],
+      settings: AppSettings(backgroundPath: wallpaper),
+      overrides: [
+        wallpaperImageProvider.overrideWith((ref, path) async => image),
+      ],
+    );
+  });
+
+  // 账户 is a rail destination now, not a settings section: this is the page a user
+  // lands on to change who the game starts as.
+  testWidgets('accounts page', (tester) async {
+    await shoot(
+      tester,
+      '/accounts',
+      'accounts',
       overrides: [
         accountStoreProvider.overrideWithValue(
           MemoryAccountStore(
@@ -442,6 +474,23 @@ void main() {
             ),
           ),
         ),
+      ],
+    );
+  });
+
+  // 联机: the LAN scan and the port mapping, lifted out of 设置 → 网络.
+  testWidgets('network page', (tester) async {
+    await shoot(
+      tester,
+      '/network',
+      'network',
+      overrides: [
+        lanInterfacesProvider.overrideWith(
+          (ref) async => const [
+            LanInterface(name: 'wlan0', ipv4: ['192.168.1.23']),
+          ],
+        ),
+        lanDiscoveryProvider.overrideWith((ref) => _ShotLanWorlds()),
       ],
     );
   });
@@ -613,7 +662,7 @@ void main() {
       tester,
       '/setup',
       'setup-network',
-      scrollDown: 1100,
+      openKey: 'setup-section-network',
       overrides: [
         lanInterfacesProvider.overrideWith(
           (ref) async => const [

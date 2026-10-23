@@ -196,7 +196,7 @@
   "diagnosisOpenDownload": "下载",
   "diagnosisRetry": "再试一次",
   "settingsNetworkTitle": "网络",
-  "settingsNetworkHint": "测量启动器用到的下载源速度，并显示局域网联机要用的地址。",
+  "settingsNetworkHint": "测一测启动器下载用的各个源有多快，以及安装时用哪一个。",
   "settingsSpeedTest": "测试下载速度",
   "settingsSpeedTesting": "测试中…",
   "settingsLanAddress": "局域网地址",
@@ -365,7 +365,6 @@
   "downloadUninstallTitle": "卸载 {version}？",
   "downloadUninstallBody": "只删除这个版本自己的文件；共享库和资源会保留，使用它的实例也不会被删除——它们会显示缺少版本。",
   "downloadUninstallDone": "已卸载 {version}",
-  "setupAccounts": "账户",
   "accountOffline": "离线",
   "accountThirdParty": "第三方认证",
   "accountAdd": "添加离线账户",
@@ -375,5 +374,12 @@
   "accountEmptyHint": "添加一个离线账户，指定游戏里显示的名字。",
   "accountRemove": "删除账户",
   "accountRemoveTitle": "删除账户 {name}？",
-  "accountRemoveBody": "只是启动器忘掉它；世界、服务器和模组都不受影响。"
+  "accountRemoveBody": "只是启动器忘掉它；世界、服务器和模组都不受影响。",
+  "serverJoin": "加入",
+  "setupBackgroundDim": "背景压暗",
+  "setupBackgroundDimHint": "数值越高，图片越不明显、文字越清楚。",
+  "navAccounts": "账户",
+  "navNetwork": "联机",
+  "lanNoGateway": "没有路由器响应 UPnP，端口没能打开。可能是路由器关闭了 UPnP。",
+  "lanNeverScanned": "还没有扫描。先在游戏里「对局域网开放」一个存档，再在这里找它。"
 }

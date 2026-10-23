@@ -16,7 +16,6 @@ import '../components/section_drawer.dart';
 import '../components/section_page.dart';
 import '../shell/shell_icons.dart';
 import '../theme/app_theme.dart';
-import 'account_panel.dart';
 import 'java_panel.dart';
 import 'about_panel.dart';
 import 'network_panel.dart';
@@ -42,15 +41,7 @@ class SetupScreen extends ConsumerStatefulWidget {
 }
 
 /// The sections, in the order they appear in the list.
-enum SetupSection {
-  accounts,
-  general,
-  appearance,
-  launch,
-  java,
-  network,
-  about,
-}
+enum SetupSection { general, appearance, launch, java, network, about }
 
 class _SetupScreenState extends ConsumerState<SetupScreen> {
   var _section = SetupSection.general;
@@ -99,11 +90,6 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
     AppLocalizations l10n,
     SetupSection section,
   ) => switch (section) {
-    SetupSection.accounts => SectionDestination(
-      key: 'setup-section-accounts',
-      label: l10n.setupAccounts,
-      icon: ShellIcons.account,
-    ),
     SetupSection.general => SectionDestination(
       key: 'setup-section-general',
       label: l10n.setupSectionGeneral,
@@ -145,14 +131,8 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
     final notifier = ref.read(appSettingsProvider.notifier);
 
     return switch (section) {
-      // Accounts first: it is the only section that changes who you are, and the one
-      // people come to settings for most often.
-      SetupSection.accounts => _Section(
-        title: l10n.setupAccounts,
-        children: const [AccountPanel()],
-      ),
       SetupSection.general => _Section(
-        title: l10n.setupLanguage,
+        title: l10n.setupSectionGeneral,
         children: [
           _SettingRow(
             label: l10n.setupLanguage,
@@ -211,6 +191,22 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
               onPicked: (path) => notifier.setBackground(path),
             ),
           ),
+          if (settings.backgroundPath != null)
+            _SettingRow(
+              label: l10n.setupBackgroundDim,
+              hint: l10n.setupBackgroundDimHint,
+              child: AppSlider(
+                key: const m3.ValueKey('background-dim'),
+                value: settings.backgroundDim,
+                min: 0,
+                max: 1,
+                // The wash is what makes text readable; the slider is what makes the
+                // picture visible. Neither number is right for everyone.
+                divisions: 20,
+                label: '${(settings.backgroundDim * 100).round()}%',
+                onChanged: notifier.setBackgroundDim,
+              ),
+            ),
         ],
       ),
       SetupSection.launch => _Section(

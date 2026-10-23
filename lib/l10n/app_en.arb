@@ -1035,7 +1035,7 @@
   "@settingsNetworkTitle": {
     "description": "Settings section for diagnostics and LAN."
   },
-  "settingsNetworkHint": "Measures the CDNs the launcher downloads from, and shows the address to share for LAN play.",
+  "settingsNetworkHint": "Measures the mirrors the launcher downloads from, and which one installs use.",
   "@settingsNetworkHint": {
     "description": "Explanation above the network diagnostics in settings."
   },
@@ -1677,10 +1677,6 @@
       }
     }
   },
-  "setupAccounts": "Accounts",
-  "@setupAccounts": {
-    "description": "Settings section for launcher accounts."
-  },
   "accountOffline": "Offline",
   "@accountOffline": {
     "description": "Label for an offline account."
@@ -1725,5 +1721,33 @@
   "accountRemoveBody": "Only the launcher forgets it. Worlds, servers and mods are untouched.",
   "@accountRemoveBody": {
     "description": "Explains that removing an account keeps the data."
+  },
+  "serverJoin": "Join",
+  "@serverJoin": {
+    "description": "Tooltip/action that launches the game into this server."
+  },
+  "setupBackgroundDim": "Wallpaper dim",
+  "@setupBackgroundDim": {
+    "description": "How strongly the page wash covers the wallpaper."
+  },
+  "setupBackgroundDimHint": "Higher hides more of the picture and makes text easier to read.",
+  "@setupBackgroundDimHint": {
+    "description": "Explains the wallpaper dim slider."
+  },
+  "navAccounts": "Accounts",
+  "@navAccounts": {
+    "description": "Rail destination: who the game starts as."
+  },
+  "navNetwork": "Multiplayer",
+  "@navNetwork": {
+    "description": "Rail destination: LAN worlds and port mapping."
+  },
+  "lanNoGateway": "No UPnP gateway answered, so the port could not be opened. Your router may have UPnP disabled.",
+  "@lanNoGateway": {
+    "description": "Shown when router discovery finds nothing to map the port on."
+  },
+  "lanNeverScanned": "Not scanned yet. Open a world in the game with \"Open to LAN\", then find it here.",
+  "@lanNeverScanned": {
+    "description": "Empty state on the multiplayer page before the first LAN scan."
   }
 }

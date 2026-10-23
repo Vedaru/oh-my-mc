@@ -9,7 +9,7 @@ import 'package:oh_my_mc/core/diagnostics/speed_test.dart';
 import 'package:oh_my_mc/core/diagnostics/upnp.dart';
 import 'package:oh_my_mc/data/diagnostics_providers.dart';
 import 'package:oh_my_mc/data/settings.dart';
-import 'package:oh_my_mc/ui/setup/network_panel.dart';
+import 'package:oh_my_mc/ui/network/lan_panel.dart';
 
 import '../support/harness.dart';
 
@@ -108,7 +108,7 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
 
-    await pumpScreen(tester, container, const NetworkPanel());
+    await pumpScreen(tester, container, const LanPanel());
     await tester.pumpAndSettle();
   }
 

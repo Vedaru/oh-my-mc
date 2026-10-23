@@ -14,6 +14,7 @@ import 'package:oh_my_mc/data/settings.dart';
 import 'package:oh_my_mc/data/launch_factory.dart';
 import 'package:oh_my_mc/ui/motion/motion.dart';
 import 'package:oh_my_mc/ui/components/app_accent_picker.dart';
+import 'package:oh_my_mc/ui/accounts/accounts_screen.dart';
 import 'package:oh_my_mc/ui/setup/setup_screen.dart';
 
 import '../support/harness.dart';
@@ -84,6 +85,39 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 400));
     await tester.tap(find.byKey(m3.ValueKey('setup-section-$section')));
+    await tester.pump(const Duration(milliseconds: 400));
+    return container;
+  }
+
+  /// Accounts are a page of their own now (`/accounts`), not a settings section, so
+  /// these tests mount that page rather than opening a section of 设置.
+  Future<ProviderContainer> pumpAccounts(WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final container = ProviderContainer(
+      overrides: [
+        launcherPathsProvider.overrideWithValue(
+          LauncherPaths(data: data, game: Directory(p.join(data.path, 'game'))),
+        ),
+        settingsStoreProvider.overrideWith(
+          (ref) => MemorySettingsStore(AppSettings.defaults),
+        ),
+        instanceStoreProvider.overrideWith(
+          (ref) => MemoryInstanceStore(const []),
+        ),
+        accountStoreProvider.overrideWithValue(MemoryAccountStore()),
+      ],
+    );
+    addTearDown(container.dispose);
+    await tester.runAsync(() => container.read(accountListProvider.future));
+    await pumpScreen(
+      tester,
+      container,
+      const AccountsScreen(),
+      motion: Motion.none,
+      settle: false,
+    );
     await tester.pump(const Duration(milliseconds: 400));
     return container;
   }
@@ -211,7 +245,7 @@ void main() {
   testWidgets('an offline account is added and becomes the active one', (
     tester,
   ) async {
-    final container = await pump(tester, section: 'accounts');
+    final container = await pumpAccounts(tester);
 
     await tester.tap(find.byKey(const ValueKey('account-add')));
     await tester.pumpAndSettle();
@@ -231,7 +265,7 @@ void main() {
   testWidgets('the game would reject a bad name, so the dialog does too', (
     tester,
   ) async {
-    await pump(tester, section: 'accounts');
+    await pumpAccounts(tester);
 
     await tester.tap(find.byKey(const ValueKey('account-add')));
     await tester.pumpAndSettle();
@@ -280,10 +314,6 @@ void main() {
       AccentChoice.green,
     );
 
-    // Identity lives in 账户 now: the stored name seeds the first account, so an
-    // update does not rename anyone.
-    await tester.tap(find.byKey(const ValueKey('setup-section-accounts')));
-    await tester.pumpAndSettle();
-    expect(find.text('Alex'), findsWidgets);
+    // Identity lives in 账户 now (its own page), so this test stops at 设置's controls.
   });
 }

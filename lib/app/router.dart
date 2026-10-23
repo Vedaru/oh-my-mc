@@ -15,6 +15,8 @@ abstract final class Routes {
   static const instances = '/instances';
   static const download = '/download';
   static const setup = '/setup';
+  static const accounts = '/accounts';
+  static const network = '/network';
   static const logs = '/logs';
 
   /// Instance detail. [instanceDetail] builds a concrete path.
@@ -61,6 +63,8 @@ GoRouter createRouter({
             AppShell(location: state.uri.path, child: child),
         routes: [
           _route(Routes.launch, screens),
+          _route(Routes.accounts, screens),
+          _route(Routes.network, screens),
           // The detail route is a *relative* child (`:id`), which is what makes
           // `/instances/<id>` resolve. A child repeating its parent's segment
           // would be a second, competing table.
@@ -126,6 +130,11 @@ Page<void> appPage(
           animation: animation,
           secondaryAnimation: secondaryAnimation,
           transitionType: type,
+          // `SharedAxisTransition` fills its box with `canvasColor` by default, which is
+          // an opaque sheet over everything below it - including a wallpaper, for as
+          // long as the page is on screen. The page paints its own surfaces; the
+          // transition only has to move them.
+          fillColor: const Color(0x00000000),
           child: child,
         ),
   );

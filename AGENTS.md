@@ -177,7 +177,13 @@ directory and `test/shots/` are now git-ignored.)
 - **The rail is fixed-width with the label under the icon** (`NavigationRailLabelType.all`). Do not
   switch it back to `extended:` (216 px spent on short labels) and do not make it collapsible (the
   body's constraints would then depend on a control inside the rail). No divider between rail and
-  page: they are one surface, separated by tone.
+  page: they are one surface, separated by tone. Below 560 px of height the rail drops to
+  `labelType.none` (icons + tooltips): seven labelled destinations no longer fit, and a destination
+  clipped off the bottom is one nobody can click. The width stays 88 px either way.
+- **The rail carries the seven things a session starts from**: 启动, 实例, 账户, 联机, 下载, 日志, 设置.
+  账户 and 联机 are destinations, not settings sections: an account is what every launch depends on,
+  and joining a friend is something you do while playing - both were 设置 sections (通用, 网络) that
+  nobody found. 设置 keeps the things that *are* preferences.
 - **Launch owns version selection** (PCL's operation logic). The launch page's picker lists every
   instance and links to management; `/instances` is a *management* route, not a rail item. A second
   tab that only chooses what the launch page already chooses is two doors to one room.

@@ -14,6 +14,7 @@ import 'app/app_root.dart';
 import 'app/providers.dart';
 import 'app/router.dart';
 import 'core/instance/instance.dart';
+import 'core/launch/join_target.dart';
 import 'core/launch/launch_handle.dart';
 import 'data/instance_providers.dart';
 import 'data/instance_store.dart';
@@ -24,6 +25,8 @@ import 'data/settings.dart';
 
 import 'ui/download/download_screen.dart';
 import 'ui/logs/logs_screen.dart';
+import 'ui/accounts/accounts_screen.dart';
+import 'ui/network/network_screen.dart';
 import 'ui/setup/setup_screen.dart';
 import 'ui/instances/instance_detail_screen.dart';
 import 'ui/instances/instances_screen.dart';
@@ -180,6 +183,8 @@ class OhMyMcApp extends StatelessWidget {
     return switch (state.uri.path) {
       Routes.instances => const InstancesScreen(),
       Routes.download => const DownloadScreen(),
+      Routes.accounts => const AccountsScreen(),
+      Routes.network => const NetworkScreen(),
       Routes.setup => const SetupScreen(),
       Routes.logs => const LogsScreen(),
       _ when detailId != null && mods => InstanceDetailScreen(
@@ -194,9 +199,10 @@ class OhMyMcApp extends StatelessWidget {
 
   /// Production replaces this override with [realLaunchHandleFactory]; a test
   /// that forgets to pass either gets a clear error instead of a JVM.
-  static LaunchHandle _noLauncher(Instance instance) => throw StateError(
-    'OhMyMcApp needs `paths` or `launchHandleFactory` to launch',
-  );
+  static LaunchHandle _noLauncher(Instance instance, {JoinTarget? join}) =>
+      throw StateError(
+        'OhMyMcApp needs `paths` or `launchHandleFactory` to launch',
+      );
 
   /// Builds an in-memory store from [locale]/[themeMode], so tests that mount
   /// `OhMyMcApp(locale: ...)` need no platform plugin.

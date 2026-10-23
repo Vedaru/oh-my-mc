@@ -83,7 +83,7 @@ wrong: installing wrote files, and nothing pointed the launcher at them.
 | 下载 → 资源包 / 光影 / 数据包 catalogues (Modrinth) | **done** | `content_search_dialog.dart`, `CatalogKind`, `download_content_bar.dart` |
 | 下载 → 世界 | **done** for import (`.zip`); Modrinth has no world directory | `lib/core/game/world_import.dart` |
 | Download speed test **and source switching** | **done** | `speed_test.dart`, `mirror_preference.dart` (auto / official / BMCLAPI, installs obey it) |
-| 联机 | **done**: LAN world discovery (the game's own multicast announcements) + UPnP port mapping for the port a world announced | `lib/core/diagnostics/lan_discovery.dart`, `upnp.dart`, 设置 → 网络 |
+| 联机 | **done**: LAN world discovery (the game's own multicast announcements) + UPnP port mapping for the port a world announced. Its own rail destination - joining a friend is not a setting | `lib/core/diagnostics/lan_discovery.dart`, `upnp.dart`, `lib/ui/network/network_screen.dart` |
 | 启动器自身更新 / 公告 | **done**: release feed, version compare, installer download, notes as the announcement | `lib/core/update/update_check.dart`, `ui/setup/about_panel.dart` |
 
 ## 4. Backlog, in the order it gets built
@@ -165,7 +165,7 @@ Two rules the implementation exists to enforce, both learned the hard way:
    while probing optional classes; diagnosing that sends the user to fix nothing.
    The analyzer requires a non-zero exit or a JVM/loader fatal marker.
 
-Also in P6: a download speed test (`SpeedTest`, 设置 → 网络) that measures the CDNs
+Also in P6: a download speed test (`SpeedTest`, 联机) that measures the CDNs
 the launcher actually uses, sequentially and capped at 2 MB, and the LAN address with
 the interface it came from. Not implemented: detecting an "open to LAN" world and
 listing LAN worlds - that needs game-side introspection, not a launcher-side list.

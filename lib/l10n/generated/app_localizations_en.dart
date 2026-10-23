@@ -720,7 +720,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsNetworkHint =>
-      'Measures the CDNs the launcher downloads from, and shows the address to share for LAN play.';
+      'Measures the mirrors the launcher downloads from, and which one installs use.';
 
   @override
   String get settingsSpeedTest => 'Test download speed';
@@ -1192,9 +1192,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get setupAccounts => 'Accounts';
-
-  @override
   String get accountOffline => 'Offline';
 
   @override
@@ -1228,4 +1225,28 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get accountRemoveBody =>
       'Only the launcher forgets it. Worlds, servers and mods are untouched.';
+
+  @override
+  String get serverJoin => 'Join';
+
+  @override
+  String get setupBackgroundDim => 'Wallpaper dim';
+
+  @override
+  String get setupBackgroundDimHint =>
+      'Higher hides more of the picture and makes text easier to read.';
+
+  @override
+  String get navAccounts => 'Accounts';
+
+  @override
+  String get navNetwork => 'Multiplayer';
+
+  @override
+  String get lanNoGateway =>
+      'No UPnP gateway answered, so the port could not be opened. Your router may have UPnP disabled.';
+
+  @override
+  String get lanNeverScanned =>
+      'Not scanned yet. Open a world in the game with \"Open to LAN\", then find it here.';
 }

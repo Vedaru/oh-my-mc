@@ -36,6 +36,10 @@ class AppSettingsNotifier extends Notifier<AppSettings> {
   Future<void> setAccent(AccentChoice accent) =>
       set(state.copyWith(accent: accent));
 
+  /// How strong the wash over the wallpaper is.
+  Future<void> setBackgroundDim(double dim) =>
+      set(state.copyWith(backgroundDim: dim));
+
   /// Null clears the wallpaper.
   Future<void> setBackground(String? path) =>
       set(state.copyWith(backgroundPath: path, clearBackground: path == null));
