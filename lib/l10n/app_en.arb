@@ -1644,5 +1644,96 @@
         "type": "String"
       }
     }
+  },
+  "lanHint": "Worlds this network has opened to LAN, and opening one so a friend outside can join.",
+  "@lanHint": {
+    "description": "Explanation above the LAN play controls."
+  },
+  "lanScan": "Find LAN worlds",
+  "@lanScan": {
+    "description": "Button that listens for the game LAN broadcasts."
+  },
+  "lanScanning": "Listening…",
+  "@lanScanning": {
+    "description": "State while the LAN scan runs."
+  },
+  "lanNothingFound": "Nothing announced a world in the last few seconds.",
+  "@lanNothingFound": {
+    "description": "Shown after a scan that found nothing."
+  },
+  "lanUnnamedWorld": "Unnamed world",
+  "@lanUnnamedWorld": {
+    "description": "Fallback name for an announcement without a MOTD."
+  },
+  "lanOpenPort": "Open port",
+  "@lanOpenPort": {
+    "description": "Button that maps the world port on the router."
+  },
+  "lanMappingActive": "Open to the internet",
+  "@lanMappingActive": {
+    "description": "Label of the active port mapping row."
+  },
+  "lanClosePort": "Close port",
+  "@lanClosePort": {
+    "description": "Button that removes the mapping."
+  },
+  "lanNoExternalAddress": "The router did not report an external address",
+  "@lanNoExternalAddress": {
+    "description": "Shown when the gateway cannot report its public IP."
+  },
+  "aboutTitle": "About",
+  "@aboutTitle": {
+    "description": "Settings section with the version and update check."
+  },
+  "aboutVersion": "Version",
+  "@aboutVersion": {
+    "description": "Label of the current version row."
+  },
+  "aboutCheck": "Check for updates",
+  "@aboutCheck": {
+    "description": "Button that queries the release feed."
+  },
+  "aboutChecking": "Checking…",
+  "@aboutChecking": {
+    "description": "State while the update check runs."
+  },
+  "aboutUpToDate": "{version} is the newest version.",
+  "@aboutUpToDate": {
+    "description": "Shown when no newer release exists.",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "aboutCheckFailed": "Could not reach the release feed. Nothing is wrong with this install.",
+  "@aboutCheckFailed": {
+    "description": "Shown when the check could not answer."
+  },
+  "aboutNewVersion": "{version} is available",
+  "@aboutNewVersion": {
+    "description": "Shown when a newer release exists.",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "aboutPublished": "Published {date}",
+  "@aboutPublished": {
+    "description": "Release date of the newer version.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "aboutDownload": "Download installer",
+  "@aboutDownload": {
+    "description": "Opens the release installer asset."
+  },
+  "aboutReleasePage": "Release notes",
+  "@aboutReleasePage": {
+    "description": "Opens the release page."
   }
 }

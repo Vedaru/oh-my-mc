@@ -313,6 +313,18 @@ the current gap table and the ordered backlog. Two rules from it bind new code:
   off the screen. One line goes to the console (`launch: java · N classpath
   entries · main`), the exact command line goes to `<data>/logs/launch-*.log`
   with `--accessToken` masked.
+- **Catalogue installs name their destination.** A mod goes to `mods/`, a resource
+  pack to `resourcepacks/` (and is switched on in `options.txt`), a data pack into one
+  *world* - which is why the flow asks for the world first. A download button that
+  silently picks a target is a download into the wrong place.
+- **A port mapping takes its port from the game's LAN announcement**, never from a
+  setting: the game picks a random port per session. `LanDiscovery` listens on the
+  game's own multicast (224.0.2.60:4445) for `[MOTD]…[/MOTD][AD]port[/AD]`.
+- **The update check is on demand and silent on failure.** A request to GitHub on
+  every launch is a privacy answer the user did not give, and offline/rate-limited
+  must read as "could not reach the feed", never as a broken install. `appVersion` in
+  `lib/app/version.dart` is asserted against `pubspec.yaml` by a test, because a stale
+  constant means missing every update.
 - **The game owns `options.txt` and `servers.dat`; the launcher edits the field it
   was asked to change.** `OptionsTxt` rewrites one key in place and keeps every other
   line (the game rewrites the file on exit, so a wholesale rewrite loses settings), and

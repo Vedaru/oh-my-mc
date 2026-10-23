@@ -1168,4 +1168,71 @@ class AppLocalizationsEn extends AppLocalizations {
   String catalogTarget(String name) {
     return 'Installing into “$name”';
   }
+
+  @override
+  String get lanHint =>
+      'Worlds this network has opened to LAN, and opening one so a friend outside can join.';
+
+  @override
+  String get lanScan => 'Find LAN worlds';
+
+  @override
+  String get lanScanning => 'Listening…';
+
+  @override
+  String get lanNothingFound =>
+      'Nothing announced a world in the last few seconds.';
+
+  @override
+  String get lanUnnamedWorld => 'Unnamed world';
+
+  @override
+  String get lanOpenPort => 'Open port';
+
+  @override
+  String get lanMappingActive => 'Open to the internet';
+
+  @override
+  String get lanClosePort => 'Close port';
+
+  @override
+  String get lanNoExternalAddress =>
+      'The router did not report an external address';
+
+  @override
+  String get aboutTitle => 'About';
+
+  @override
+  String get aboutVersion => 'Version';
+
+  @override
+  String get aboutCheck => 'Check for updates';
+
+  @override
+  String get aboutChecking => 'Checking…';
+
+  @override
+  String aboutUpToDate(String version) {
+    return '$version is the newest version.';
+  }
+
+  @override
+  String get aboutCheckFailed =>
+      'Could not reach the release feed. Nothing is wrong with this install.';
+
+  @override
+  String aboutNewVersion(String version) {
+    return '$version is available';
+  }
+
+  @override
+  String aboutPublished(String date) {
+    return 'Published $date';
+  }
+
+  @override
+  String get aboutDownload => 'Download installer';
+
+  @override
+  String get aboutReleasePage => 'Release notes';
 }

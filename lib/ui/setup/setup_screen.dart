@@ -10,6 +10,7 @@ import '../motion/motion.dart';
 import '../shell/shell_icons.dart';
 import '../theme/app_theme.dart';
 import 'java_panel.dart';
+import 'about_panel.dart';
 import 'network_panel.dart';
 import '../components/app_accent_picker.dart';
 import '../components/app_radio_group.dart';
@@ -101,6 +102,8 @@ class SetupScreen extends ConsumerWidget {
             title: l10n.settingsNetworkTitle,
             children: const [NetworkPanel()],
           ),
+          const m3.SizedBox(height: 16),
+          _Section(title: l10n.aboutTitle, children: const [AboutPanel()]),
         ],
       ),
     );

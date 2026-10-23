@@ -2035,6 +2035,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Installing into “{name}”'**
   String catalogTarget(String name);
+
+  /// Explanation above the LAN play controls.
+  ///
+  /// In en, this message translates to:
+  /// **'Worlds this network has opened to LAN, and opening one so a friend outside can join.'**
+  String get lanHint;
+
+  /// Button that listens for the game LAN broadcasts.
+  ///
+  /// In en, this message translates to:
+  /// **'Find LAN worlds'**
+  String get lanScan;
+
+  /// State while the LAN scan runs.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening…'**
+  String get lanScanning;
+
+  /// Shown after a scan that found nothing.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing announced a world in the last few seconds.'**
+  String get lanNothingFound;
+
+  /// Fallback name for an announcement without a MOTD.
+  ///
+  /// In en, this message translates to:
+  /// **'Unnamed world'**
+  String get lanUnnamedWorld;
+
+  /// Button that maps the world port on the router.
+  ///
+  /// In en, this message translates to:
+  /// **'Open port'**
+  String get lanOpenPort;
+
+  /// Label of the active port mapping row.
+  ///
+  /// In en, this message translates to:
+  /// **'Open to the internet'**
+  String get lanMappingActive;
+
+  /// Button that removes the mapping.
+  ///
+  /// In en, this message translates to:
+  /// **'Close port'**
+  String get lanClosePort;
+
+  /// Shown when the gateway cannot report its public IP.
+  ///
+  /// In en, this message translates to:
+  /// **'The router did not report an external address'**
+  String get lanNoExternalAddress;
+
+  /// Settings section with the version and update check.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get aboutTitle;
+
+  /// Label of the current version row.
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get aboutVersion;
+
+  /// Button that queries the release feed.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for updates'**
+  String get aboutCheck;
+
+  /// State while the update check runs.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking…'**
+  String get aboutChecking;
+
+  /// Shown when no newer release exists.
+  ///
+  /// In en, this message translates to:
+  /// **'{version} is the newest version.'**
+  String aboutUpToDate(String version);
+
+  /// Shown when the check could not answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not reach the release feed. Nothing is wrong with this install.'**
+  String get aboutCheckFailed;
+
+  /// Shown when a newer release exists.
+  ///
+  /// In en, this message translates to:
+  /// **'{version} is available'**
+  String aboutNewVersion(String version);
+
+  /// Release date of the newer version.
+  ///
+  /// In en, this message translates to:
+  /// **'Published {date}'**
+  String aboutPublished(String date);
+
+  /// Opens the release installer asset.
+  ///
+  /// In en, this message translates to:
+  /// **'Download installer'**
+  String get aboutDownload;
+
+  /// Opens the release page.
+  ///
+  /// In en, this message translates to:
+  /// **'Release notes'**
+  String get aboutReleasePage;
 }
 
 class _AppLocalizationsDelegate

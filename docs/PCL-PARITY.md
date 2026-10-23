@@ -73,9 +73,12 @@ wrong: installing wrote files, and nothing pointed the launcher at them.
 | **Crash analysis** | **done** | `lib/core/diagnostics/crash_analyzer.dart`, `crash_card.dart`, `crash_copy.dart` |
 | **Microsoft sign-in, skin** | **missing** | offline identity only |
 | 资源包 / 光影 / 存档 / 服务器 management (list, toggle, delete, add) | **done** | `lib/core/game/content.dart`, `options_txt.dart`, `nbt.dart`, `ui/instances/content_screen.dart` |
-| 数据包 (datapacks) | **missing** | needs a world context; the list belongs to a save, not a version |
-| Download speed test / mirror health | **done** (speed test; mirror reordering not yet) | `lib/core/diagnostics/speed_test.dart`, 设置 → 网络 |
-| 联机 (LAN/port mapping) | **missing** | - |
+| 数据包 (datapacks) | **done** | `CatalogKind.datapack` + a world picker; installed into `<save>/datapacks/` |
+| 下载 → 资源包 / 光影 / 数据包 catalogues (Modrinth) | **done** | `content_search_dialog.dart`, `CatalogKind`, `download_content_bar.dart` |
+| 下载 → 世界 | **done** for import (`.zip`); Modrinth has no world directory | `lib/core/game/world_import.dart` |
+| Download speed test **and source switching** | **done** | `speed_test.dart`, `mirror_preference.dart` (auto / official / BMCLAPI, installs obey it) |
+| 联机 | **done**: LAN world discovery (the game's own multicast announcements) + UPnP port mapping for the port a world announced | `lib/core/diagnostics/lan_discovery.dart`, `upnp.dart`, 设置 → 网络 |
+| 启动器自身更新 / 公告 | **done**: release feed, version compare, installer download, notes as the announcement | `lib/core/update/update_check.dart`, `ui/setup/about_panel.dart` |
 
 ## 4. Backlog, in the order it gets built
 

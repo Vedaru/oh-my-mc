@@ -52,4 +52,5 @@ abstract final class ShellIcons {
   static const shaderPacks = m3.Icons.auto_awesome;
   static const saves = m3.Icons.map;
   static const network = m3.Icons.lan;
+  static const info = m3.Icons.info_outline;
 }

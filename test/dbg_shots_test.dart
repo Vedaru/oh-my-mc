@@ -6,6 +6,8 @@ import 'dart:io';
 import 'package:material_ui/material_ui.dart' as m3;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart' as w;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:oh_my_mc/ui/theme/app_theme.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oh_my_mc/core/instance/instance.dart';
@@ -18,10 +20,13 @@ import 'package:oh_my_mc/core/logs/log_files.dart';
 import 'package:oh_my_mc/data/log_providers.dart';
 import 'package:oh_my_mc/core/mods/modrinth.dart';
 import 'package:oh_my_mc/data/modrinth_providers.dart';
+import 'package:oh_my_mc/core/diagnostics/lan_discovery.dart';
 import 'package:oh_my_mc/core/diagnostics/network_info.dart';
 import 'package:oh_my_mc/data/diagnostics_providers.dart';
 import 'package:oh_my_mc/core/game/content.dart';
 import 'package:oh_my_mc/ui/instances/content_screen.dart';
+import 'package:oh_my_mc/core/update/update_check.dart';
+import 'package:oh_my_mc/ui/setup/about_panel.dart';
 import 'package:oh_my_mc/data/launch_providers.dart';
 import 'package:oh_my_mc/core/launch/launch_handle.dart';
 import 'package:oh_my_mc/data/instance_providers.dart';
@@ -31,6 +36,7 @@ import 'package:oh_my_mc/data/launch_factory.dart';
 import 'package:oh_my_mc/data/settings.dart';
 import 'package:oh_my_mc/main.dart';
 import 'package:path/path.dart' as p;
+import 'package:oh_my_mc/l10n/generated/app_localizations.dart';
 
 /// Loads a font so the shots contain glyphs instead of boxes.
 ///
@@ -145,6 +151,53 @@ Instance _instance(String id, String name, String version, {DateTime? last}) =>
 
 void main() {
   setUpAll(_loadFonts);
+
+  /// Captures one widget on its own, for a panel whose interesting state needs an
+  /// interaction the route-based `shoot` cannot reach (a section below the fold).
+  Future<void> shootWidget(
+    WidgetTester tester,
+    w.Widget child,
+    String file, {
+    List<Override> overrides = const [],
+    String? tapKey,
+  }) async {
+    tester.view.physicalSize = const Size(1000, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    tester.platformDispatcher.platformBrightnessTestValue = w.Brightness.dark;
+    addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+
+    final container = ProviderContainer(overrides: overrides);
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: m3.MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.material(w.Brightness.dark),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: m3.Scaffold(
+            body: m3.Padding(
+              padding: const m3.EdgeInsets.all(24),
+              child: child,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    if (tapKey != null) {
+      await tester.tap(find.byKey(w.ValueKey(tapKey)));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+    }
+    await expectLater(
+      find.byType(m3.MaterialApp),
+      matchesGoldenFile('shots/$file.png'),
+    );
+  }
 
   Future<void> shoot(
     WidgetTester tester,
@@ -421,7 +474,22 @@ void main() {
             LanInterface(name: 'wlan0', ipv4: ['192.168.1.23']),
           ],
         ),
+        // Without a stub the panel shows "…" forever: real interface enumeration never
+        // completes inside the shot's fake clock.
+        lanDiscoveryProvider.overrideWith((ref) => _ShotLanWorlds()),
       ],
+    );
+  });
+
+  testWidgets('setup about', (tester) async {
+    // The About card *after* a check: the state worth photographing is the upgrade
+    // offer, and the section sits below the fold of the settings route.
+    await shootWidget(
+      tester,
+      const AboutPanel(),
+      'setup-about',
+      overrides: [updateCheckerProvider.overrideWithValue(_ShotUpdater())],
+      tapKey: 'about-check',
     );
   });
 
@@ -796,4 +864,38 @@ class _ShotContent extends GameContent {
     ],
     _ => const [],
   };
+}
+
+/// A release feed with a newer version, so the about shot shows the upgrade card
+/// instead of the empty state.
+class _ShotUpdater extends UpdateChecker {
+  @override
+  Future<UpdateCheck?> check({required String currentVersion}) async =>
+      const UpdateCheck(
+        isNewer: true,
+        latest: ReleaseInfo(
+          version: '0.2.0',
+          title: '0.2.0',
+          notes:
+              '- 资源包 / 光影 / 数据包 直接从下载页安装\n'
+              '- 崩溃时给出一句话原因和对应的按钮\n'
+              '- 测速后自动选择下载源',
+          pageUrl: 'https://example.invalid/releases/v0.2.0',
+          installerUrl: 'https://example.invalid/setup.exe',
+        ),
+      );
+
+  @override
+  void close() {}
+}
+
+/// Two worlds announced on the LAN, so the 联机 section has content in the shot.
+class _ShotLanWorlds extends LanDiscovery {
+  @override
+  Future<List<LanWorld>> discover({
+    Future<List<LanWorld>> Function(Duration window)? listener,
+  }) async => const [
+    LanWorld(motd: "Vedaru's Survival", port: 54321, address: '192.168.1.9'),
+    LanWorld(motd: 'Creative Test', port: 25566, address: '192.168.1.14'),
+  ];
 }

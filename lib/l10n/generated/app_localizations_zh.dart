@@ -1132,4 +1132,67 @@ class AppLocalizationsZh extends AppLocalizations {
   String catalogTarget(String name) {
     return '安装到「$name」';
   }
+
+  @override
+  String get lanHint => '这个网络里开了局域网的世界；也可以把其中一个开放到外网，让不在同一网络的朋友进来。';
+
+  @override
+  String get lanScan => '查找局域网世界';
+
+  @override
+  String get lanScanning => '正在监听…';
+
+  @override
+  String get lanNothingFound => '最近几秒内没有世界在广播。';
+
+  @override
+  String get lanUnnamedWorld => '未命名世界';
+
+  @override
+  String get lanOpenPort => '开放端口';
+
+  @override
+  String get lanMappingActive => '已开放到外网';
+
+  @override
+  String get lanClosePort => '关闭端口';
+
+  @override
+  String get lanNoExternalAddress => '路由器没有报告外网地址';
+
+  @override
+  String get aboutTitle => '关于';
+
+  @override
+  String get aboutVersion => '版本';
+
+  @override
+  String get aboutCheck => '检查更新';
+
+  @override
+  String get aboutChecking => '检查中…';
+
+  @override
+  String aboutUpToDate(String version) {
+    return '$version 已是最新版本。';
+  }
+
+  @override
+  String get aboutCheckFailed => '连不上发布源。这次安装本身没有问题。';
+
+  @override
+  String aboutNewVersion(String version) {
+    return '有新版本 $version';
+  }
+
+  @override
+  String aboutPublished(String date) {
+    return '发布于 $date';
+  }
+
+  @override
+  String get aboutDownload => '下载安装包';
+
+  @override
+  String get aboutReleasePage => '更新说明';
 }
