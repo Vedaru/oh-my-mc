@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:go_router/go_router.dart';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,12 +10,15 @@ import 'package:path/path.dart' as p;
 
 import '../../core/game/content.dart';
 import '../../core/instance/instance.dart';
+import '../../core/launch/join_target.dart';
 import '../../core/mods/mod_scanner.dart';
 import '../../core/mods/modrinth.dart';
 import '../../core/mods/update_checker.dart';
+import '../../app/router.dart';
 import '../../data/backup_providers.dart';
 import '../../data/game_content_provider.dart';
 import '../../data/launch_factory.dart';
+import '../../data/launch_providers.dart';
 import '../../data/mods_providers.dart';
 import '../../data/server_providers.dart';
 import '../../data/modrinth_providers.dart';
@@ -178,6 +183,17 @@ class _InstanceContentPageState extends ConsumerState<InstanceContentPage> {
         .read(gameContentProvider)(_root)
         .addServer(name: server.name, ip: server.ip);
     if (mounted) setState(() => _generation++);
+  }
+
+  /// Starts this instance and goes straight to the server's address.
+  ///
+  /// The multiplayer screen is a step the launcher can skip: the address is already in
+  /// `servers.dat`, so joining is two launch flags.
+  void _joinServer(ContentEntry entry) {
+    ref
+        .read(launchControllerProvider.notifier)
+        .launch(widget.instance, join: JoinTarget.parse(entry.path));
+    context.go(Routes.launch);
   }
 
   /// Puts a backup zip back as a save folder, beside the original.
@@ -353,6 +369,7 @@ class _InstanceContentPageState extends ConsumerState<InstanceContentPage> {
                   root: _root,
                   kind: widget.kind,
                   world: _world,
+                  onJoinServer: _joinServer,
                 ),
         ),
       ],
@@ -504,6 +521,7 @@ class _GameContentPage extends ConsumerStatefulWidget {
     required this.root,
     required this.kind,
     required this.world,
+    this.onJoinServer,
     super.key,
   });
 
@@ -512,6 +530,9 @@ class _GameContentPage extends ConsumerStatefulWidget {
 
   /// The world a data pack page is pointed at; empty for every other kind.
   final String world;
+
+  /// Present on the servers page: start the game into that row's address.
+  final void Function(ContentEntry entry)? onJoinServer;
 
   @override
   ConsumerState<_GameContentPage> createState() => _GameContentPageState();
@@ -672,6 +693,15 @@ class _GameContentPageState extends ConsumerState<_GameContentPage> {
                     icon: const m3.Icon(ShellIcons.backup, size: 18),
                     visualDensity: m3.VisualDensity.compact,
                     tooltip: context.l10n.worldBackup,
+                  ),
+                if (widget.kind == InstanceContentKind.servers &&
+                    widget.onJoinServer != null)
+                  m3.IconButton(
+                    key: m3.ValueKey('server-join-${entry.name}'),
+                    onPressed: () => widget.onJoinServer!(entry),
+                    icon: const m3.Icon(ShellIcons.play, size: 18),
+                    visualDensity: m3.VisualDensity.compact,
+                    tooltip: context.l10n.serverJoin,
                   ),
                 m3.IconButton(
                   onPressed: () => _delete(entry),

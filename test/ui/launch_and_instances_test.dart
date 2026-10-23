@@ -174,7 +174,7 @@ Future<ProviderContainer> pumpScreen(
       ),
       launchHandleFactoryProvider.overrideWith(
         (ref) =>
-            (instance) => (handle ?? FakeLaunchHandle.new)(),
+            (instance, {join}) => (handle ?? FakeLaunchHandle.new)(),
       ),
     ],
   );

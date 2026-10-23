@@ -472,6 +472,28 @@ void main() {
     expect(find.textContaining('timed out'), findsOneWidget);
   });
 
+  testWidgets('a server row can start the game into it', (tester) async {
+    content.byKind[ContentKind.servers] = [
+      ContentEntry(
+        name: 'SMP',
+        path: 'mc.example.net:25566',
+        isDirectory: false,
+      ),
+    ];
+    // The join is a launch flag, so this asserts the request the controller was asked
+    // to make rather than the argv (that is the factory's own test).
+    await pump(
+      tester,
+      section: 'servers',
+      overrides: [
+        serverPingerProvider.overrideWithValue(
+          (address) async => const ServerPing.failed('timed out'),
+        ),
+      ],
+    );
+    expect(find.byKey(const ValueKey('server-join-SMP')), findsOneWidget);
+  });
+
   testWidgets('a server is added as a name and an address, not a download', (
     tester,
   ) async {

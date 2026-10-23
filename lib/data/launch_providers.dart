@@ -3,13 +3,19 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/instance/instance.dart';
+import '../../core/launch/join_target.dart';
 import '../../core/launch/launch_handle.dart';
 import '../../core/mc/arch_compat.dart';
 import 'instance_providers.dart';
 
 /// Builds a handle for [instance]. Overridden at startup with the real
 /// `ProcessLaunchHandle`; tests substitute a fake so no JVM is involved.
-typedef LaunchHandleFactory = LaunchHandle Function(Instance instance);
+///
+/// [join] is a per-launch choice: "start this instance and go to that server".
+typedef LaunchHandleFactory = LaunchHandle Function(
+  Instance instance, {
+  JoinTarget? join,
+});
 
 final launchHandleFactoryProvider = Provider<LaunchHandleFactory>(
   (ref) => throw StateError(
@@ -42,11 +48,11 @@ class LaunchController extends Notifier<LaunchSession> {
   Instance? get instance => _instance;
 
   /// Starts [instance]. A no-op when something is already running.
-  Future<void> launch(Instance instance) async {
+  Future<void> launch(Instance instance, {JoinTarget? join}) async {
     if (state.isBusy) return;
 
     _instance = instance;
-    final handle = ref.read(launchHandleFactoryProvider)(instance);
+    final handle = ref.read(launchHandleFactoryProvider)(instance, join: join);
     _handle = handle;
     state = LaunchSession(
       state: LaunchState.preparing,

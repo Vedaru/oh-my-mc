@@ -10,6 +10,7 @@ import '../core/account/account.dart';
 import 'account_providers.dart';
 import '../core/instance/instance.dart';
 import '../core/mc/arch_compat.dart';
+import '../core/launch/join_target.dart';
 import '../core/launch/launch_handle.dart';
 import '../core/mc/host.dart';
 import '../core/mc/install_plan.dart';
@@ -63,8 +64,10 @@ final launcherPathsProvider = Provider<LauncherPaths>(
 /// `prepare` rather than before the handle is created: reading and resolving a
 /// version, scanning JVMs and building a classpath all take real time, and doing
 /// them there is what lets the UI show `preparing` instead of freezing.
-LaunchHandle Function(Instance) realLaunchHandleFactory(Ref ref) {
-  return (instance) {
+LaunchHandle Function(Instance, {JoinTarget? join}) realLaunchHandleFactory(
+  Ref ref,
+) {
+  return (instance, {join}) {
     // Read once, at launch time: the user may have changed the player name or
     // memory since the screen was built, and a launch should use what is on
     // screen now rather than what was on screen when the shell was created.
@@ -89,6 +92,7 @@ LaunchHandle Function(Instance) realLaunchHandleFactory(Ref ref) {
         paths: paths,
         settings: settings,
         account: account,
+        join: join,
       ),
     );
   };
@@ -102,6 +106,7 @@ Future<LaunchOutcome> prepareInstanceLaunch({
   JavaManager? javaManager,
   RuleContext? host,
   Account? account,
+  JoinTarget? join,
 }) async {
   // Resources always come from the shared tree: the installer writes there even
   // when the instance is isolated, because libraries and assets are identical
@@ -196,6 +201,7 @@ LaunchRequest buildLaunchRequest({
   required AppSettings settings,
   required VersionJson version,
   Account? account,
+  JoinTarget? join,
 }) => LaunchRequest(
   versionId: version.jar ?? version.id,
   // The account is the identity; `settings.playerName` is only the seed a fresh
@@ -220,6 +226,9 @@ LaunchRequest buildLaunchRequest({
       '${instance.windowHeight}',
     ],
     if (instance.fullscreen) '--fullscreen',
+    // A join is a launch flag, not an instance property: the same instance is joined
+    // to different servers on different days.
+    if (join != null) ...join.gameArgs,
   ],
 );
 
