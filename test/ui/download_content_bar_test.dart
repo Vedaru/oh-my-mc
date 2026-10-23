@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:flutter/widgets.dart' show Size;
+import 'package:flutter/widgets.dart' show Rect, Size;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart' as m3;
@@ -167,6 +167,46 @@ void main() {
       find.byKey(const m3.ValueKey('catalog-mod')),
     );
     expect(button.onPressed, isNull);
+  });
+
+  testWidgets('the five actions are one row of equal pills', (tester) async {
+    await pump(tester);
+
+    const ids = [
+      'catalog-mod',
+      'catalog-resourcePack',
+      'catalog-shader',
+      'catalog-datapack',
+      'catalog-import-world',
+    ];
+
+    final rects = <String, Rect>{
+      for (final id in ids) id: tester.getRect(find.byKey(m3.ValueKey(id))),
+    };
+
+    // Same shape: every one is an outlined pill, so the row reads as five variants of
+    // one action rather than "four buttons and a link".
+    for (final id in ids) {
+      final button = tester.widget<AppButton>(find.byKey(m3.ValueKey(id)));
+      expect(
+        button.style,
+        AppButtonStyle.outlined,
+        reason: '$id is not a pill',
+      );
+      expect(
+        button.size,
+        AppButtonSize.sm,
+        reason: '$id has a different height',
+      );
+    }
+
+    // Same rhythm: the gap between neighbours is one number, and 导入世界 is not
+    // further from 数据包 than the catalogues are from each other.
+    final gaps = [
+      for (var i = 1; i < ids.length; i++)
+        rects[ids[i]]!.left - rects[ids[i - 1]]!.right,
+    ];
+    expect(gaps, everyElement(moreOrLessEquals(8, epsilon: 0.01)));
   });
 
   testWidgets('a resource pack installs into resourcepacks/ and is enabled', (

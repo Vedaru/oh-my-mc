@@ -103,45 +103,42 @@ class _DownloadContentBarState extends ConsumerState<DownloadContentBar> {
 
   /// The row's five actions, in reading order.
   ///
-  /// All five are outlined pills of the same height and weight, because they are the
-  /// same kind of thing - one way to put content into an instance. 导入世界 used to be
-  /// a text button, which made the row look like four buttons and a link.
+  /// Every one goes through [_BarButton], the same widget with the same style: five
+  /// buttons built by five separate `AppButton(...)` calls is how one of them ended up
+  /// a text link with a wider optical gap than its neighbours.
   List<Widget> _buttons(AppLocalizations l10n, bool enabled) => [
-    _CatalogButton(
-      kind: CatalogKind.mod,
+    _BarButton(
+      id: 'catalog-mod',
       icon: ShellIcons.mods,
       label: l10n.catalogMods,
       onPressed: enabled ? () => _open(CatalogKind.mod) : null,
     ),
-    _CatalogButton(
-      kind: CatalogKind.resourcePack,
+    _BarButton(
+      id: 'catalog-resourcePack',
       icon: ShellIcons.resourcePacks,
       label: l10n.catalogResourcePacks,
       onPressed: enabled ? () => _open(CatalogKind.resourcePack) : null,
     ),
-    _CatalogButton(
-      kind: CatalogKind.shader,
+    _BarButton(
+      id: 'catalog-shader',
       icon: ShellIcons.shaderPacks,
       label: l10n.catalogShaders,
       onPressed: enabled ? () => _open(CatalogKind.shader) : null,
     ),
-    _CatalogButton(
-      kind: CatalogKind.datapack,
+    _BarButton(
+      id: 'catalog-datapack',
       icon: ShellIcons.saves,
       label: l10n.catalogDataPacks,
       onPressed: enabled ? () => _open(CatalogKind.datapack) : null,
     ),
     // Worlds and packs are files, not catalogues: Modrinth has no world directory, so
-    // promising a search there would be a dead end.
-    AppButton(
-      key: const m3.ValueKey('catalog-import-world'),
+    // promising a search there would be a dead end. The button is the same pill as the
+    // four catalogues - it is one more way to put content into an instance.
+    _BarButton(
+      id: 'catalog-import-world',
+      icon: ShellIcons.saves,
+      label: _importing ? l10n.catalogImporting : l10n.catalogImportWorld,
       onPressed: enabled ? _importWorld : null,
-      style: AppButtonStyle.outlined,
-      size: AppButtonSize.sm,
-      icon: const m3.Icon(ShellIcons.saves, size: 14),
-      label: m3.Text(
-        _importing ? l10n.catalogImporting : l10n.catalogImportWorld,
-      ),
     ),
   ];
 
@@ -191,15 +188,19 @@ class _DownloadContentBarState extends ConsumerState<DownloadContentBar> {
   }
 }
 
-class _CatalogButton extends StatelessWidget {
-  const _CatalogButton({
-    required this.kind,
+/// One pill in the content bar.
+///
+/// `id` is the widget key, not a catalogue: the world import is not a catalogue and
+/// still belongs in this row, and it has to be built exactly like the four that are.
+class _BarButton extends StatelessWidget {
+  const _BarButton({
+    required this.id,
     required this.icon,
     required this.label,
     required this.onPressed,
   });
 
-  final CatalogKind kind;
+  final String id;
   final Object icon;
   final String label;
   final VoidCallback? onPressed;
@@ -207,7 +208,7 @@ class _CatalogButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppButton(
-      key: m3.ValueKey('catalog-${kind.name}'),
+      key: m3.ValueKey(id),
       onPressed: onPressed,
       style: AppButtonStyle.outlined,
       size: AppButtonSize.sm,
