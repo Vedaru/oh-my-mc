@@ -1195,4 +1195,36 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get aboutReleasePage => '更新说明';
+
+  @override
+  String get setupSectionGeneral => '通用';
+
+  @override
+  String get setupSectionAppearance => '外观';
+
+  @override
+  String get actionMore => '更多';
+
+  @override
+  String get actionLaunch => '启动';
+
+  @override
+  String get detailTabOverview => '概览';
+
+  @override
+  String get detailTabContent => '内容';
+
+  @override
+  String get detailTabSettings => '设置';
+
+  @override
+  String get detailTabFiles => '文件';
+
+  @override
+  String detailCounts(int mods, int packs) {
+    return '$mods 个模组 · $packs 个资源包';
+  }
+
+  @override
+  String get contentInstall => '从 Modrinth 安装';
 }

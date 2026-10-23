@@ -190,7 +190,10 @@ class _NetworkPanelState extends ConsumerState<NetworkPanel> {
             leadingIcon: ShellIcons.download,
             label: sample.name,
             supporting: sample.ok
-                ? '${(sample.bytes / (1024 * 1024)).toStringAsFixed(1)} MB'
+                // Bytes alone say nothing about why an install of many small files
+                // feels slow: the first-byte time is half that answer.
+                ? '${(sample.bytes / 1024).round()} KB · '
+                      '${sample.firstByte.inMilliseconds} ms to first byte'
                 : sample.url,
             // The number goes in the trailing slot; a failure replaces the
             // supporting line instead, so the reason appears once.

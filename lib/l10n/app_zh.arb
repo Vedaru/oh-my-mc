@@ -387,5 +387,15 @@
   "aboutNewVersion": "有新版本 {version}",
   "aboutPublished": "发布于 {date}",
   "aboutDownload": "下载安装包",
-  "aboutReleasePage": "更新说明"
+  "aboutReleasePage": "更新说明",
+  "setupSectionGeneral": "通用",
+  "setupSectionAppearance": "外观",
+  "actionMore": "更多",
+  "actionLaunch": "启动",
+  "detailTabOverview": "概览",
+  "detailTabContent": "内容",
+  "detailTabSettings": "设置",
+  "detailTabFiles": "文件",
+  "detailCounts": "{mods} 个模组 · {packs} 个资源包",
+  "contentInstall": "从 Modrinth 安装"
 }

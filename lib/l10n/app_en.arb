@@ -1735,5 +1735,53 @@
   "aboutReleasePage": "Release notes",
   "@aboutReleasePage": {
     "description": "Opens the release page."
+  },
+  "setupSectionGeneral": "General",
+  "@setupSectionGeneral": {
+    "description": "Settings section: language."
+  },
+  "setupSectionAppearance": "Appearance",
+  "@setupSectionAppearance": {
+    "description": "Settings section: theme and accent."
+  },
+  "actionMore": "More",
+  "@actionMore": {
+    "description": "Tooltip of the overflow menu."
+  },
+  "actionLaunch": "Play",
+  "@actionLaunch": {
+    "description": "Primary action on the instance page."
+  },
+  "detailTabOverview": "Overview",
+  "@detailTabOverview": {
+    "description": "Instance page tab: what this instance is."
+  },
+  "detailTabContent": "Content",
+  "@detailTabContent": {
+    "description": "Instance page tab: what is installed."
+  },
+  "detailTabSettings": "Settings",
+  "@detailTabSettings": {
+    "description": "Instance page tab: what it runs with."
+  },
+  "detailTabFiles": "Files",
+  "@detailTabFiles": {
+    "description": "Instance page tab: where the files are."
+  },
+  "detailCounts": "{mods} mods · {packs} packs",
+  "@detailCounts": {
+    "description": "Overview summary of installed content.",
+    "placeholders": {
+      "mods": {
+        "type": "int"
+      },
+      "packs": {
+        "type": "int"
+      }
+    }
+  },
+  "contentInstall": "Install from Modrinth",
+  "@contentInstall": {
+    "description": "Button in the instance content tab that opens the catalogue."
   }
 }

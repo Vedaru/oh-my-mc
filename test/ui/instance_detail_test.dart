@@ -44,6 +44,8 @@ void main() {
     javaPath: javaPath,
   );
 
+  /// Opens the instance page on a tab. The page shows one tab at a time, so every
+  /// test has to say which one it is about: 0 概览, 1 内容, 2 设置, 3 文件.
   Future<ProviderContainer> pump(
     WidgetTester tester, {
     List<Instance> instances = const [],
@@ -52,6 +54,7 @@ void main() {
     VoidCallback? onClose,
     Future<JavaRuntime?> Function(String)? probe,
     List<GameFolder>? folders,
+    int tab = 0,
   }) async {
     // A real temp directory, because the page reads the game path from
     // `launcherPathsProvider` and a missing override is a hard error.
@@ -85,9 +88,7 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    // The page is a lazily built ListView: a section that is off screen does not
-    // exist to `find`, so a taller surface beats teaching every test to scroll.
-    tester.view.physicalSize = const Size(1600, 2400);
+    tester.view.physicalSize = const Size(1600, 1400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
 
@@ -96,6 +97,10 @@ void main() {
       container,
       InstanceDetailScreen(id: id, onClose: onClose),
     );
+    if (tab != 0) {
+      await tester.tap(find.byKey(ValueKey('detail-tab-$tab')));
+      await tester.pumpAndSettle();
+    }
     return container;
   }
 
@@ -116,8 +121,8 @@ void main() {
         id: 'b',
       );
 
-      // Twice: the page title and the name field.
-      expect(find.text('Beta'), findsNWidgets(2));
+      // The header shows it; the editable name lives in 设置, which is a tab away.
+      expect(find.text('Beta'), findsOneWidget);
       expect(find.text('Alpha'), findsNothing);
     });
 
@@ -131,7 +136,7 @@ void main() {
     });
 
     testWidgets('renaming writes the new name to the store', (tester) async {
-      final container = await pump(tester, instances: [sample()]);
+      final container = await pump(tester, instances: [sample()], tab: 2);
 
       final field = find.byKey(const ValueKey('instance-name'));
       await tester.enterText(field, 'Renamed');
@@ -143,7 +148,7 @@ void main() {
     });
 
     testWidgets('the isolation switch persists', (tester) async {
-      final container = await pump(tester, instances: [sample()]);
+      final container = await pump(tester, instances: [sample()], tab: 2);
 
       await tester.tap(find.byKey(const ValueKey('instance-isolation')));
       await tester.pumpAndSettle();
@@ -164,6 +169,7 @@ void main() {
           vendor: 'Eclipse Adoptium',
           arch: HostArch.x86_64,
         ),
+        tab: 2,
       );
 
       expect(
@@ -188,6 +194,7 @@ void main() {
         tester,
         instances: [sample(javaPath: '/opt/nope/bin/java')],
         probe: (exe) async => null,
+        tab: 2,
       );
 
       await tester.tap(find.byKey(const ValueKey('instance-java-test')));
@@ -200,7 +207,7 @@ void main() {
     });
 
     testWidgets('no test button without a chosen runtime', (tester) async {
-      await pump(tester, instances: [sample()]);
+      await pump(tester, instances: [sample()], tab: 2);
 
       // Nothing to run: "Automatic" is a decision the version makes at launch.
       expect(find.byKey(const ValueKey('instance-java-test')), findsNothing);
@@ -209,7 +216,7 @@ void main() {
     testWidgets('switching to isolated warns that nothing is migrated', (
       tester,
     ) async {
-      await pump(tester, instances: [sample()]);
+      await pump(tester, instances: [sample()], tab: 2);
 
       // Nothing moves. If this message disappears, the switch starts looking like
       // a data migration and users will lose track of their worlds.
@@ -234,6 +241,7 @@ void main() {
       await pump(
         tester,
         instances: [sample(isolation: IsolationKind.isolated)],
+        tab: 2,
       );
 
       await tester.tap(find.byKey(const ValueKey('instance-isolation')));
@@ -252,6 +260,7 @@ void main() {
         tester,
         instances: [sample()],
         settings: const AppSettings(memoryMb: 4096),
+        tab: 2,
       );
 
       // Off means "use the global default", which is a separate state from
@@ -265,7 +274,11 @@ void main() {
     });
 
     testWidgets('turning the override back off clears it', (tester) async {
-      final container = await pump(tester, instances: [sample(memoryMb: 8192)]);
+      final container = await pump(
+        tester,
+        instances: [sample(memoryMb: 8192)],
+        tab: 2,
+      );
 
       await tester.tap(find.byKey(const ValueKey('instance-memory-override')));
       await tester.pumpAndSettle();
@@ -278,7 +291,7 @@ void main() {
     });
 
     testWidgets('JVM arguments are parsed and stored as argv', (tester) async {
-      final container = await pump(tester, instances: [sample()]);
+      final container = await pump(tester, instances: [sample()], tab: 2);
 
       await tester.enterText(
         find.byKey(const ValueKey('instance-jvm-args')),
@@ -299,7 +312,7 @@ void main() {
     });
 
     testWidgets('game arguments land in their own field', (tester) async {
-      final container = await pump(tester, instances: [sample()]);
+      final container = await pump(tester, instances: [sample()], tab: 2);
 
       await tester.enterText(
         find.byKey(const ValueKey('instance-game-args')),
@@ -322,6 +335,7 @@ void main() {
         instances: [
           sample().copyWith(jvmArgs: ['-Xmx4G', '-Dfoo=a b']),
         ],
+        tab: 2,
       );
 
       // Quoted on the way in, so the round trip back through the parser is the
@@ -334,7 +348,9 @@ void main() {
     ) async {
       final container = await pump(tester, instances: [sample()]);
 
-      await tester.tap(find.widgetWithText(AppButton, 'Delete'));
+      await tester.tap(find.byKey(const ValueKey('instance-more')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete'));
       await tester.pumpAndSettle();
       expect(find.textContaining('This cannot be undone'), findsOneWidget);
 
@@ -357,7 +373,9 @@ void main() {
         onClose: () => closed++,
       );
 
-      await tester.tap(find.widgetWithText(AppButton, 'Delete'));
+      await tester.tap(find.byKey(const ValueKey('instance-more')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete'));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('instance-delete-confirm')));
       // The confirmed delete touches the real filesystem, and `Directory.exists`
@@ -380,7 +398,7 @@ void main() {
 
   group('window size', () {
     testWidgets('the size is written to the store on submit', (tester) async {
-      final container = await pump(tester, instances: [sample()]);
+      final container = await pump(tester, instances: [sample()], tab: 2);
 
       await tester.enterText(
         find.byKey(const ValueKey('instance-window-width')),
@@ -398,7 +416,7 @@ void main() {
     });
 
     testWidgets('a half-filled pair is not stored', (tester) async {
-      final container = await pump(tester, instances: [sample()]);
+      final container = await pump(tester, instances: [sample()], tab: 2);
 
       await tester.enterText(
         find.byKey(const ValueKey('instance-window-width')),
@@ -412,7 +430,7 @@ void main() {
     });
 
     testWidgets('the fullscreen switch persists', (tester) async {
-      final container = await pump(tester, instances: [sample()]);
+      final container = await pump(tester, instances: [sample()], tab: 2);
 
       await tester.tap(find.byKey(const ValueKey('instance-fullscreen')));
       await tester.pumpAndSettle();
@@ -446,6 +464,7 @@ void main() {
               entries: 0,
             ),
           ],
+          tab: 3,
         );
         await tester.pumpAndSettle();
 
@@ -486,6 +505,7 @@ void main() {
           ),
           GameFolder(kind: GameFolderKind.saves, path: '/g/saves', entries: 1),
         ],
+        tab: 3,
       );
       await tester.pumpAndSettle();
 

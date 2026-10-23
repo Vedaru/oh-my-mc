@@ -17,6 +17,7 @@ import '../../data/instance_cloner.dart';
 import '../../core/instance/memory.dart';
 import '../../core/mc/game_folders.dart';
 import '../../data/instance_providers.dart';
+import '../../data/launch_providers.dart';
 import '../../data/pack_providers.dart';
 import '../../data/java_providers.dart';
 import '../../data/launch_factory.dart';
@@ -27,6 +28,7 @@ import '../motion/motion.dart';
 import '../shell/shell_icons.dart';
 import '../theme/app_theme.dart';
 import 'args_field.dart';
+import 'content_browser.dart';
 import 'instance_card.dart';
 import '../components/app_slider.dart';
 import '../components/app_switch.dart';
@@ -39,7 +41,7 @@ import '../components/app_dialog.dart';
 /// instance is written back on each edit rather than on a "Save" button: a
 /// settings page whose changes are lost when the window closes is a bug report,
 /// and there is no multi-field invariant that would need a transaction.
-class InstanceDetailScreen extends ConsumerWidget {
+class InstanceDetailScreen extends ConsumerStatefulWidget {
   const InstanceDetailScreen({required this.id, this.onClose, super.key});
 
   final String id;
@@ -47,6 +49,23 @@ class InstanceDetailScreen extends ConsumerWidget {
   /// Leaves the page. Production replaces the route; tests pass a callback so
   /// the page can be asserted without a router.
   final VoidCallback? onClose;
+
+  @override
+  ConsumerState<InstanceDetailScreen> createState() =>
+      _InstanceDetailScreenState();
+}
+
+/// The page's tabs.
+///
+/// The page used to stack five sections on one scroll - general, runtime, window,
+/// arguments, files - and a per-version settings page that long is a page where
+/// nobody finds the memory slider. The tabs are the task phases: what this instance
+/// *is* (概览), what is installed in it (内容), what it runs with (设置), and where the
+/// files are (文件).
+enum DetailTab { overview, content, settings, files }
+
+class _InstanceDetailScreenState extends ConsumerState<InstanceDetailScreen> {
+  var _tab = DetailTab.overview;
 
   /// Leaves the page.
   ///
@@ -56,7 +75,7 @@ class InstanceDetailScreen extends ConsumerWidget {
   /// a deep link - which has no page under it - landing on the grid rather than
   /// on an empty navigator.
   void _close(BuildContext context) {
-    final close = onClose;
+    final close = widget.onClose;
     if (close != null) {
       close();
       return;
@@ -69,7 +88,7 @@ class InstanceDetailScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final state = ref.watch(instanceListProvider);
 
     return switch (state) {
@@ -79,17 +98,17 @@ class InstanceDetailScreen extends ConsumerWidget {
       InstanceListFailed(:final message) => m3.Center(
         child: m3.SelectableText(message),
       ),
-      InstanceListReady(:final instances) => _body(context, ref, instances),
+      InstanceListReady(:final instances) => _body(context, instances),
     };
   }
 
-  Widget _body(BuildContext context, WidgetRef ref, List<Instance> instances) {
+  Widget _body(BuildContext context, List<Instance> instances) {
     final l10n = context.l10n;
     final scheme = m3.Theme.of(context).colorScheme;
 
     Instance? instance;
     for (final candidate in instances) {
-      if (candidate.id == id) instance = candidate;
+      if (candidate.id == widget.id) instance = candidate;
     }
 
     // A stale link (the instance was deleted in another window) is not a crash:
@@ -116,8 +135,6 @@ class InstanceDetailScreen extends ConsumerWidget {
         ),
       );
     }
-
-    final notifier = ref.read(instanceListProvider.notifier);
 
     return MotionEntrance(
       children: [
@@ -149,144 +166,228 @@ class InstanceDetailScreen extends ConsumerWidget {
                   overflow: m3.TextOverflow.ellipsis,
                 ),
               ),
-              // Clone and export are different questions: "I want a second copy
-              // here" versus "I want to hand this to someone". Both existed as
-              // strings in the ARB long before either had a button.
+              // One primary action per page, and the management actions in a menu:
+              // clone / export / delete are low-frequency and delete is destructive,
+              // so they do not get to sit next to the thing a user came here to do.
               AppButton(
-                key: const m3.ValueKey('instance-clone'),
-                onPressed: () => _clone(context, ref, instance!),
-                style: AppButtonStyle.text,
-                label: m3.Text(l10n.instanceClone),
+                key: const m3.ValueKey('instance-play'),
+                onPressed: () => ref
+                    .read(launchControllerProvider.notifier)
+                    .launch(instance!),
+                style: AppButtonStyle.filled,
+                icon: const m3.Icon(ShellIcons.play, size: 14),
+                label: m3.Text(l10n.actionLaunch),
               ),
-              AppButton(
-                key: const m3.ValueKey('instance-export-pack'),
-                onPressed: () => _exportPack(context, ref, instance!),
-                style: AppButtonStyle.text,
-                label: m3.Text(l10n.packExport),
-              ),
-              AppButton(
-                onPressed: () => _delete(context, ref, instance!),
-                style: AppButtonStyle.text,
-                label: m3.Text(l10n.instanceDelete),
+              const m3.SizedBox(width: 8),
+              m3.PopupMenuButton<String>(
+                key: const m3.ValueKey('instance-more'),
+                tooltip: l10n.actionMore,
+                onSelected: (choice) => switch (choice) {
+                  'clone' => _clone(context, ref, instance!),
+                  'export' => _exportPack(context, ref, instance!),
+                  'delete' => _delete(context, ref, instance!),
+                  _ => null,
+                },
+                itemBuilder: (context) => [
+                  m3.PopupMenuItem(
+                    value: 'clone',
+                    child: m3.Text(l10n.instanceClone),
+                  ),
+                  m3.PopupMenuItem(
+                    value: 'export',
+                    child: m3.Text(l10n.packExport),
+                  ),
+                  const m3.PopupMenuDivider(),
+                  m3.PopupMenuItem(
+                    value: 'delete',
+                    child: m3.Text(l10n.instanceDelete),
+                  ),
+                ],
+                child: const m3.Padding(
+                  padding: m3.EdgeInsets.all(8),
+                  child: m3.Icon(ShellIcons.more, size: 18),
+                ),
               ),
             ],
           ),
         ),
+        DetailTabs(
+          current: _tab.index,
+          labels: [
+            l10n.detailTabOverview,
+            l10n.detailTabContent,
+            l10n.detailTabSettings,
+            l10n.detailTabFiles,
+          ],
+          onPick: (index) => setState(() => _tab = DetailTab.values[index]),
+        ),
         m3.Expanded(
-          child: m3.ListView(
-            padding: const m3.EdgeInsets.fromLTRB(16, 0, 16, 16),
-            children: [
-              _Section(
-                title: l10n.instanceSectionGeneral,
-                children: [
-                  _NameRow(
-                    instance: instance,
-                    onChanged: (name) =>
-                        notifier.update(instance!.copyWith(name: name)),
-                  ),
-                  _ReadOnlyRow(
-                    label: l10n.instanceVersionLabel,
-                    value: [
-                      instance.versionId,
-                      if (instance.loader.isModded)
-                        '${instance.loader.name} '
-                                '${instance.loaderVersion ?? ''}'
-                            .trim(),
-                    ].join('  ·  '),
-                  ),
-                  _IsolationRow(
-                    instance: instance,
-                    onChanged: (isolation) => notifier.update(
-                      instance!.copyWith(isolation: isolation),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _Section(
-                title: l10n.instanceSectionRuntime,
-                children: [
-                  _MemoryRow(
-                    instance: instance,
-                    onChanged: (memoryMb) => notifier.update(
-                      instance!.copyWith(
-                        memoryMb: memoryMb,
-                        clearMemoryMb: memoryMb == null,
-                      ),
-                    ),
-                  ),
-                  _JavaRow(
-                    instance: instance,
-                    onChanged: (path) => notifier.update(
-                      instance!.copyWith(
-                        javaPath: path,
-                        clearJavaPath: path == null,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _Section(
-                title: l10n.instanceSectionWindow,
-                children: [
-                  _WindowRow(
-                    instance: instance,
-                    onSize: (width, height) => notifier.update(
-                      instance!.copyWith(
-                        windowWidth: width,
-                        windowHeight: height,
-                        clearWindowSize: width == null && height == null,
-                      ),
-                    ),
-                    onFullscreen: (value) =>
-                        notifier.update(instance!.copyWith(fullscreen: value)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _Section(
-                title: l10n.instanceSectionArguments,
-                children: [
-                  ArgsField(
-                    fieldKey: const ValueKey('instance-jvm-args'),
-                    label: l10n.instanceJvmArgsLabel,
-                    hint: l10n.instanceJvmArgsHint,
-                    value: instance.jvmArgs,
-                    onChanged: (args) =>
-                        notifier.update(instance!.copyWith(jvmArgs: args)),
-                  ),
-                  ArgsField(
-                    fieldKey: const ValueKey('instance-game-args'),
-                    label: l10n.instanceGameArgsLabel,
-                    hint: l10n.instanceGameArgsHint,
-                    value: instance.gameArgs,
-                    onChanged: (args) =>
-                        notifier.update(instance!.copyWith(gameArgs: args)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _Section(
-                title: l10n.instanceSectionFiles,
-                description: l10n.instanceFilesHint,
-                children: [
-                  _FilesList(
-                    instance: instance,
-                    onOpenFolder: (folder) =>
-                        _openFolder(context, ref, instance!, folder: folder),
-                    onOpenRoot: () => _openFolder(context, ref, instance!),
-                    onCopyPath: (path) => _copyPath(context, path),
-                    onManageMods: () =>
-                        context.go(Routes.instanceMods(instance!.id)),
-                    onOpenContent: (kind) => context.go(
-                      Routes.instanceContent(instance!.id, kind.name),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+          child: m3.SingleChildScrollView(
+            key: m3.ValueKey('detail-${_tab.name}'),
+            padding: const m3.EdgeInsets.fromLTRB(16, 12, 16, 16),
+            child: switch (_tab) {
+              DetailTab.overview => _overview(context, instance),
+              DetailTab.content => _content(context, instance),
+              DetailTab.settings => _settings(context, instance),
+              DetailTab.files => _files(context, instance),
+            },
           ),
+        ),
+      ],
+    );
+  }
+
+  /// 概览: what this instance *is*, and the state worth knowing before playing.
+  Widget _overview(BuildContext context, Instance instance) {
+    final l10n = context.l10n;
+    return m3.Column(
+      crossAxisAlignment: m3.CrossAxisAlignment.stretch,
+      children: [
+        _Section(
+          title: l10n.instanceSectionGeneral,
+          children: [
+            _ReadOnlyRow(
+              label: l10n.instanceVersionLabel,
+              value: [
+                instance.versionId,
+                if (instance.loader.isModded)
+                  '${instance.loader.name} ${instance.loaderVersion ?? ''}'
+                      .trim(),
+              ].join('  ·  '),
+            ),
+            _ReadOnlyRow(
+              label: l10n.instanceMemoryLabel,
+              value: instance.memoryMb == null
+                  ? l10n.instanceMemoryUsingDefault(
+                      ref.watch(appSettingsMemoryProvider),
+                    )
+                  : l10n.instanceMemoryMb(instance.memoryMb!),
+            ),
+            _ReadOnlyRow(
+              label: l10n.instanceIsolationLabel,
+              value: instance.isolation == IsolationKind.isolated
+                  ? l10n.instanceIsolationOn
+                  : l10n.instanceIsolationOff,
+            ),
+            ListRow(
+              leadingIcon: ShellIcons.clock,
+              label: l10n.instancePlaytimeLabel,
+              trailingText: _FilesListState.playtimeOf(l10n, instance),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// 内容: everything installed in this instance, one kind at a time.
+  Widget _content(BuildContext context, Instance instance) => ContentBrowser(
+    instance: instance,
+    initialKind: ContentKind.resourcePacks,
+  );
+
+  /// 设置: the fields that change how it runs.
+  Widget _settings(BuildContext context, Instance instance) {
+    final l10n = context.l10n;
+    final notifier = ref.read(instanceListProvider.notifier);
+    return m3.Column(
+      crossAxisAlignment: m3.CrossAxisAlignment.stretch,
+      children: [
+        _Section(
+          title: l10n.instanceSectionGeneral,
+          children: [
+            _NameRow(
+              instance: instance,
+              onChanged: (name) =>
+                  notifier.update(instance.copyWith(name: name)),
+            ),
+            _IsolationRow(
+              instance: instance,
+              onChanged: (isolation) =>
+                  notifier.update(instance.copyWith(isolation: isolation)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _Section(
+          title: l10n.instanceSectionRuntime,
+          children: [
+            _MemoryRow(
+              instance: instance,
+              onChanged: (memoryMb) => notifier.update(
+                instance.copyWith(
+                  memoryMb: memoryMb,
+                  clearMemoryMb: memoryMb == null,
+                ),
+              ),
+            ),
+            _JavaRow(
+              instance: instance,
+              onChanged: (path) => notifier.update(
+                instance.copyWith(javaPath: path, clearJavaPath: path == null),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _Section(
+          title: l10n.instanceSectionWindow,
+          children: [
+            _WindowRow(
+              instance: instance,
+              onSize: (width, height) => notifier.update(
+                instance.copyWith(
+                  windowWidth: width,
+                  windowHeight: height,
+                  clearWindowSize: width == null && height == null,
+                ),
+              ),
+              onFullscreen: (value) =>
+                  notifier.update(instance.copyWith(fullscreen: value)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _Section(
+          title: l10n.instanceSectionArguments,
+          children: [
+            ArgsField(
+              fieldKey: const ValueKey('instance-jvm-args'),
+              label: l10n.instanceJvmArgsLabel,
+              hint: l10n.instanceJvmArgsHint,
+              value: instance.jvmArgs,
+              onChanged: (args) =>
+                  notifier.update(instance.copyWith(jvmArgs: args)),
+            ),
+            ArgsField(
+              fieldKey: const ValueKey('instance-game-args'),
+              label: l10n.instanceGameArgsLabel,
+              hint: l10n.instanceGameArgsHint,
+              value: instance.gameArgs,
+              onChanged: (args) =>
+                  notifier.update(instance.copyWith(gameArgs: args)),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// 文件: the paths, one row per folder, and the log shortcut.
+  Widget _files(BuildContext context, Instance instance) {
+    final l10n = context.l10n;
+    return _Section(
+      title: l10n.instanceSectionFiles,
+      description: l10n.instanceFilesHint,
+      children: [
+        _FilesList(
+          instance: instance,
+          onOpenFolder: (folder) =>
+              _openFolder(context, ref, instance, folder: folder),
+          onOpenRoot: () => _openFolder(context, ref, instance),
+          onCopyPath: (path) => _copyPath(context, path),
+          onManageMods: () => setState(() => _tab = DetailTab.content),
+          onOpenContent: (kind) => setState(() => _tab = DetailTab.content),
         ),
       ],
     );
@@ -1106,34 +1207,43 @@ class _FilesListState extends State<_FilesList> {
     );
   }
 
-  static String _playtime(AppLocalizations l10n, Instance instance) {
-    final last = instance.lastPlayedAt;
-    if (last == null) return l10n.instanceNeverPlayed;
-    return l10n.instancePlaytimeValue(
-      formatPlaytime(instance.totalPlaytime),
-      '${last.year}-${_two(last.month)}-${_two(last.day)}',
-    );
-  }
+  static String playtimeOf(AppLocalizations l10n, Instance instance) =>
+      formatPlaytimeLine(l10n, instance);
 
-  static String _two(int value) => value.toString().padLeft(2, '0');
-
-  /// A different cue per folder. M3 asks the leading icon to relate to the label;
-  /// four identical puzzle pieces would be decoration, not a cue.
-  static m3.IconData _folderIcon(GameFolderKind kind) => switch (kind) {
-    GameFolderKind.mods => ShellIcons.mods,
-    GameFolderKind.resourcePacks => ShellIcons.resourcePacks,
-    GameFolderKind.shaderPacks => ShellIcons.shaderPacks,
-    GameFolderKind.saves => ShellIcons.saves,
-  };
-
-  static String _folderLabel(AppLocalizations l10n, GameFolderKind kind) =>
-      switch (kind) {
-        GameFolderKind.mods => l10n.instanceFolderMods,
-        GameFolderKind.resourcePacks => l10n.instanceFolderResourcePacks,
-        GameFolderKind.shaderPacks => l10n.instanceFolderShaderPacks,
-        GameFolderKind.saves => l10n.instanceFolderSaves,
-      };
+  static String _playtime(AppLocalizations l10n, Instance instance) =>
+      formatPlaytimeLine(l10n, instance);
 }
+
+/// "3 h 20 min · last played 2026-10-20", or the never-played sentence.
+String formatPlaytimeLine(AppLocalizations l10n, Instance instance) {
+  final last = instance.lastPlayedAt;
+  if (last == null) return l10n.instanceNeverPlayed;
+  String two(int value) => value.toString().padLeft(2, '0');
+  return l10n.instancePlaytimeValue(
+    formatPlaytime(instance.totalPlaytime),
+    '${last.year}-${two(last.month)}-${two(last.day)}',
+  );
+}
+
+// The folder-list helpers below are file-scope because the overview tab needs the
+// same playtime sentence the files list shows.
+
+/// A different cue per folder. M3 asks the leading icon to relate to the label;
+/// four identical puzzle pieces would be decoration, not a cue.
+m3.IconData _folderIcon(GameFolderKind kind) => switch (kind) {
+  GameFolderKind.mods => ShellIcons.mods,
+  GameFolderKind.resourcePacks => ShellIcons.resourcePacks,
+  GameFolderKind.shaderPacks => ShellIcons.shaderPacks,
+  GameFolderKind.saves => ShellIcons.saves,
+};
+
+String _folderLabel(AppLocalizations l10n, GameFolderKind kind) =>
+    switch (kind) {
+      GameFolderKind.mods => l10n.instanceFolderMods,
+      GameFolderKind.resourcePacks => l10n.instanceFolderResourcePacks,
+      GameFolderKind.shaderPacks => l10n.instanceFolderShaderPacks,
+      GameFolderKind.saves => l10n.instanceFolderSaves,
+    };
 
 /// Window width/height and the fullscreen switch.
 ///

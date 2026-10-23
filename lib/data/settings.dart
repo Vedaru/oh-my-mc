@@ -160,27 +160,22 @@ class AppSettings {
     fastestSource: fastestSource ?? this.fastestSource,
   );
 
+  /// Equality is derived from [toMap], not hand-written.
+  ///
+  /// A hand-written `==` is how this class shipped a real bug: `downloadSource` was
+  /// added to the model and the settings page, but not to `==` - so Riverpod compared
+  /// the old and new state, saw no difference, and never rebuilt. The radio buttons
+  /// held the new value and showed the old one, which reads to a user as "the control
+  /// does not work". Deriving equality from the persisted form means a new field
+  /// participates as soon as it is stored.
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is AppSettings &&
-          other.theme == theme &&
-          other.language == language &&
-          other.accent == accent &&
-          other.playerName == playerName &&
-          other.memoryMb == memoryMb &&
-          _sameList(other.javaDirs, javaDirs);
+      other is AppSettings && _sameMap(toMap(), other.toMap());
 
   @override
-  int get hashCode => Object.hash(
-    theme,
-    language,
-    accent,
-    playerName,
-    memoryMb,
-    Object.hashAll(javaDirs),
-    downloadSource,
-    fastestSource,
+  int get hashCode => Object.hashAll(
+    toMap().entries.map((entry) => Object.hash(entry.key, entry.value)),
   );
 
   @override
@@ -228,10 +223,11 @@ List<String> _validJavaDirs(Object? raw) {
   }
 }
 
-bool _sameList(List<String> a, List<String> b) {
+bool _sameMap(Map<String, Object?> a, Map<String, Object?> b) {
   if (a.length != b.length) return false;
-  for (var i = 0; i < a.length; i++) {
-    if (a[i] != b[i]) return false;
+  for (final entry in a.entries) {
+    if (!b.containsKey(entry.key)) return false;
+    if (b[entry.key] != entry.value) return false;
   }
   return true;
 }

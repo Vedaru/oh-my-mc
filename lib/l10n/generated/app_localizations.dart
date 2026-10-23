@@ -2149,6 +2149,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Release notes'**
   String get aboutReleasePage;
+
+  /// Settings section: language.
+  ///
+  /// In en, this message translates to:
+  /// **'General'**
+  String get setupSectionGeneral;
+
+  /// Settings section: theme and accent.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get setupSectionAppearance;
+
+  /// Tooltip of the overflow menu.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get actionMore;
+
+  /// Primary action on the instance page.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get actionLaunch;
+
+  /// Instance page tab: what this instance is.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get detailTabOverview;
+
+  /// Instance page tab: what is installed.
+  ///
+  /// In en, this message translates to:
+  /// **'Content'**
+  String get detailTabContent;
+
+  /// Instance page tab: what it runs with.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get detailTabSettings;
+
+  /// Instance page tab: where the files are.
+  ///
+  /// In en, this message translates to:
+  /// **'Files'**
+  String get detailTabFiles;
+
+  /// Overview summary of installed content.
+  ///
+  /// In en, this message translates to:
+  /// **'{mods} mods · {packs} packs'**
+  String detailCounts(int mods, int packs);
+
+  /// Button in the instance content tab that opens the catalogue.
+  ///
+  /// In en, this message translates to:
+  /// **'Install from Modrinth'**
+  String get contentInstall;
 }
 
 class _AppLocalizationsDelegate

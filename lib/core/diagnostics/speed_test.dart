@@ -8,6 +8,7 @@ class SpeedSample {
     required this.url,
     this.bytes = 0,
     this.elapsed = Duration.zero,
+    this.firstByte = Duration.zero,
     this.error,
   });
 
@@ -15,6 +16,11 @@ class SpeedSample {
   final String url;
   final int bytes;
   final Duration elapsed;
+
+  /// Time until the first response headers arrived: the number that explains a slow
+  /// install of many small files, which throughput alone does not.
+  final Duration firstByte;
+
   final String? error;
 
   bool get ok => error == null && bytes > 0;
@@ -26,8 +32,13 @@ class SpeedSample {
 
   String get label {
     if (!ok) return error ?? 'failed';
-    final mbps = bytesPerSecond / (1024 * 1024);
-    return '${mbps.toStringAsFixed(1)} MB/s';
+    final perSecond = bytesPerSecond;
+    // Under 1 MB/s the decimal rounds to "0.0", which reads as "broken". Small
+    // numbers are shown in KB/s instead.
+    if (perSecond < 1024 * 1024) {
+      return '${(perSecond / 1024).round()} KB/s';
+    }
+    return '${(perSecond / (1024 * 1024)).toStringAsFixed(1)} MB/s';
   }
 }
 
@@ -68,6 +79,7 @@ class SpeedTest {
     HttpClient? client,
     this.maxBytes = 2 * 1024 * 1024,
     this.timeout = const Duration(seconds: 8),
+    this.budget = const Duration(seconds: 5),
   }) : _client = client ?? HttpClient();
 
   final HttpClient _client;
@@ -76,6 +88,10 @@ class SpeedTest {
   /// polite to the CDN.
   final int maxBytes;
   final Duration timeout;
+
+  /// Wall-clock cap for the repeat requests. A speed test that takes a minute is a
+  /// speed test nobody runs.
+  final Duration budget;
 
   Future<List<SpeedSample>> run(
     List<Mirror> mirrors, {
@@ -90,55 +106,68 @@ class SpeedTest {
     return samples;
   }
 
+  /// Measures `mirror` until [maxBytes] or [budget] is reached.
+  ///
+  /// Looping rather than one request: the file is small (283 KB), and a single
+  /// transfer mostly measures TLS setup - which read as "0.2 MB/s" on a link that is
+  /// actually fine. Re-requesting also measures connection reuse, which is what a
+  /// real install does (hundreds of libraries, one host).
   Future<SpeedSample> measure(Mirror mirror) async {
     final watch = Stopwatch()..start();
     var received = 0;
-    try {
-      final request = await _client
-          .getUrl(Uri.parse(mirror.url))
-          .timeout(timeout);
-      final response = await request.close().timeout(timeout);
-      if (response.statusCode != HttpStatus.ok) {
-        await response.drain<void>();
-        return SpeedSample(
-          name: mirror.name,
-          url: mirror.url,
-          error: 'HTTP ${response.statusCode}',
-          elapsed: watch.elapsed,
-        );
-      }
+    var firstByte = Duration.zero;
 
-      // Read until the cap, then cancel the subscription: that is what actually
-      // stops the transfer (draining a 100 MB file to find out how fast the first
-      // 2 MB arrived would be absurd). Chunks arrive at socket granularity, so
-      // `received` can overshoot the cap by one chunk - reported as measured,
-      // because those bytes were transferred.
-      final completer = Completer<void>();
-      late StreamSubscription<List<int>> subscription;
-      subscription = response.listen(
-        (chunk) {
-          received += chunk.length;
-          if (received >= maxBytes && !completer.isCompleted) {
-            subscription.cancel();
-            completer.complete();
-          }
-        },
-        onError: (Object error, StackTrace stack) {
-          if (!completer.isCompleted) completer.completeError(error, stack);
-        },
-        onDone: () {
-          if (!completer.isCompleted) completer.complete();
-        },
-        cancelOnError: true,
-      );
-      await completer.future.timeout(timeout);
+    try {
+      while (received < maxBytes && watch.elapsed < budget) {
+        final request = await _client
+            .getUrl(Uri.parse(mirror.url))
+            .timeout(timeout);
+        final response = await request.close().timeout(timeout);
+        if (response.statusCode != HttpStatus.ok) {
+          await response.drain<void>();
+          return SpeedSample(
+            name: mirror.name,
+            url: mirror.url,
+            bytes: received,
+            elapsed: watch.elapsed,
+            error: 'HTTP ${response.statusCode}',
+          );
+        }
+        if (firstByte == Duration.zero) firstByte = watch.elapsed;
+
+        // Read until the cap, then cancel the subscription: that is what actually
+        // stops the transfer. Chunks arrive at socket granularity, so `received` can
+        // overshoot the cap by one chunk - reported as measured, because those bytes
+        // were transferred.
+        final completer = Completer<void>();
+        late StreamSubscription<List<int>> subscription;
+        subscription = response.listen(
+          (chunk) {
+            received += chunk.length;
+            if (received >= maxBytes && !completer.isCompleted) {
+              subscription.cancel();
+              completer.complete();
+            }
+          },
+          onError: (Object error, StackTrace stack) {
+            if (!completer.isCompleted) completer.completeError(error, stack);
+          },
+          onDone: () {
+            if (!completer.isCompleted) completer.complete();
+          },
+          cancelOnError: true,
+        );
+        await completer.future.timeout(timeout);
+        if (received == 0) break;
+      }
     } on Object catch (e) {
       return SpeedSample(
         name: mirror.name,
         url: mirror.url,
         bytes: received,
         elapsed: watch.elapsed,
-        error: _describe(e),
+        firstByte: firstByte,
+        error: received > 0 ? null : _describe(e),
       );
     } finally {
       watch.stop();
@@ -148,6 +177,7 @@ class SpeedTest {
       url: mirror.url,
       bytes: received,
       elapsed: watch.elapsed,
+      firstByte: firstByte,
     );
   }
 

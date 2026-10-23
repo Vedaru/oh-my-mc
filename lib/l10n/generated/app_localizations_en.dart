@@ -1235,4 +1235,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aboutReleasePage => 'Release notes';
+
+  @override
+  String get setupSectionGeneral => 'General';
+
+  @override
+  String get setupSectionAppearance => 'Appearance';
+
+  @override
+  String get actionMore => 'More';
+
+  @override
+  String get actionLaunch => 'Play';
+
+  @override
+  String get detailTabOverview => 'Overview';
+
+  @override
+  String get detailTabContent => 'Content';
+
+  @override
+  String get detailTabSettings => 'Settings';
+
+  @override
+  String get detailTabFiles => 'Files';
+
+  @override
+  String detailCounts(int mods, int packs) {
+    return '$mods mods · $packs packs';
+  }
+
+  @override
+  String get contentInstall => 'Install from Modrinth';
 }

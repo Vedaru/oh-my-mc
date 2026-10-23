@@ -342,13 +342,23 @@ void main() {
     );
   });
 
+  testWidgets('detail settings', (tester) async {
+    await shoot(
+      tester,
+      '/instances/a',
+      'detail-settings',
+      instances: [_instance('a', 'Survival', '1.20.1')],
+      openKey: 'detail-tab-2',
+    );
+  });
+
   testWidgets('detail files', (tester) async {
     await shoot(
       tester,
       '/instances/a',
       'detail-files',
       instances: [_instance('a', 'Survival', '1.20.1')],
-      scrollDown: 900,
+      openKey: 'detail-tab-3',
       overrides: [
         foldersOverride(mods: 14, resourcePacks: 3, shaderPacks: 0, saves: 6),
       ],

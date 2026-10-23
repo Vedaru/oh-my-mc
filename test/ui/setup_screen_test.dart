@@ -38,12 +38,14 @@ void main() {
   Future<ProviderContainer> pump(
     WidgetTester tester, {
     AppSettings settings = AppSettings.defaults,
+
+    /// Which settings section to open. The page shows one section at a time, so a
+    /// test has to say where the control it is about lives.
+    String section = 'general',
   }) async {
-    // The page is taller than the default 600px test viewport now that it has a
-    // Java-management section, and `ListView` does not build off-screen
-    // children. A taller viewport asserts the whole page instead of scrolling
-    // to each row, which would hide a row that never renders at all.
-    tester.view.physicalSize = const Size(1400, 2600);
+    // One section at a time, so a normal window is enough; the section list itself is
+    // a `ListView` and needs a bounded height.
+    tester.view.physicalSize = const Size(1400, 1000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
 
@@ -74,11 +76,13 @@ void main() {
       settle: false,
     );
     await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.byKey(m3.ValueKey('setup-section-$section')));
+    await tester.pump(const Duration(milliseconds: 400));
     return container;
   }
 
   testWidgets('with nothing downloaded, the list says so', (tester) async {
-    await pump(tester);
+    await pump(tester, section: 'java');
     expect(find.byKey(const ValueKey('java-list-empty')), findsOneWidget);
   });
 
@@ -92,7 +96,7 @@ void main() {
       ..createSync(recursive: true)
       ..writeAsStringSync('#!/bin/sh\n');
 
-    await pump(tester);
+    await pump(tester, section: 'java');
 
     expect(find.text('Java 17 (17.0.15)'), findsOneWidget);
     // A freshly-created fake tree is tiny; the assertion is that the size is
@@ -101,7 +105,7 @@ void main() {
   });
 
   testWidgets('choosing dark theme persists it', (tester) async {
-    final container = await pump(tester);
+    final container = await pump(tester, section: 'appearance');
 
     await tester.tap(find.byKey(const ValueKey('theme-ThemePreference.dark')));
     await tester.pumpAndSettle();
@@ -116,7 +120,7 @@ void main() {
   });
 
   testWidgets('choosing Chinese persists it', (tester) async {
-    final container = await pump(tester);
+    final container = await pump(tester, section: 'general');
 
     await tester.tap(
       find.byKey(const ValueKey('language-LanguagePreference.chinese')),
@@ -130,7 +134,7 @@ void main() {
   });
 
   testWidgets('picking an accent swatch persists it', (tester) async {
-    final container = await pump(tester);
+    final container = await pump(tester, section: 'appearance');
 
     // Blue is the default, so its swatch is the selected one.
     expect(container.read(appSettingsProvider).accent, AccentChoice.blue);
@@ -142,7 +146,7 @@ void main() {
   });
 
   testWidgets('there is no animation switch any more', (tester) async {
-    await pump(tester);
+    await pump(tester, section: 'appearance');
 
     // Motion is part of the design: only the OS accessibility flag can turn it
     // off, so the screen must not offer a toggle.
@@ -150,7 +154,7 @@ void main() {
   });
 
   testWidgets('a valid player name is stored', (tester) async {
-    final container = await pump(tester);
+    final container = await pump(tester, section: 'launch');
 
     await tester.enterText(
       find.byKey(const ValueKey('setup-player-name')),
@@ -165,7 +169,7 @@ void main() {
   testWidgets('an invalid player name reverts instead of being stored', (
     tester,
   ) async {
-    final container = await pump(tester);
+    final container = await pump(tester, section: 'launch');
 
     // Too short and containing a space: the game would reject it, and the store
     // would silently substitute "Player", which reads as a lost edit.
@@ -189,7 +193,7 @@ void main() {
   testWidgets('the memory slider persists the value it was released on', (
     tester,
   ) async {
-    final container = await pump(tester);
+    final container = await pump(tester, section: 'launch');
 
     await tester.drag(
       find.byKey(const ValueKey('setup-memory')),
@@ -203,8 +207,11 @@ void main() {
   });
 
   testWidgets('the controls start from the stored settings', (tester) async {
+    // The controls live in different sections now, so each is asserted in its own
+    // pane rather than all at once.
     await pump(
       tester,
+      section: 'appearance',
       settings: const AppSettings(
         theme: ThemePreference.light,
         language: LanguagePreference.chinese,
@@ -217,6 +224,10 @@ void main() {
       tester.widget<AppAccentPicker>(find.byType(AppAccentPicker)).value,
       AccentChoice.green,
     );
+
+    // The player name lives in 启动, not 外观: switch sections and check it there.
+    await tester.tap(find.byKey(const ValueKey('setup-section-launch')));
+    await tester.pumpAndSettle();
     final field = tester.widget<m3.TextField>(
       find.descendant(
         of: find.byKey(const ValueKey('setup-player-name')),

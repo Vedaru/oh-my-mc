@@ -53,4 +53,5 @@ abstract final class ShellIcons {
   static const saves = m3.Icons.map;
   static const network = m3.Icons.lan;
   static const info = m3.Icons.info_outline;
+  static const more = m3.Icons.more_vert;
 }

@@ -162,4 +162,66 @@ void main() {
       expect(settings.accent, AccentChoice.blue);
     });
   });
+
+  group('equality', () {
+    // Equality is what Riverpod uses to decide whether to notify listeners. A field
+    // missing from `==` is a field whose change never reaches the screen - which is
+    // how the download-source radio ended up holding a new value while drawing the
+    // old one.
+    test('every persisted field participates in equality', () {
+      const base = AppSettings.defaults;
+      final variants = <String, AppSettings>{
+        'theme': base.copyWith(theme: ThemePreference.light),
+        'language': base.copyWith(language: LanguagePreference.chinese),
+        'accent': base.copyWith(accent: AccentChoice.teal),
+        'playerName': base.copyWith(playerName: 'Someone'),
+        'memoryMb': base.copyWith(memoryMb: 4096),
+        'javaDirs': base.copyWith(javaDirs: const ['/opt/jdk']),
+        'downloadSource': base.copyWith(
+          downloadSource: SourcePreference.bmclapi,
+        ),
+        'fastestSource': base.copyWith(fastestSource: 'bmclapi'),
+      };
+
+      // Every key the store can write must be covered here, or a new field can slip
+      // in without a check. An *optional* key (one only written when set) is compared
+      // against a fully-populated instance, which is the map with the most keys.
+      final full = base.copyWith(
+        fastestSource: 'official',
+        javaDirs: const ['/opt/jdk'],
+      );
+      expect(variants.keys.toSet(), full.toMap().keys.toSet());
+
+      for (final entry in variants.entries) {
+        expect(
+          entry.value,
+          isNot(base),
+          reason: 'changing ${entry.key} did not change equality',
+        );
+        expect(
+          entry.value.hashCode,
+          isNot(base.hashCode),
+          reason: 'changing ${entry.key} did not change the hash',
+        );
+      }
+    });
+
+    test('two objects with the same values are equal', () {
+      final a = AppSettings.fromMap(
+        const AppSettings(
+          memoryMb: 4096,
+          downloadSource: SourcePreference.official,
+        ).toMap(),
+      );
+      final b = AppSettings.fromMap(
+        const AppSettings(
+          memoryMb: 4096,
+          downloadSource: SourcePreference.official,
+        ).toMap(),
+      );
+
+      expect(a, b);
+      expect(a.hashCode, b.hashCode);
+    });
+  });
 }

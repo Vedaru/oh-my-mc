@@ -18,93 +18,256 @@ import '../components/page_body.dart';
 import '../components/app_slider.dart';
 import '../components/app_text_field.dart';
 
-/// Everything the launcher lets a user change.
+/// The settings screen: a section list on the left, one section on the right.
 ///
-/// Each control writes through [AppSettingsNotifier] immediately, so there is no
-/// Save button and no unsaved state to lose. The Java section manages files
-/// rather than settings, which is why it is a panel of its own.
-class SetupScreen extends ConsumerWidget {
+/// It used to be one page with six groups stacked on it - language, appearance,
+/// launch, Java, network, about - which by the end was a scroll long enough that
+/// finding the memory slider meant hunting. A launcher's settings are looked up, not
+/// read, so the sections are a **list you pick from**, and only one is on screen.
+///
+/// Each control still writes through [AppSettingsNotifier] immediately: no Save button,
+/// no unsaved state.
+class SetupScreen extends StatefulWidget {
   const SetupScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  State<SetupScreen> createState() => _SetupScreenState();
+}
+
+/// The sections, in the order they appear in the list.
+enum SetupSection { general, appearance, launch, java, network, about }
+
+class _SetupScreenState extends State<SetupScreen> {
+  var _section = SetupSection.general;
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final settings = ref.watch(appSettingsProvider);
-    final notifier = ref.read(appSettingsProvider.notifier);
 
     return PageBody(
-      child: MotionEntrance(
+      // Not scrollable: the section list stays put while one section scrolls, which
+      // is what keeps "where am I" answerable on a short window.
+      scrollable: false,
+      child: m3.Column(
+        crossAxisAlignment: m3.CrossAxisAlignment.stretch,
         children: [
           PageTitle(l10n.navSetup),
-          _Section(
-            title: l10n.setupLanguage,
-            children: [
-              _SettingRow(
-                label: l10n.setupLanguage,
-                hint: l10n.setupLanguageHint,
-                child: _Choice<LanguagePreference>(
-                  keyPrefix: 'language',
-                  value: settings.language,
-                  options: {
-                    LanguagePreference.system: l10n.themeSystem,
-                    LanguagePreference.english: l10n.languageEnglish,
-                    LanguagePreference.chinese: l10n.languageChinese,
-                  },
-                  onChanged: notifier.setLanguage,
+          m3.Expanded(
+            child: m3.Row(
+              crossAxisAlignment: m3.CrossAxisAlignment.stretch,
+              children: [
+                m3.SizedBox(
+                  width: 200,
+                  child: _SectionList(
+                    current: _section,
+                    onPick: (section) => setState(() => _section = section),
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const m3.SizedBox(height: 16),
-          _Section(
-            title: l10n.setupUi,
-            children: [
-              _SettingRow(
-                label: l10n.setupThemeMode,
-                hint: l10n.setupThemeHint,
-                child: _Choice<ThemePreference>(
-                  keyPrefix: 'theme',
-                  value: settings.theme,
-                  options: {
-                    ThemePreference.system: l10n.themeSystem,
-                    ThemePreference.light: l10n.themeLight,
-                    ThemePreference.dark: l10n.themeDark,
-                  },
-                  onChanged: notifier.setTheme,
+                const m3.SizedBox(width: 16),
+                m3.Expanded(
+                  child: m3.SingleChildScrollView(
+                    // Keyed by section so switching sections starts at the top
+                    // instead of inheriting the previous section's scroll offset.
+                    key: m3.ValueKey('setup-${_section.name}'),
+                    padding: const m3.EdgeInsets.only(bottom: 24),
+                    child: MotionEntrance(children: [_body(context, _section)]),
+                  ),
                 ),
-              ),
-              // No animation switch: motion is part of the design, and only the
-              // OS accessibility flag can turn it off (`MotionScope` ORs it in).
-              _SettingRow(
-                label: l10n.setupAccent,
-                hint: l10n.setupAccentHint,
-                child: AppAccentPicker(
-                  value: settings.accent,
-                  onChanged: notifier.setAccent,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-          const m3.SizedBox(height: 16),
-          _Section(
-            title: l10n.setupLaunch,
-            children: [
-              _PlayerNameRow(settings: settings),
-              _GlobalMemoryRow(settings: settings),
-            ],
-          ),
-          const m3.SizedBox(height: 16),
-          _Section(title: l10n.setupJava, children: const [JavaRuntimeList()]),
-          const m3.SizedBox(height: 16),
-          // Network last: it is the only section that does not change how the game
-          // launches, and everything above it is what a user comes here for.
-          _Section(
-            title: l10n.settingsNetworkTitle,
-            children: const [NetworkPanel()],
-          ),
-          const m3.SizedBox(height: 16),
-          _Section(title: l10n.aboutTitle, children: const [AboutPanel()]),
         ],
+      ),
+    );
+  }
+
+  Widget _body(BuildContext context, SetupSection section) {
+    final l10n = context.l10n;
+    final settings = ProviderScope.containerOf(context)
+        .read(appSettingsProvider);
+    final notifier = ProviderScope.containerOf(context)
+        .read(appSettingsProvider.notifier);
+
+    return switch (section) {
+      SetupSection.general => _Section(
+        title: l10n.setupLanguage,
+        children: [
+          _SettingRow(
+            label: l10n.setupLanguage,
+            hint: l10n.setupLanguageHint,
+            child: _Choice<LanguagePreference>(
+              keyPrefix: 'language',
+              value: settings.language,
+              options: {
+                LanguagePreference.system: l10n.themeSystem,
+                LanguagePreference.english: l10n.languageEnglish,
+                LanguagePreference.chinese: l10n.languageChinese,
+              },
+              onChanged: notifier.setLanguage,
+            ),
+          ),
+        ],
+      ),
+      SetupSection.appearance => _Section(
+        title: l10n.setupUi,
+        children: [
+          _SettingRow(
+            label: l10n.setupThemeMode,
+            hint: l10n.setupThemeHint,
+            child: _Choice<ThemePreference>(
+              keyPrefix: 'theme',
+              value: settings.theme,
+              options: {
+                ThemePreference.system: l10n.themeSystem,
+                ThemePreference.light: l10n.themeLight,
+                ThemePreference.dark: l10n.themeDark,
+              },
+              onChanged: notifier.setTheme,
+            ),
+          ),
+          // No animation switch: motion is part of the design, and only the OS
+          // accessibility flag can turn it off (`MotionScope` ORs it in).
+          _SettingRow(
+            label: l10n.setupAccent,
+            hint: l10n.setupAccentHint,
+            child: AppAccentPicker(
+              value: settings.accent,
+              onChanged: notifier.setAccent,
+            ),
+          ),
+        ],
+      ),
+      SetupSection.launch => _Section(
+        title: l10n.setupLaunch,
+        children: [
+          _PlayerNameRow(settings: settings),
+          _GlobalMemoryRow(settings: settings),
+        ],
+      ),
+      SetupSection.java => _Section(
+        title: l10n.setupJava,
+        children: const [JavaRuntimeList()],
+      ),
+      SetupSection.network => _Section(
+        title: l10n.settingsNetworkTitle,
+        children: const [NetworkPanel()],
+      ),
+      SetupSection.about => _Section(
+        title: l10n.aboutTitle,
+        children: const [AboutPanel()],
+      ),
+    };
+  }
+}
+
+/// The section list.
+///
+/// Rows, not a tab bar: six tabs across the top of a desktop window either wrap or
+/// shrink to unreadable, and a list of six is the same information without either
+/// problem. The selected row is marked and tinted, which is how M3 expresses state on
+/// a navigation surface.
+class _SectionList extends StatelessWidget {
+  const _SectionList({required this.current, required this.onPick});
+
+  final SetupSection current;
+  final void Function(SetupSection section) onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final scheme = m3.Theme.of(context).colorScheme;
+
+    final labels = {
+      SetupSection.general: (l10n.setupSectionGeneral, ShellIcons.list),
+      SetupSection.appearance: (
+        l10n.setupSectionAppearance,
+        ShellIcons.resourcePacks,
+      ),
+      SetupSection.launch: (l10n.setupLaunch, ShellIcons.play),
+      SetupSection.java: (l10n.setupJava, ShellIcons.java),
+      SetupSection.network: (l10n.settingsNetworkTitle, ShellIcons.network),
+      SetupSection.about: (l10n.aboutTitle, ShellIcons.info),
+    };
+
+    return m3.Container(
+      decoration: m3.BoxDecoration(
+        color: scheme.surfaceContainerLow,
+        borderRadius: m3.BorderRadius.circular(16),
+      ),
+      padding: const m3.EdgeInsets.symmetric(vertical: 8),
+      child: m3.ListView(
+        padding: m3.EdgeInsets.zero,
+        children: [
+          for (final entry in labels.entries)
+            _SectionRow(
+              key: m3.ValueKey('setup-section-${entry.key.name}'),
+              label: entry.value.$1,
+              icon: entry.value.$2,
+              selected: entry.key == current,
+              onPressed: () => onPick(entry.key),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionRow extends StatelessWidget {
+  const _SectionRow({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onPressed,
+    super.key,
+  });
+
+  final String label;
+  final Object icon;
+  final bool selected;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = m3.Theme.of(context).colorScheme;
+    return m3.Padding(
+      padding: const m3.EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      child: m3.Material(
+        color: selected ? scheme.secondaryContainer : m3.Colors.transparent,
+        borderRadius: m3.BorderRadius.circular(10),
+        child: m3.InkWell(
+          onTap: onPressed,
+          borderRadius: m3.BorderRadius.circular(10),
+          child: m3.Padding(
+            padding: const m3.EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
+            child: m3.Row(
+              children: [
+                m3.Icon(
+                  icon as m3.IconData,
+                  size: 16,
+                  color: selected
+                      ? scheme.onSecondaryContainer
+                      : scheme.onSurfaceVariant,
+                ),
+                const m3.SizedBox(width: 10),
+                m3.Expanded(
+                  child: m3.Text(
+                    label,
+                    maxLines: 1,
+                    overflow: m3.TextOverflow.ellipsis,
+                    style: AppTheme.label(context).copyWith(
+                      color: selected
+                          ? scheme.onSecondaryContainer
+                          : scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

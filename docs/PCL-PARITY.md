@@ -54,7 +54,9 @@ wrong: installing wrote files, and nothing pointed the launcher at them.
 | 启动: play/stop, log tail, busy state | **done** | same file |
 | 下载: version list (release/snapshot/old) + install queue + progress | **done** | `lib/ui/download/`, `lib/data/install_providers.dart` |
 | 下载完成即出现在启动页 | **done** | `InstallController.install` → `InstanceListController.ensureForVersion` |
-| 版本设置: reachable from the card and from 版本设置 button | **done** | `/instances/:id`, `lib/ui/instances/instance_detail_screen.dart` |
+| 版本设置: reachable from the card and from 版本设置 button | **done** | `/instances/:id`, tabbed page: 概览 / 内容 / 设置 / 文件 |
+| 版本设置 内容 tab: mods / resource packs / shaders in one list with a kind filter | **done** | `lib/ui/instances/content_browser.dart` |
+| 设置 as sections rather than one long page | **done** | `lib/ui/setup/setup_screen.dart` (`SetupSection`) |
 | 版本设置: Java (path + detect + download), memory, JVM/game args, isolation | **done** | `instance_detail_screen.dart`, `lib/ui/setup/java_panel.dart` |
 | 版本设置: open the game folder | **done** | Files section of the detail screen |
 | Accounts: offline name | **done** | `AppSettings.playerName`, `launch_service.dart` |
