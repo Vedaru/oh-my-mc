@@ -840,7 +840,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get contentShaderPacksHint => '已安装的光影包；在游戏里选择启用的那个。';
 
   @override
-  String get contentSavesHint => '这个实例的存档。删除后无法恢复。';
+  String get contentSavesHint => '存档无法重新下载：删除或改动之前先备份。';
 
   @override
   String get contentServersHint => '游戏里多人游戏列表显示的内容。';
@@ -1128,4 +1128,17 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get launcherUpdateAction => '打开发布页';
+
+  @override
+  String get worldRestore => '从备份还原…';
+
+  @override
+  String worldRestoreDone(String name) {
+    return '已还原为 $name';
+  }
+
+  @override
+  String worldRestoreFailed(String error) {
+    return '还原失败：$error';
+  }
 }

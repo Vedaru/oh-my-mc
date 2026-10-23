@@ -870,7 +870,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get contentSavesHint =>
-      'Worlds in this instance. Deleting one is permanent.';
+      'A world cannot be downloaded again: back it up before you delete or change it.';
 
   @override
   String get contentServersHint =>
@@ -1172,4 +1172,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get launcherUpdateAction => 'Open release page';
+
+  @override
+  String get worldRestore => 'Restore from backup…';
+
+  @override
+  String worldRestoreDone(String name) {
+    return 'Restored as $name';
+  }
+
+  @override
+  String worldRestoreFailed(String error) {
+    return 'Restore failed: $error';
+  }
 }

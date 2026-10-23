@@ -1,16 +1,17 @@
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart' as m3;
 import 'package:path/path.dart' as p;
 
 import '../../core/game/content.dart';
-import '../../core/game/world_backup.dart';
 import '../../core/instance/instance.dart';
 import '../../core/mods/mod_scanner.dart';
 import '../../core/mods/modrinth.dart';
 import '../../core/mods/update_checker.dart';
+import '../../data/backup_providers.dart';
 import '../../data/game_content_provider.dart';
 import '../../data/launch_factory.dart';
 import '../../data/mods_providers.dart';
@@ -179,6 +180,48 @@ class _InstanceContentPageState extends ConsumerState<InstanceContentPage> {
     if (mounted) setState(() => _generation++);
   }
 
+  /// Puts a backup zip back as a save folder, beside the original.
+  ///
+  /// The restore never overwrites: `WorldBackupService` names the copy
+  /// `<world> (restored <stamp>)`, because a restore that silently replaces hours of
+  /// play is a data-loss feature wearing a helpful label.
+  Future<void> _restoreWorld() async {
+    final l10n = context.l10n;
+    final messenger = m3.ScaffoldMessenger.maybeOf(context);
+    final picked = await FilePicker.pickFiles(
+      dialogTitle: l10n.worldRestore,
+      type: FileType.custom,
+      allowedExtensions: const ['zip'],
+    );
+    final path = picked.isEmpty ? null : picked.first.path;
+    if (path == null || !mounted) return;
+    try {
+      final restored = await ref
+          .read(worldBackupServiceProvider)
+          .restore(File(path), savesDir: Directory(p.join(_root, 'saves')));
+      if (!mounted) return;
+      messenger
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(
+          m3.SnackBar(
+            content: m3.Text(l10n.worldRestoreDone(p.basename(restored.path))),
+            behavior: m3.SnackBarBehavior.floating,
+          ),
+        );
+      setState(() => _generation++);
+    } on Object catch (e) {
+      if (!mounted) return;
+      messenger
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(
+          m3.SnackBar(
+            content: m3.Text(l10n.worldRestoreFailed('$e')),
+            behavior: m3.SnackBarBehavior.floating,
+          ),
+        );
+    }
+  }
+
   Future<void> _openFolder() async {
     final target = widget.kind == InstanceContentKind.servers
         ? _root
@@ -231,6 +274,17 @@ class _InstanceContentPageState extends ConsumerState<InstanceContentPage> {
                     icon: const m3.Icon(ShellIcons.folder, size: 14),
                     label: m3.Text(l10n.instanceOpenFolderTooltip),
                   ),
+                  if (widget.kind == InstanceContentKind.worlds) ...[
+                    const m3.SizedBox(width: 8),
+                    AppButton(
+                      key: const m3.ValueKey('world-restore'),
+                      onPressed: _restoreWorld,
+                      style: AppButtonStyle.text,
+                      size: AppButtonSize.sm,
+                      icon: const m3.Icon(ShellIcons.backup, size: 14),
+                      label: m3.Text(l10n.worldRestore),
+                    ),
+                  ],
                   if (widget.kind == InstanceContentKind.servers) ...[
                     m3.IconButton(
                       key: const m3.ValueKey('servers-refresh'),
@@ -513,10 +567,12 @@ class _GameContentPageState extends ConsumerState<_GameContentPage> {
     final l10n = context.l10n;
     final messenger = m3.ScaffoldMessenger.maybeOf(context);
     try {
-      final backup = await const WorldBackupService().backUp(
-        Directory(entry.path),
-        backupsDir: Directory(p.join(widget.root, 'backups')),
-      );
+      final backup = await ref
+          .read(worldBackupServiceProvider)
+          .backUp(
+            Directory(entry.path),
+            backupsDir: Directory(p.join(widget.root, 'backups')),
+          );
       messenger
         ?..hideCurrentSnackBar()
         ..showSnackBar(

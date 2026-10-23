@@ -1523,7 +1523,7 @@ abstract class AppLocalizations {
   /// Warns that deleting a world is permanent.
   ///
   /// In en, this message translates to:
-  /// **'Worlds in this instance. Deleting one is permanent.'**
+  /// **'A world cannot be downloaded again: back it up before you delete or change it.'**
   String get contentSavesHint;
 
   /// Explains that this is the in-game multiplayer list.
@@ -2035,6 +2035,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open release page'**
   String get launcherUpdateAction;
+
+  /// Button that restores a world from a backup zip.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore from backup…'**
+  String get worldRestore;
+
+  /// Snackbar after a restore, naming the new world folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Restored as {name}'**
+  String worldRestoreDone(String name);
+
+  /// Snackbar when a restore failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore failed: {error}'**
+  String worldRestoreFailed(String error);
 }
 
 class _AppLocalizationsDelegate

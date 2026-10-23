@@ -1224,7 +1224,7 @@
   "@contentShaderPacksHint": {
     "description": "Explains that the active shader is picked in game."
   },
-  "contentSavesHint": "Worlds in this instance. Deleting one is permanent.",
+  "contentSavesHint": "A world cannot be downloaded again: back it up before you delete or change it.",
   "@contentSavesHint": {
     "description": "Warns that deleting a world is permanent."
   },
@@ -1645,5 +1645,27 @@
   "launcherUpdateAction": "Open release page",
   "@launcherUpdateAction": {
     "description": "Button that opens the release page."
+  },
+  "worldRestore": "Restore from backup…",
+  "@worldRestore": {
+    "description": "Button that restores a world from a backup zip."
+  },
+  "worldRestoreDone": "Restored as {name}",
+  "@worldRestoreDone": {
+    "description": "Snackbar after a restore, naming the new world folder.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "worldRestoreFailed": "Restore failed: {error}",
+  "@worldRestoreFailed": {
+    "description": "Snackbar when a restore failed.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   }
 }

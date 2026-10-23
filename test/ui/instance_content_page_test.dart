@@ -7,12 +7,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart' as m3;
 import 'package:oh_my_mc/app/providers.dart';
 import 'package:oh_my_mc/core/game/content.dart';
+import 'package:oh_my_mc/core/game/world_backup.dart';
 import 'package:oh_my_mc/core/instance/instance.dart';
 import 'package:oh_my_mc/core/mods/mod_installer.dart';
 import 'package:oh_my_mc/core/mods/mod_scanner.dart';
 import 'package:oh_my_mc/core/mods/modrinth.dart';
 import 'package:oh_my_mc/core/mods/update_checker.dart';
 import 'package:oh_my_mc/core/net/cancellation.dart';
+import 'package:oh_my_mc/data/backup_providers.dart';
 import 'package:oh_my_mc/data/game_content_provider.dart';
 import 'package:oh_my_mc/data/instance_providers.dart';
 import 'package:oh_my_mc/data/instance_store.dart';
@@ -93,6 +95,28 @@ class _UpdateClient implements ModrinthClient {
 
 /// Records the deletes the update replaces. The real one unlinks a path, and the test's
 /// "installed" jar does not exist on disk.
+/// Records what a restore was asked to do, without zipping anything.
+class _FakeBackupService implements WorldBackupService {
+  final restored = <String>[];
+
+  @override
+  Future<WorldBackup> backUp(
+    Directory world, {
+    required Directory backupsDir,
+  }) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<File>> listBackups(Directory backupsDir) async => const [];
+
+  @override
+  Future<Directory> restore(File archive, {required Directory savesDir}) async {
+    restored.add(archive.path);
+    return savesDir;
+  }
+}
+
 class _FakeModsRepository implements ModsRepository {
   final deleted = <String>[];
 
@@ -308,6 +332,19 @@ void main() {
     await tester.tap(find.byKey(const m3.ValueKey('content-confirm-delete')));
     await tester.pumpAndSettle();
     expect(content.writes, ['delete:/World']);
+  });
+
+  testWidgets('a backup can be put back as a world', (tester) async {
+    final service = _FakeBackupService();
+    await pump(
+      tester,
+      section: 'worlds',
+      overrides: [worldBackupServiceProvider.overrideWithValue(service)],
+    );
+
+    // The worlds page offers both halves of the feature: take a copy, and put one back.
+    expect(find.byKey(const ValueKey('world-backup-World')), findsOneWidget);
+    expect(find.byKey(const ValueKey('world-restore')), findsOneWidget);
   });
 
   testWidgets('a data pack section starts from a world', (tester) async {

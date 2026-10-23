@@ -275,7 +275,7 @@
   "contentServers": "服务器",
   "contentResourcePacksHint": "启用的资源包会写进 options.txt，游戏启动时读取。",
   "contentShaderPacksHint": "已安装的光影包；在游戏里选择启用的那个。",
-  "contentSavesHint": "这个实例的存档。删除后无法恢复。",
+  "contentSavesHint": "存档无法重新下载：删除或改动之前先备份。",
   "contentServersHint": "游戏里多人游戏列表显示的内容。",
   "contentEmptyResourcePacks": "还没有资源包。",
   "contentEmptyShaderPacks": "还没有光影包。",
@@ -360,5 +360,8 @@
   "setupBackgroundFailed": "无法使用这个文件。",
   "launcherUpdateTitle": "有新版本 {version}",
   "launcherUpdateBody": "到发布页下载更新，实例和设置都会保留。",
-  "launcherUpdateAction": "打开发布页"
+  "launcherUpdateAction": "打开发布页",
+  "worldRestore": "从备份还原…",
+  "worldRestoreDone": "已还原为 {name}",
+  "worldRestoreFailed": "还原失败：{error}"
 }
