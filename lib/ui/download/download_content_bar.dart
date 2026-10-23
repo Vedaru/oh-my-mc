@@ -101,6 +101,50 @@ class _DownloadContentBarState extends ConsumerState<DownloadContentBar> {
     }
   }
 
+  /// The row's five actions, in reading order.
+  ///
+  /// All five are outlined pills of the same height and weight, because they are the
+  /// same kind of thing - one way to put content into an instance. 导入世界 used to be
+  /// a text button, which made the row look like four buttons and a link.
+  List<Widget> _buttons(AppLocalizations l10n, bool enabled) => [
+    _CatalogButton(
+      kind: CatalogKind.mod,
+      icon: ShellIcons.mods,
+      label: l10n.catalogMods,
+      onPressed: enabled ? () => _open(CatalogKind.mod) : null,
+    ),
+    _CatalogButton(
+      kind: CatalogKind.resourcePack,
+      icon: ShellIcons.resourcePacks,
+      label: l10n.catalogResourcePacks,
+      onPressed: enabled ? () => _open(CatalogKind.resourcePack) : null,
+    ),
+    _CatalogButton(
+      kind: CatalogKind.shader,
+      icon: ShellIcons.shaderPacks,
+      label: l10n.catalogShaders,
+      onPressed: enabled ? () => _open(CatalogKind.shader) : null,
+    ),
+    _CatalogButton(
+      kind: CatalogKind.datapack,
+      icon: ShellIcons.saves,
+      label: l10n.catalogDataPacks,
+      onPressed: enabled ? () => _open(CatalogKind.datapack) : null,
+    ),
+    // Worlds and packs are files, not catalogues: Modrinth has no world directory, so
+    // promising a search there would be a dead end.
+    AppButton(
+      key: const m3.ValueKey('catalog-import-world'),
+      onPressed: enabled ? _importWorld : null,
+      style: AppButtonStyle.outlined,
+      size: AppButtonSize.sm,
+      icon: const m3.Icon(ShellIcons.saves, size: 14),
+      label: m3.Text(
+        _importing ? l10n.catalogImporting : l10n.catalogImportWorld,
+      ),
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -123,53 +167,21 @@ class _DownloadContentBarState extends ConsumerState<DownloadContentBar> {
           const m3.SizedBox(height: 8),
           // One row, scrolling sideways on a narrow window: five buttons that wrap
           // onto a second line double the bar's height for no information gained.
+          //
+          // The gaps come from the loop, not from hand-placed `SizedBox`es between
+          // them: a row of five buttons is exactly the place where one missing spacer
+          // is invisible in code review and obvious on screen.
           m3.SingleChildScrollView(
             scrollDirection: m3.Axis.horizontal,
             child: m3.Row(
               children: [
-                _CatalogButton(
-                  kind: CatalogKind.mod,
-                  icon: ShellIcons.mods,
-                  label: l10n.catalogMods,
-                  onPressed: enabled ? () => _open(CatalogKind.mod) : null,
-                ),
-                const m3.SizedBox(width: 8),
-                _CatalogButton(
-                  kind: CatalogKind.resourcePack,
-                  icon: ShellIcons.resourcePacks,
-                  label: l10n.catalogResourcePacks,
-                  onPressed: enabled
-                      ? () => _open(CatalogKind.resourcePack)
-                      : null,
-                ),
-                _CatalogButton(
-                  kind: CatalogKind.shader,
-                  icon: ShellIcons.shaderPacks,
-                  label: l10n.catalogShaders,
-                  onPressed: enabled ? () => _open(CatalogKind.shader) : null,
-                ),
-                const m3.SizedBox(width: 8),
-                _CatalogButton(
-                  kind: CatalogKind.datapack,
-                  icon: ShellIcons.saves,
-                  label: l10n.catalogDataPacks,
-                  onPressed: enabled ? () => _open(CatalogKind.datapack) : null,
-                ),
-                const m3.SizedBox(width: 8),
-                // Worlds and packs are files, not catalogues: Modrinth has no world
-                // directory, so promising a search there would be a dead end.
-                AppButton(
-                  key: const m3.ValueKey('catalog-import-world'),
-                  onPressed: enabled ? _importWorld : null,
-                  style: AppButtonStyle.text,
-                  size: AppButtonSize.sm,
-                  icon: const m3.Icon(ShellIcons.saves, size: 14),
-                  label: m3.Text(
-                    _importing
-                        ? l10n.catalogImporting
-                        : l10n.catalogImportWorld,
-                  ),
-                ),
+                for (final (index, button) in _buttons(
+                  l10n,
+                  enabled,
+                ).indexed) ...[
+                  if (index > 0) const m3.SizedBox(width: 8),
+                  button,
+                ],
               ],
             ),
           ),

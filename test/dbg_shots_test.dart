@@ -391,7 +391,14 @@ void main() {
   });
 
   testWidgets('download', (tester) async {
-    await shoot(tester, '/download', 'download');
+    // With an instance selected: the content bar's buttons are disabled without one,
+    // and the shot exists to review the enabled row.
+    await shoot(
+      tester,
+      '/download',
+      'download',
+      instances: [_instance('mc', 'mc', '1.20.1')],
+    );
   });
 
   testWidgets('content resource packs', (tester) async {
