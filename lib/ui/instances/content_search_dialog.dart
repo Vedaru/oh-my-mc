@@ -280,9 +280,9 @@ Future<void> showContentSearch({
   required WidgetRef ref,
   required Instance instance,
   required CatalogKind kind,
+  String? world,
 }) async {
-  String? world;
-  if (kind == CatalogKind.datapack) {
+  if (kind == CatalogKind.datapack && world == null) {
     // A datapack is per world, so the world is the first question, not a detail of
     // where the files go.
     final root = ref.read(launcherPathsProvider).gamePathsFor(instance).root;
