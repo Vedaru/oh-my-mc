@@ -1507,6 +1507,276 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Export failed: {error}'**
   String packExportFailed(String error);
+
+  /// Crash action: open where memory is set.
+  ///
+  /// In en, this message translates to:
+  /// **'Version settings'**
+  String get diagnosisOpenSettings;
+
+  /// Crash action: open the Java settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Java'**
+  String get diagnosisChooseJava;
+
+  /// Crash action: get a runtime the launcher manages.
+  ///
+  /// In en, this message translates to:
+  /// **'Install Java'**
+  String get diagnosisInstallJava;
+
+  /// Crash action: open the mod list.
+  ///
+  /// In en, this message translates to:
+  /// **'Mods'**
+  String get diagnosisOpenMods;
+
+  /// Crash action: open the log page.
+  ///
+  /// In en, this message translates to:
+  /// **'Logs'**
+  String get diagnosisOpenLogs;
+
+  /// Crash action: open the download page to repair.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get diagnosisOpenDownload;
+
+  /// Crash action: launch once more.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get diagnosisRetry;
+
+  /// Settings section for diagnostics and LAN.
+  ///
+  /// In en, this message translates to:
+  /// **'Network'**
+  String get settingsNetworkTitle;
+
+  /// Explanation above the network diagnostics in settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Measures the CDNs the launcher downloads from, and shows the address to share for LAN play.'**
+  String get settingsNetworkHint;
+
+  /// Button that measures mirror throughput.
+  ///
+  /// In en, this message translates to:
+  /// **'Test download speed'**
+  String get settingsSpeedTest;
+
+  /// State while the speed test runs.
+  ///
+  /// In en, this message translates to:
+  /// **'Testing…'**
+  String get settingsSpeedTesting;
+
+  /// Label for the local IP shown for LAN play.
+  ///
+  /// In en, this message translates to:
+  /// **'LAN address'**
+  String get settingsLanAddress;
+
+  /// Shown when no LAN address exists.
+  ///
+  /// In en, this message translates to:
+  /// **'No network interface found'**
+  String get settingsLanUnknown;
+
+  /// Copy the LAN address to the clipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get settingsCopy;
+
+  /// Confirmation after copying.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied'**
+  String get settingsCopied;
+
+  /// Crash diagnosis title (outOfMemory).
+  ///
+  /// In en, this message translates to:
+  /// **'Out of memory'**
+  String get diagOutOfMemoryTitle;
+
+  /// Crash diagnosis explanation (outOfMemory).
+  ///
+  /// In en, this message translates to:
+  /// **'The game ran out of heap. A modded 1.20 instance usually needs 4 GB or more; raise the memory in the version settings unless the machine has no more to give. On 32-bit Java it needs a 64-bit runtime instead.'**
+  String get diagOutOfMemoryBody;
+
+  /// Crash diagnosis title (outOfMetaspace).
+  ///
+  /// In en, this message translates to:
+  /// **'Out of metaspace'**
+  String get diagOutOfMetaspaceTitle;
+
+  /// Crash diagnosis explanation (outOfMetaspace).
+  ///
+  /// In en, this message translates to:
+  /// **'Not the game heap: the JVM ran out of class metadata. Raising the memory slider does not help - this is an old Java with a huge modpack, so switch to a Java 17 or 21 runtime.'**
+  String get diagOutOfMetaspaceBody;
+
+  /// Crash diagnosis title (javaTooOld).
+  ///
+  /// In en, this message translates to:
+  /// **'This Java is too old'**
+  String get diagJavaTooOldTitle;
+
+  /// Crash diagnosis explanation (javaTooOld).
+  ///
+  /// In en, this message translates to:
+  /// **'A class in the game or a mod was compiled for a newer Java than the one selected. Choose a newer runtime in the version settings, or let the launcher install one.'**
+  String get diagJavaTooOldBody;
+
+  /// Crash diagnosis title (javaTooOldNamed).
+  ///
+  /// In en, this message translates to:
+  /// **'This version needs Java {java}'**
+  String diagJavaTooOldNamedTitle(int java);
+
+  /// Crash diagnosis explanation (javaTooOldNamed).
+  ///
+  /// In en, this message translates to:
+  /// **'The selected Java is older than Java {java}, which the game or a mod requires. Pick a Java {java} runtime in the version settings, or let the launcher install one.'**
+  String diagJavaTooOldNamedBody(int java);
+
+  /// Crash diagnosis title (javaMissing).
+  ///
+  /// In en, this message translates to:
+  /// **'The Java runtime is missing'**
+  String get diagJavaMissingTitle;
+
+  /// Crash diagnosis explanation (javaMissing).
+  ///
+  /// In en, this message translates to:
+  /// **'The configured Java is no longer at that path - it was moved, or a launcher-managed runtime was deleted. Pick another one, or install one.'**
+  String get diagJavaMissingBody;
+
+  /// Crash diagnosis title (modConflict).
+  ///
+  /// In en, this message translates to:
+  /// **'The mods do not fit together'**
+  String get diagModConflictTitle;
+
+  /// Crash diagnosis explanation (modConflict).
+  ///
+  /// In en, this message translates to:
+  /// **'The loader refused the mod set: two mods provide the same thing, or one needs a version of another that is not installed. The log names the mods involved.'**
+  String get diagModConflictBody;
+
+  /// Crash diagnosis title (modMismatch).
+  ///
+  /// In en, this message translates to:
+  /// **'A mod does not match the game version'**
+  String get diagModMismatchTitle;
+
+  /// Crash diagnosis explanation (modMismatch).
+  ///
+  /// In en, this message translates to:
+  /// **'A class the mod expected is not there. On a modded instance this is a mod built for another Minecraft version; on a vanilla one the installed files are incomplete.'**
+  String get diagModMismatchBody;
+
+  /// Crash diagnosis title (missingDependency).
+  ///
+  /// In en, this message translates to:
+  /// **'A mod is missing a dependency'**
+  String get diagMissingDependencyTitle;
+
+  /// Crash diagnosis explanation (missingDependency).
+  ///
+  /// In en, this message translates to:
+  /// **'A mod needs another mod that is not installed. Install the missing one - the search dialog pulls dependencies in automatically.'**
+  String get diagMissingDependencyBody;
+
+  /// Crash diagnosis title (mixinFailed).
+  ///
+  /// In en, this message translates to:
+  /// **'A mod failed to patch the game'**
+  String get diagMixinFailedTitle;
+
+  /// Crash diagnosis explanation (mixinFailed).
+  ///
+  /// In en, this message translates to:
+  /// **'A mixin did not apply, which almost always means the mod was built for a different game or loader version. Remove or update that mod.'**
+  String get diagMixinFailedBody;
+
+  /// Crash diagnosis title (mixinFailedNamed).
+  ///
+  /// In en, this message translates to:
+  /// **'A mod failed to patch the game: {mod}'**
+  String diagMixinFailedNamedTitle(String mod);
+
+  /// Crash diagnosis explanation (mixinFailedNamed).
+  ///
+  /// In en, this message translates to:
+  /// **'A mixin from {mod} did not apply, which almost always means it was built for a different game or loader version. Remove or update that mod.'**
+  String diagMixinFailedNamedBody(String mod);
+
+  /// Crash diagnosis title (archMismatch).
+  ///
+  /// In en, this message translates to:
+  /// **'The native libraries do not match the system'**
+  String get diagArchMismatchTitle;
+
+  /// Crash diagnosis explanation (archMismatch).
+  ///
+  /// In en, this message translates to:
+  /// **'LWJGL could not load its native code, which usually means a 32-bit Java on a 64-bit system (or the reverse), or natives extracted by another launcher. Reinstall the version and make sure the Java is 64-bit.'**
+  String get diagArchMismatchBody;
+
+  /// Crash diagnosis title (graphicsDriver).
+  ///
+  /// In en, this message translates to:
+  /// **'The graphics driver crashed'**
+  String get diagGraphicsDriverTitle;
+
+  /// Crash diagnosis explanation (graphicsDriver).
+  ///
+  /// In en, this message translates to:
+  /// **'Minecraft could not create or use an OpenGL context. Update the GPU driver, and on a laptop make sure the game is not running on a GPU that cannot do OpenGL 3.2.'**
+  String get diagGraphicsDriverBody;
+
+  /// Crash diagnosis title (networkFailure).
+  ///
+  /// In en, this message translates to:
+  /// **'Something could not be downloaded'**
+  String get diagNetworkFailureTitle;
+
+  /// Crash diagnosis explanation (networkFailure).
+  ///
+  /// In en, this message translates to:
+  /// **'A file could not be fetched. Retry; if it keeps failing, the mirror is unreachable from this network.'**
+  String get diagNetworkFailureBody;
+
+  /// Crash diagnosis title (corruptInstall).
+  ///
+  /// In en, this message translates to:
+  /// **'An installed file is damaged'**
+  String get diagCorruptInstallTitle;
+
+  /// Crash diagnosis explanation (corruptInstall).
+  ///
+  /// In en, this message translates to:
+  /// **'A jar could not be read - usually an interrupted download or a full disk. Repairing the version re-downloads only the files that fail their check.'**
+  String get diagCorruptInstallBody;
+
+  /// Crash diagnosis title (unknown exit).
+  ///
+  /// In en, this message translates to:
+  /// **'The game exited with code {code}'**
+  String diagUnknownTitle(String code);
+
+  /// Crash diagnosis explanation (unknown).
+  ///
+  /// In en, this message translates to:
+  /// **'None of the known failure patterns matched. The tail of the log is the place to look: the last exception before the exit is usually the cause.'**
+  String get diagUnknownBody;
 }
 
 class _AppLocalizationsDelegate

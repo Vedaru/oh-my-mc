@@ -10,6 +10,7 @@ import '../motion/motion.dart';
 import '../shell/shell_icons.dart';
 import '../theme/app_theme.dart';
 import 'java_panel.dart';
+import 'network_panel.dart';
 import '../components/app_accent_picker.dart';
 import '../components/app_radio_group.dart';
 import '../components/page_body.dart';
@@ -93,6 +94,13 @@ class SetupScreen extends ConsumerWidget {
           ),
           const m3.SizedBox(height: 16),
           _Section(title: l10n.setupJava, children: const [JavaRuntimeList()]),
+          const m3.SizedBox(height: 16),
+          // Network last: it is the only section that does not change how the game
+          // launches, and everything above it is what a user comes here for.
+          _Section(
+            title: l10n.settingsNetworkTitle,
+            children: const [NetworkPanel()],
+          ),
         ],
       ),
     );

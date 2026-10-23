@@ -18,6 +18,8 @@ import 'package:oh_my_mc/core/logs/log_files.dart';
 import 'package:oh_my_mc/data/log_providers.dart';
 import 'package:oh_my_mc/core/mods/modrinth.dart';
 import 'package:oh_my_mc/data/modrinth_providers.dart';
+import 'package:oh_my_mc/core/diagnostics/network_info.dart';
+import 'package:oh_my_mc/data/diagnostics_providers.dart';
 import 'package:oh_my_mc/data/launch_providers.dart';
 import 'package:oh_my_mc/core/launch/launch_handle.dart';
 import 'package:oh_my_mc/data/instance_providers.dart';
@@ -360,6 +362,44 @@ void main() {
     await shoot(tester, '/download', 'download');
   });
 
+  testWidgets('crash diagnosis', (tester) async {
+    await shoot(
+      tester,
+      '/launch',
+      'crash',
+      instances: const [
+        Instance(
+          id: 'fabric',
+          name: 'Fabulously Optimized',
+          versionId: '1.20.1',
+          loader: LoaderKind.fabric,
+          loaderVersion: '0.16.9',
+        ),
+      ],
+      overrides: [
+        instanceListProvider.overrideWith(() => _ShotSelected('fabric')),
+        launchControllerProvider.overrideWith(_ShotCrash.new),
+      ],
+    );
+  });
+
+  testWidgets('setup network', (tester) async {
+    await shoot(
+      tester,
+      '/setup',
+      'setup-network',
+      scrollDown: 1100,
+      overrides: [
+        lanInterfacesProvider.overrideWith(
+          (ref) async => const [
+            LanInterface(name: 'docker0', ipv4: ['172.17.0.1']),
+            LanInterface(name: 'wlan0', ipv4: ['192.168.1.23']),
+          ],
+        ),
+      ],
+    );
+  });
+
   testWidgets('mods search', (tester) async {
     await shoot(
       tester,
@@ -649,4 +689,52 @@ class _ShotRunning extends LaunchController {
 class _ShotNoSession extends LaunchController {
   @override
   LaunchSession build() => const LaunchSession.idle();
+}
+
+/// A session that ended in the failure the crash card exists for.
+class _ShotCrash extends LaunchController {
+  @override
+  LaunchSession build() => LaunchSession(
+    state: LaunchState.exited,
+    exitCode: 1,
+    instanceId: 'fabric',
+    uptime: const Duration(minutes: 6),
+    log: const [
+      LogLine(
+        '[12:00:00] [main/INFO]: Loading 214 mods from /mods',
+        LogChannel.stdout,
+      ),
+      LogLine(
+        '[12:00:04] [Render thread/INFO]: Backend library: LWJGL 3.4.3',
+        LogChannel.stdout,
+      ),
+      LogLine(
+        '[12:31:12] [Render thread/ERROR]: java.lang.OutOfMemoryError: Java heap space',
+        LogChannel.stderr,
+      ),
+      LogLine(
+        '\tat net.minecraft.client.renderer.chunk.RenderChunk.rebuild(RenderChunk.java:184)',
+        LogChannel.stderr,
+      ),
+    ],
+  );
+}
+
+/// An instance list with one selected instance, for pages that need the selection
+/// to be non-empty without a round trip through the launch flow.
+class _ShotSelected extends InstanceListNotifier {
+  _ShotSelected(this.id);
+
+  final String id;
+
+  @override
+  InstanceListState build() => InstanceListReady(const [
+    Instance(
+      id: 'fabric',
+      name: 'Fabulously Optimized',
+      versionId: '1.20.1',
+      loader: LoaderKind.fabric,
+      loaderVersion: '0.16.9',
+    ),
+  ], selectedId: id);
 }

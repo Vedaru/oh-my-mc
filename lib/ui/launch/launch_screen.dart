@@ -11,12 +11,14 @@ import '../../data/instance_providers.dart';
 import '../../core/mc/arch_compat.dart';
 import '../../data/install_providers.dart';
 import '../../data/java_providers.dart';
+import '../../core/diagnostics/crash_analyzer.dart';
 import '../../data/launch_providers.dart';
 import '../../l10n/l10n.dart';
 import '../components/app_banner.dart';
 import '../components/hover_row.dart';
 import 'version_list_dialog.dart';
 import '../components/page_body.dart';
+import 'crash_card.dart';
 import '../motion/motion.dart';
 import '../instances/instance_card.dart';
 import '../setup/java_panel.dart';
@@ -39,6 +41,13 @@ class LaunchScreen extends ConsumerWidget {
     final l10n = context.l10n;
     final list = ref.watch(instanceListProvider);
     final session = ref.watch(launchControllerProvider);
+    // Only for a session that ended badly. A refused launch already has its own
+    // offer above, and a running one has nothing to diagnose yet.
+    final diagnosis = session.state == LaunchState.exited
+        ? CrashAnalyzer.analyze([
+            for (final line in session.log) line.text,
+          ], exitCode: session.exitCode)
+        : null;
     final controller = ref.read(launchControllerProvider.notifier);
 
     final selected = switch (list) {
@@ -95,6 +104,17 @@ class LaunchScreen extends ConsumerWidget {
             // Java offer because they are the same kind of message: "this is what
             // stopped you, and here is the button that unblocks it".
             _RepairOfferArea(instance: selected, session: session),
+            // A crash is the other end of the same idea: the launch was allowed to
+            // run and died. Saying "exit code 1" and showing a stack trace makes
+            // the user do the reading; the card does it for them.
+            if (diagnosis != null) ...[
+              const m3.SizedBox(height: 12),
+              CrashCard(
+                diagnosis: diagnosis,
+                instanceId: selected.id,
+                onRetry: busy ? null : () => controller.launch(selected),
+              ),
+            ],
             const m3.SizedBox(height: 20),
             // Expanded: the console *is* the bottom half of this page. Sizing it
             // to its content made an idle page end in a thin grey strip that

@@ -1229,5 +1229,210 @@
         "type": "String"
       }
     }
+  },
+  "diagnosisOpenSettings": "Version settings",
+  "@diagnosisOpenSettings": {
+    "description": "Crash action: open where memory is set."
+  },
+  "diagnosisChooseJava": "Choose Java",
+  "@diagnosisChooseJava": {
+    "description": "Crash action: open the Java settings."
+  },
+  "diagnosisInstallJava": "Install Java",
+  "@diagnosisInstallJava": {
+    "description": "Crash action: get a runtime the launcher manages."
+  },
+  "diagnosisOpenMods": "Mods",
+  "@diagnosisOpenMods": {
+    "description": "Crash action: open the mod list."
+  },
+  "diagnosisOpenLogs": "Logs",
+  "@diagnosisOpenLogs": {
+    "description": "Crash action: open the log page."
+  },
+  "diagnosisOpenDownload": "Download",
+  "@diagnosisOpenDownload": {
+    "description": "Crash action: open the download page to repair."
+  },
+  "diagnosisRetry": "Try again",
+  "@diagnosisRetry": {
+    "description": "Crash action: launch once more."
+  },
+  "settingsNetworkTitle": "Network",
+  "@settingsNetworkTitle": {
+    "description": "Settings section for diagnostics and LAN."
+  },
+  "settingsNetworkHint": "Measures the CDNs the launcher downloads from, and shows the address to share for LAN play.",
+  "@settingsNetworkHint": {
+    "description": "Explanation above the network diagnostics in settings."
+  },
+  "settingsSpeedTest": "Test download speed",
+  "@settingsSpeedTest": {
+    "description": "Button that measures mirror throughput."
+  },
+  "settingsSpeedTesting": "Testing…",
+  "@settingsSpeedTesting": {
+    "description": "State while the speed test runs."
+  },
+  "settingsLanAddress": "LAN address",
+  "@settingsLanAddress": {
+    "description": "Label for the local IP shown for LAN play."
+  },
+  "settingsLanUnknown": "No network interface found",
+  "@settingsLanUnknown": {
+    "description": "Shown when no LAN address exists."
+  },
+  "settingsCopy": "Copy",
+  "@settingsCopy": {
+    "description": "Copy the LAN address to the clipboard."
+  },
+  "settingsCopied": "Copied",
+  "@settingsCopied": {
+    "description": "Confirmation after copying."
+  },
+  "diagOutOfMemoryTitle": "Out of memory",
+  "@diagOutOfMemoryTitle": {
+    "description": "Crash diagnosis title (outOfMemory)."
+  },
+  "diagOutOfMemoryBody": "The game ran out of heap. A modded 1.20 instance usually needs 4 GB or more; raise the memory in the version settings unless the machine has no more to give. On 32-bit Java it needs a 64-bit runtime instead.",
+  "@diagOutOfMemoryBody": {
+    "description": "Crash diagnosis explanation (outOfMemory)."
+  },
+  "diagOutOfMetaspaceTitle": "Out of metaspace",
+  "@diagOutOfMetaspaceTitle": {
+    "description": "Crash diagnosis title (outOfMetaspace)."
+  },
+  "diagOutOfMetaspaceBody": "Not the game heap: the JVM ran out of class metadata. Raising the memory slider does not help - this is an old Java with a huge modpack, so switch to a Java 17 or 21 runtime.",
+  "@diagOutOfMetaspaceBody": {
+    "description": "Crash diagnosis explanation (outOfMetaspace)."
+  },
+  "diagJavaTooOldTitle": "This Java is too old",
+  "@diagJavaTooOldTitle": {
+    "description": "Crash diagnosis title (javaTooOld)."
+  },
+  "diagJavaTooOldBody": "A class in the game or a mod was compiled for a newer Java than the one selected. Choose a newer runtime in the version settings, or let the launcher install one.",
+  "@diagJavaTooOldBody": {
+    "description": "Crash diagnosis explanation (javaTooOld)."
+  },
+  "diagJavaTooOldNamedTitle": "This version needs Java {java}",
+  "@diagJavaTooOldNamedTitle": {
+    "description": "Crash diagnosis title (javaTooOldNamed).",
+    "placeholders": {
+      "java": {
+        "type": "int"
+      }
+    }
+  },
+  "diagJavaTooOldNamedBody": "The selected Java is older than Java {java}, which the game or a mod requires. Pick a Java {java} runtime in the version settings, or let the launcher install one.",
+  "@diagJavaTooOldNamedBody": {
+    "description": "Crash diagnosis explanation (javaTooOldNamed).",
+    "placeholders": {
+      "java": {
+        "type": "int"
+      }
+    }
+  },
+  "diagJavaMissingTitle": "The Java runtime is missing",
+  "@diagJavaMissingTitle": {
+    "description": "Crash diagnosis title (javaMissing)."
+  },
+  "diagJavaMissingBody": "The configured Java is no longer at that path - it was moved, or a launcher-managed runtime was deleted. Pick another one, or install one.",
+  "@diagJavaMissingBody": {
+    "description": "Crash diagnosis explanation (javaMissing)."
+  },
+  "diagModConflictTitle": "The mods do not fit together",
+  "@diagModConflictTitle": {
+    "description": "Crash diagnosis title (modConflict)."
+  },
+  "diagModConflictBody": "The loader refused the mod set: two mods provide the same thing, or one needs a version of another that is not installed. The log names the mods involved.",
+  "@diagModConflictBody": {
+    "description": "Crash diagnosis explanation (modConflict)."
+  },
+  "diagModMismatchTitle": "A mod does not match the game version",
+  "@diagModMismatchTitle": {
+    "description": "Crash diagnosis title (modMismatch)."
+  },
+  "diagModMismatchBody": "A class the mod expected is not there. On a modded instance this is a mod built for another Minecraft version; on a vanilla one the installed files are incomplete.",
+  "@diagModMismatchBody": {
+    "description": "Crash diagnosis explanation (modMismatch)."
+  },
+  "diagMissingDependencyTitle": "A mod is missing a dependency",
+  "@diagMissingDependencyTitle": {
+    "description": "Crash diagnosis title (missingDependency)."
+  },
+  "diagMissingDependencyBody": "A mod needs another mod that is not installed. Install the missing one - the search dialog pulls dependencies in automatically.",
+  "@diagMissingDependencyBody": {
+    "description": "Crash diagnosis explanation (missingDependency)."
+  },
+  "diagMixinFailedTitle": "A mod failed to patch the game",
+  "@diagMixinFailedTitle": {
+    "description": "Crash diagnosis title (mixinFailed)."
+  },
+  "diagMixinFailedBody": "A mixin did not apply, which almost always means the mod was built for a different game or loader version. Remove or update that mod.",
+  "@diagMixinFailedBody": {
+    "description": "Crash diagnosis explanation (mixinFailed)."
+  },
+  "diagMixinFailedNamedTitle": "A mod failed to patch the game: {mod}",
+  "@diagMixinFailedNamedTitle": {
+    "description": "Crash diagnosis title (mixinFailedNamed).",
+    "placeholders": {
+      "mod": {
+        "type": "String"
+      }
+    }
+  },
+  "diagMixinFailedNamedBody": "A mixin from {mod} did not apply, which almost always means it was built for a different game or loader version. Remove or update that mod.",
+  "@diagMixinFailedNamedBody": {
+    "description": "Crash diagnosis explanation (mixinFailedNamed).",
+    "placeholders": {
+      "mod": {
+        "type": "String"
+      }
+    }
+  },
+  "diagArchMismatchTitle": "The native libraries do not match the system",
+  "@diagArchMismatchTitle": {
+    "description": "Crash diagnosis title (archMismatch)."
+  },
+  "diagArchMismatchBody": "LWJGL could not load its native code, which usually means a 32-bit Java on a 64-bit system (or the reverse), or natives extracted by another launcher. Reinstall the version and make sure the Java is 64-bit.",
+  "@diagArchMismatchBody": {
+    "description": "Crash diagnosis explanation (archMismatch)."
+  },
+  "diagGraphicsDriverTitle": "The graphics driver crashed",
+  "@diagGraphicsDriverTitle": {
+    "description": "Crash diagnosis title (graphicsDriver)."
+  },
+  "diagGraphicsDriverBody": "Minecraft could not create or use an OpenGL context. Update the GPU driver, and on a laptop make sure the game is not running on a GPU that cannot do OpenGL 3.2.",
+  "@diagGraphicsDriverBody": {
+    "description": "Crash diagnosis explanation (graphicsDriver)."
+  },
+  "diagNetworkFailureTitle": "Something could not be downloaded",
+  "@diagNetworkFailureTitle": {
+    "description": "Crash diagnosis title (networkFailure)."
+  },
+  "diagNetworkFailureBody": "A file could not be fetched. Retry; if it keeps failing, the mirror is unreachable from this network.",
+  "@diagNetworkFailureBody": {
+    "description": "Crash diagnosis explanation (networkFailure)."
+  },
+  "diagCorruptInstallTitle": "An installed file is damaged",
+  "@diagCorruptInstallTitle": {
+    "description": "Crash diagnosis title (corruptInstall)."
+  },
+  "diagCorruptInstallBody": "A jar could not be read - usually an interrupted download or a full disk. Repairing the version re-downloads only the files that fail their check.",
+  "@diagCorruptInstallBody": {
+    "description": "Crash diagnosis explanation (corruptInstall)."
+  },
+  "diagUnknownTitle": "The game exited with code {code}",
+  "@diagUnknownTitle": {
+    "description": "Crash diagnosis title (unknown exit).",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "diagUnknownBody": "None of the known failure patterns matched. The tail of the log is the place to look: the last exception before the exit is usually the cause.",
+  "@diagUnknownBody": {
+    "description": "Crash diagnosis explanation (unknown)."
   }
 }

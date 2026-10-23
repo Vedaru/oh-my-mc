@@ -138,9 +138,27 @@ as a zip. Import/export strings already exist.
 **P5 - accounts.** Microsoft device-code auth (the OAuth flow PCL uses), token
 refresh, skin. Offline stays first-class.
 
-**P6 - diagnostics.** Crash analyser over the log tail (Java stacktrace, OOM,
-wrong-Java, mod mixin, arch mismatch) mapping to a human sentence and an action;
-download speed test; LAN helpers.
+**P6 - diagnostics (done).** Crash analyser over the log tail: `CrashAnalyzer`
+maps the tail (and the exit code) to a `DiagnosisKind` and the actions that fix it -
+OOM vs metaspace OOM (different fixes), Java too old (with the class-file version
+translated to a major), Java missing, mixin failure (names the mod), incompatible mod
+set, missing dependency, `NoSuchMethodError` on a modded instance, LWJGL arch
+mismatch, driver crash, failed downloads, corrupt jars, and a fallback that at least
+says which exit code it was. The launch page shows it as a card with the evidence
+line and buttons that route to the control that fixes it (`CrashCard`).
+
+Two rules the implementation exists to enforce, both learned the hard way:
+1. **The core has no prose.** `Diagnosis` carries a kind and parameters; the sentence
+   is `CrashCopy` over the ARB files. A hard-coded English sentence in `lib/core` put
+   the literal string `版本设置` inside an English dialog.
+2. **A clean exit is not a crash.** Mods log `NoClassDefFoundError` and `ERROR`
+   while probing optional classes; diagnosing that sends the user to fix nothing.
+   The analyzer requires a non-zero exit or a JVM/loader fatal marker.
+
+Also in P6: a download speed test (`SpeedTest`, 设置 → 网络) that measures the CDNs
+the launcher actually uses, sequentially and capped at 2 MB, and the LAN address with
+the interface it came from. Not implemented: detecting an "open to LAN" world and
+listing LAN worlds - that needs game-side introspection, not a launcher-side list.
 
 ## 5. Rules that keep us aligned with PCL
 

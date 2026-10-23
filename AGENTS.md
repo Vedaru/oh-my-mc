@@ -313,6 +313,16 @@ the current gap table and the ordered backlog. Two rules from it bind new code:
   off the screen. One line goes to the console (`launch: java · N classpath
   entries · main`), the exact command line goes to `<data>/logs/launch-*.log`
   with `--accessToken` masked.
+- **User-facing text lives in the ARB files, never in `lib/core`.** `Diagnosis`
+  carries a kind plus parameters; `CrashCopy` (UI) turns it into a sentence. The
+  inverse - an English sentence in core - put the literal `版本设置` inside an English
+  dialog, because the core cannot see the locale.
+- **A diagnosis needs evidence and an action, and the action must be reachable.**
+  Every `DiagnosisAction` routes to an existing screen; `retry` is only rendered when
+  a callback exists, because a button that does nothing is worse than no button.
+- **Do not diagnose a clean exit.** Mods log `NoClassDefFoundError`/`ERROR` while
+  probing for optional classes, so the analyzer requires a non-zero exit code or a
+  JVM/loader fatal marker before it looks at the patterns.
 - **Mod search filters come from the instance.** `McTarget.fromInstance` reads the
   loader off the instance, not out of its `versionId` (which is the *game* version);
   reading the id calls every Fabric instance vanilla. A vanilla instance gets an

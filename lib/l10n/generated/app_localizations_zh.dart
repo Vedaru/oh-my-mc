@@ -831,4 +831,160 @@ class AppLocalizationsZh extends AppLocalizations {
   String packExportFailed(String error) {
     return '导出失败：$error';
   }
+
+  @override
+  String get diagnosisOpenSettings => '版本设置';
+
+  @override
+  String get diagnosisChooseJava => '选择 Java';
+
+  @override
+  String get diagnosisInstallJava => '安装 Java';
+
+  @override
+  String get diagnosisOpenMods => '模组';
+
+  @override
+  String get diagnosisOpenLogs => '日志';
+
+  @override
+  String get diagnosisOpenDownload => '下载';
+
+  @override
+  String get diagnosisRetry => '再试一次';
+
+  @override
+  String get settingsNetworkTitle => '网络';
+
+  @override
+  String get settingsNetworkHint => '测量启动器用到的下载源速度，并显示局域网联机要用的地址。';
+
+  @override
+  String get settingsSpeedTest => '测试下载速度';
+
+  @override
+  String get settingsSpeedTesting => '测试中…';
+
+  @override
+  String get settingsLanAddress => '局域网地址';
+
+  @override
+  String get settingsLanUnknown => '没有找到可用的网络接口';
+
+  @override
+  String get settingsCopy => '复制';
+
+  @override
+  String get settingsCopied => '已复制';
+
+  @override
+  String get diagOutOfMemoryTitle => '内存不足';
+
+  @override
+  String get diagOutOfMemoryBody =>
+      '游戏把堆内存用尽了。加了模组的 1.20 通常需要 4 GB 或更多，在版本设置里调高内存即可；如果机器没有更多内存，就只能减少模组。另外 32 位 Java 需要换成 64 位。';
+
+  @override
+  String get diagOutOfMetaspaceTitle => '元空间不足';
+
+  @override
+  String get diagOutOfMetaspaceBody =>
+      '这不是游戏堆内存：JVM 的类元数据用尽了。提高内存滑块没有用 —— 这是旧版 Java 配上大型整合包，换成 Java 17 或 21。';
+
+  @override
+  String get diagJavaTooOldTitle => 'Java 版本太低';
+
+  @override
+  String get diagJavaTooOldBody =>
+      '游戏或模组里的类是用更新的 Java 编译的。在版本设置里换一个更新的运行时，或者让启动器安装一个。';
+
+  @override
+  String diagJavaTooOldNamedTitle(int java) {
+    return '这个版本需要 Java $java';
+  }
+
+  @override
+  String diagJavaTooOldNamedBody(int java) {
+    return '当前 Java 低于游戏或模组要求的 Java $java。在版本设置里选择 Java $java，或者让启动器安装一个。';
+  }
+
+  @override
+  String get diagJavaMissingTitle => '找不到 Java 运行时';
+
+  @override
+  String get diagJavaMissingBody =>
+      '配置的 Java 已经不在那个路径了 —— 被移动过，或者启动器管理的运行时被删掉了。换一个，或者安装一个。';
+
+  @override
+  String get diagModConflictTitle => '模组组合冲突';
+
+  @override
+  String get diagModConflictBody =>
+      '加载器拒绝了这套模组：两个模组提供了同样的东西，或者某个模组需要的另一个模组版本没装。日志里会点名涉及的模组。';
+
+  @override
+  String get diagModMismatchTitle => '模组与游戏版本不匹配';
+
+  @override
+  String get diagModMismatchBody =>
+      '模组要用的类不存在。加了模组的实例里，通常是模组是给别的 Minecraft 版本编译的；原版实例里则是安装文件不完整。';
+
+  @override
+  String get diagMissingDependencyTitle => '模组缺少前置';
+
+  @override
+  String get diagMissingDependencyBody =>
+      '某个模组需要另一个没安装的模组。装上缺的那个就行 —— 搜索对话框会自动带上依赖。';
+
+  @override
+  String get diagMixinFailedTitle => '模组注入失败';
+
+  @override
+  String get diagMixinFailedBody =>
+      'mixin 没能应用，几乎总是因为模组是给别的游戏或加载器版本编译的。删除或更新那个模组。';
+
+  @override
+  String diagMixinFailedNamedTitle(String mod) {
+    return '模组注入失败：$mod';
+  }
+
+  @override
+  String diagMixinFailedNamedBody(String mod) {
+    return '$mod 的 mixin 没能应用，几乎总是因为它给别的游戏或加载器版本编译的。删除或更新这个模组。';
+  }
+
+  @override
+  String get diagArchMismatchTitle => '原生库与系统不匹配';
+
+  @override
+  String get diagArchMismatchBody =>
+      'LWJGL 加载不了原生代码，通常是 64 位系统上用了 32 位 Java（或反过来），也可能是别的启动器解压的原生库。重装这个版本，并确认 Java 是 64 位。';
+
+  @override
+  String get diagGraphicsDriverTitle => '显卡驱动崩溃';
+
+  @override
+  String get diagGraphicsDriverBody =>
+      'Minecraft 无法创建或使用 OpenGL 上下文。更新显卡驱动；笔记本上还要确认游戏没有跑在只支持不了 OpenGL 3.2 的显卡上。';
+
+  @override
+  String get diagNetworkFailureTitle => '下载失败';
+
+  @override
+  String get diagNetworkFailureBody => '有文件没能下载下来。重试一次；如果一直失败，就是这个网络访问不到该下载源。';
+
+  @override
+  String get diagCorruptInstallTitle => '安装文件损坏';
+
+  @override
+  String get diagCorruptInstallBody =>
+      '有 jar 读不出来 —— 通常是下载中断或磁盘满了。修复版本只会重下没通过校验的文件。';
+
+  @override
+  String diagUnknownTitle(String code) {
+    return '游戏以代码 $code 退出';
+  }
+
+  @override
+  String get diagUnknownBody => '没有匹配到已知的失败模式。去看日志末尾：退出前最后一个异常通常就是原因。';
 }

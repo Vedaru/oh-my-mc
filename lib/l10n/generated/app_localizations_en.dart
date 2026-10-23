@@ -856,4 +856,164 @@ class AppLocalizationsEn extends AppLocalizations {
   String packExportFailed(String error) {
     return 'Export failed: $error';
   }
+
+  @override
+  String get diagnosisOpenSettings => 'Version settings';
+
+  @override
+  String get diagnosisChooseJava => 'Choose Java';
+
+  @override
+  String get diagnosisInstallJava => 'Install Java';
+
+  @override
+  String get diagnosisOpenMods => 'Mods';
+
+  @override
+  String get diagnosisOpenLogs => 'Logs';
+
+  @override
+  String get diagnosisOpenDownload => 'Download';
+
+  @override
+  String get diagnosisRetry => 'Try again';
+
+  @override
+  String get settingsNetworkTitle => 'Network';
+
+  @override
+  String get settingsNetworkHint =>
+      'Measures the CDNs the launcher downloads from, and shows the address to share for LAN play.';
+
+  @override
+  String get settingsSpeedTest => 'Test download speed';
+
+  @override
+  String get settingsSpeedTesting => 'Testing…';
+
+  @override
+  String get settingsLanAddress => 'LAN address';
+
+  @override
+  String get settingsLanUnknown => 'No network interface found';
+
+  @override
+  String get settingsCopy => 'Copy';
+
+  @override
+  String get settingsCopied => 'Copied';
+
+  @override
+  String get diagOutOfMemoryTitle => 'Out of memory';
+
+  @override
+  String get diagOutOfMemoryBody =>
+      'The game ran out of heap. A modded 1.20 instance usually needs 4 GB or more; raise the memory in the version settings unless the machine has no more to give. On 32-bit Java it needs a 64-bit runtime instead.';
+
+  @override
+  String get diagOutOfMetaspaceTitle => 'Out of metaspace';
+
+  @override
+  String get diagOutOfMetaspaceBody =>
+      'Not the game heap: the JVM ran out of class metadata. Raising the memory slider does not help - this is an old Java with a huge modpack, so switch to a Java 17 or 21 runtime.';
+
+  @override
+  String get diagJavaTooOldTitle => 'This Java is too old';
+
+  @override
+  String get diagJavaTooOldBody =>
+      'A class in the game or a mod was compiled for a newer Java than the one selected. Choose a newer runtime in the version settings, or let the launcher install one.';
+
+  @override
+  String diagJavaTooOldNamedTitle(int java) {
+    return 'This version needs Java $java';
+  }
+
+  @override
+  String diagJavaTooOldNamedBody(int java) {
+    return 'The selected Java is older than Java $java, which the game or a mod requires. Pick a Java $java runtime in the version settings, or let the launcher install one.';
+  }
+
+  @override
+  String get diagJavaMissingTitle => 'The Java runtime is missing';
+
+  @override
+  String get diagJavaMissingBody =>
+      'The configured Java is no longer at that path - it was moved, or a launcher-managed runtime was deleted. Pick another one, or install one.';
+
+  @override
+  String get diagModConflictTitle => 'The mods do not fit together';
+
+  @override
+  String get diagModConflictBody =>
+      'The loader refused the mod set: two mods provide the same thing, or one needs a version of another that is not installed. The log names the mods involved.';
+
+  @override
+  String get diagModMismatchTitle => 'A mod does not match the game version';
+
+  @override
+  String get diagModMismatchBody =>
+      'A class the mod expected is not there. On a modded instance this is a mod built for another Minecraft version; on a vanilla one the installed files are incomplete.';
+
+  @override
+  String get diagMissingDependencyTitle => 'A mod is missing a dependency';
+
+  @override
+  String get diagMissingDependencyBody =>
+      'A mod needs another mod that is not installed. Install the missing one - the search dialog pulls dependencies in automatically.';
+
+  @override
+  String get diagMixinFailedTitle => 'A mod failed to patch the game';
+
+  @override
+  String get diagMixinFailedBody =>
+      'A mixin did not apply, which almost always means the mod was built for a different game or loader version. Remove or update that mod.';
+
+  @override
+  String diagMixinFailedNamedTitle(String mod) {
+    return 'A mod failed to patch the game: $mod';
+  }
+
+  @override
+  String diagMixinFailedNamedBody(String mod) {
+    return 'A mixin from $mod did not apply, which almost always means it was built for a different game or loader version. Remove or update that mod.';
+  }
+
+  @override
+  String get diagArchMismatchTitle =>
+      'The native libraries do not match the system';
+
+  @override
+  String get diagArchMismatchBody =>
+      'LWJGL could not load its native code, which usually means a 32-bit Java on a 64-bit system (or the reverse), or natives extracted by another launcher. Reinstall the version and make sure the Java is 64-bit.';
+
+  @override
+  String get diagGraphicsDriverTitle => 'The graphics driver crashed';
+
+  @override
+  String get diagGraphicsDriverBody =>
+      'Minecraft could not create or use an OpenGL context. Update the GPU driver, and on a laptop make sure the game is not running on a GPU that cannot do OpenGL 3.2.';
+
+  @override
+  String get diagNetworkFailureTitle => 'Something could not be downloaded';
+
+  @override
+  String get diagNetworkFailureBody =>
+      'A file could not be fetched. Retry; if it keeps failing, the mirror is unreachable from this network.';
+
+  @override
+  String get diagCorruptInstallTitle => 'An installed file is damaged';
+
+  @override
+  String get diagCorruptInstallBody =>
+      'A jar could not be read - usually an interrupted download or a full disk. Repairing the version re-downloads only the files that fail their check.';
+
+  @override
+  String diagUnknownTitle(String code) {
+    return 'The game exited with code $code';
+  }
+
+  @override
+  String get diagUnknownBody =>
+      'None of the known failure patterns matched. The tail of the log is the place to look: the last exception before the exit is usually the cause.';
 }
