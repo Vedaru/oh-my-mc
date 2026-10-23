@@ -346,5 +346,7 @@
   "worldBackupDone": "已备份到 {name}",
   "worldBackupFailed": "备份失败：{error}",
   "actionRefresh": "刷新",
-  "serverOffline": "无响应"
+  "serverOffline": "无响应",
+  "languageSystemWith": "跟随系统（{language}）",
+  "languageEffective": "当前界面显示的是{language}。"
 }

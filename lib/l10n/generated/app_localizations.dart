@@ -1951,6 +1951,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No answer'**
   String get serverOffline;
+
+  /// Language option that follows the OS, naming what the OS currently resolves to.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow system ({language})'**
+  String languageSystemWith(String language);
+
+  /// Supporting line under the language choices, naming the language on screen now.
+  ///
+  /// In en, this message translates to:
+  /// **'This window is showing {language}.'**
+  String languageEffective(String language);
 }
 
 class _AppLocalizationsDelegate

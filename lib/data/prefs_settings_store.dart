@@ -25,9 +25,15 @@ class PrefsSettingsStore implements SettingsStore {
     try {
       final prefs = await SharedPreferences.getInstance();
       _prefs = prefs;
+      // Every namespaced key in the file, read back. Listing the keys here is how
+      // memory, the player name, the Java directories and the download source used to
+      // reset on every launch while the file still held them - and a list built from
+      // `defaults.toMap()` misses `fastestSource`, which is null by default and
+      // therefore absent from that map. Reading the file's own keys cannot drift.
       final raw = <String, Object?>{
-        for (final key in ['theme', 'language', 'accent'])
-          key: prefs.get('$_prefix$key'),
+        for (final key in prefs.getKeys())
+          if (key.startsWith(_prefix))
+            key.substring(_prefix.length): prefs.get(key),
       };
       _settings = AppSettings.fromMap(raw);
     } on Object catch (error, stack) {

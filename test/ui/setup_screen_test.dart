@@ -133,6 +133,54 @@ void main() {
     );
   });
 
+  testWidgets('the language can be switched back, not only away from', (
+    tester,
+  ) async {
+    // The bug this pins: with English stored, "Follow system" and "Chinese" were
+    // unreachable - the group kept rendering English as the only option that could
+    // be chosen, so the preference was a one-way door.
+    final container = await pump(
+      tester,
+      section: 'general',
+      settings: const AppSettings(language: LanguagePreference.english),
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey('language-LanguagePreference.system')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      container.read(appSettingsProvider).language,
+      LanguagePreference.system,
+    );
+    expect(
+      container.read(settingsStoreProvider).current.language,
+      LanguagePreference.system,
+    );
+
+    // The *rendered* group, not just the store: reading the provider once instead of
+    // watching it left the radios showing the option the user had already left.
+    expect(
+      tester
+          .widget<m3.RadioGroup<LanguagePreference>>(
+            find.byType(m3.RadioGroup<LanguagePreference>),
+          )
+          .groupValue,
+      LanguagePreference.system,
+    );
+
+    // And back again: the door swings both ways.
+    await tester.tap(
+      find.byKey(const ValueKey('language-LanguagePreference.english')),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      container.read(appSettingsProvider).language,
+      LanguagePreference.english,
+    );
+  });
+
   testWidgets('picking an accent swatch persists it', (tester) async {
     final container = await pump(tester, section: 'appearance');
 

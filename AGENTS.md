@@ -202,6 +202,11 @@ directory and `test/shots/` are now git-ignored.)
   `lib/ui/` is a bug: use the next container tone instead.
 - **Motion has no switch.** Animation is part of the design; `MotionScope` is always `Motion.full` and
   only the OS accessibility flag can turn it off. Do not add a settings toggle for it.
+- **A screen that writes a setting must `ref.watch` it.** `ref.read` takes one snapshot and never
+  rebuilds on change, so the control that wrote the value keeps drawing the old one - the language
+  radio sat on "English" after the user picked "Follow system", which reads as an option that cannot
+  be switched. `AppSettings`' equality is derived from `toMap()` for the same reason: a field missing
+  from it makes the write look like a no-op.
 - **Accent colours are a setting** (`AppSettings.accent` → `AppTheme.seedFor`). Every colour comes from
   the seeded `ColorScheme`; status hues stay fixed (see `AppTheme.status`).
 - **`material_ui` (`m3`) is the only style package.** `material_3_expressive` (`m3e`) was removed in

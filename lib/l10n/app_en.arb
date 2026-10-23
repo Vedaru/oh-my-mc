@@ -1569,5 +1569,23 @@
   "serverOffline": "No answer",
   "@serverOffline": {
     "description": "Shown where a server's MOTD would be when it did not answer."
+  },
+  "languageSystemWith": "Follow system ({language})",
+  "@languageSystemWith": {
+    "description": "Language option that follows the OS, naming what the OS currently resolves to.",
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "languageEffective": "This window is showing {language}.",
+  "@languageEffective": {
+    "description": "Supporting line under the language choices, naming the language on screen now.",
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
   }
 }

@@ -1078,4 +1078,14 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get serverOffline => '无响应';
+
+  @override
+  String languageSystemWith(String language) {
+    return '跟随系统（$language）';
+  }
+
+  @override
+  String languageEffective(String language) {
+    return '当前界面显示的是$language。';
+  }
 }

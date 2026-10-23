@@ -1,3 +1,5 @@
+import 'dart:ui' show PlatformDispatcher;
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart' as m3;
@@ -28,17 +30,17 @@ import '../components/app_text_field.dart';
 ///
 /// Each control still writes through [AppSettingsNotifier] immediately: no Save button,
 /// no unsaved state.
-class SetupScreen extends StatefulWidget {
+class SetupScreen extends ConsumerStatefulWidget {
   const SetupScreen({super.key});
 
   @override
-  State<SetupScreen> createState() => _SetupScreenState();
+  ConsumerState<SetupScreen> createState() => _SetupScreenState();
 }
 
 /// The sections, in the order they appear in the list.
 enum SetupSection { general, appearance, launch, java, network, about }
 
-class _SetupScreenState extends State<SetupScreen> {
+class _SetupScreenState extends ConsumerState<SetupScreen> {
   var _section = SetupSection.general;
 
   @override
@@ -69,6 +71,16 @@ class _SetupScreenState extends State<SetupScreen> {
         child: MotionEntrance(children: [_body(context, _section)]),
       ),
     );
+  }
+
+  /// The language the OS would pick, as a name the user recognises.
+  String _systemLanguage(AppLocalizations l10n) {
+    final code = PlatformDispatcher.instance.locale.languageCode;
+    return switch (code) {
+      'zh' => l10n.languageChinese,
+      'en' => l10n.languageEnglish,
+      _ => code,
+    };
   }
 
   SectionDestination _destination(
@@ -109,10 +121,11 @@ class _SetupScreenState extends State<SetupScreen> {
 
   Widget _body(BuildContext context, SetupSection section) {
     final l10n = context.l10n;
-    final settings = ProviderScope.containerOf(context)
-        .read(appSettingsProvider);
-    final notifier = ProviderScope.containerOf(context)
-        .read(appSettingsProvider.notifier);
+    // `watch`, not `read`: a control that writes a setting has to be redrawn from the
+    // new value, and reading the provider only once is how the radio group used to
+    // keep showing the option the user had already left.
+    final settings = ref.watch(appSettingsProvider);
+    final notifier = ref.read(appSettingsProvider.notifier);
 
     return switch (section) {
       SetupSection.general => _Section(
@@ -125,7 +138,13 @@ class _SetupScreenState extends State<SetupScreen> {
               keyPrefix: 'language',
               value: settings.language,
               options: {
-                LanguagePreference.system: l10n.themeSystem,
+                // Naming what the OS resolves to turns "Follow system" from a choice
+                // that looks like it did nothing into a choice that says what it is:
+                // on an English machine it reads "Follow system (English)", which is
+                // why picking it changes no text.
+                LanguagePreference.system: l10n.languageSystemWith(
+                  _systemLanguage(l10n),
+                ),
                 LanguagePreference.english: l10n.languageEnglish,
                 LanguagePreference.chinese: l10n.languageChinese,
               },

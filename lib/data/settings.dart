@@ -200,11 +200,17 @@ String _validPlayerName(Object? raw) {
 /// launch a game on a heap the user never chose. The range itself lives in
 /// [kMinMemoryMb]/[kMaxMemoryMb] so the sliders cannot drift from it.
 int _validMemoryMb(Object? raw) {
-  if (raw is! int) return AppSettings.defaultMemoryMb;
-  if (raw < kMinMemoryMb || raw > kMaxMemoryMb) {
+  // The preferences file stores every value as a string (see `PrefsSettingsStore`), so
+  // accepting only an `int` here meant the heap reset to the default on every launch.
+  final value = switch (raw) {
+    int value => value,
+    String value => int.tryParse(value.trim()),
+    _ => null,
+  };
+  if (value == null || value < kMinMemoryMb || value > kMaxMemoryMb) {
     return AppSettings.defaultMemoryMb;
   }
-  return raw;
+  return value;
 }
 
 /// Reads the JSON-encoded directory list. Anything unreadable is an empty list:

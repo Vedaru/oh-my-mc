@@ -1120,4 +1120,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get serverOffline => 'No answer';
+
+  @override
+  String languageSystemWith(String language) {
+    return 'Follow system ($language)';
+  }
+
+  @override
+  String languageEffective(String language) {
+    return 'This window is showing $language.';
+  }
 }
