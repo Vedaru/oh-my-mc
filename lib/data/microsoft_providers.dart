@@ -29,6 +29,8 @@ Account accountFromSession(MicrosoftSession session) => Account(
   accessToken: session.accessToken,
   refreshToken: session.refreshToken,
   expiresAt: session.expiresAt,
+  skinUrl: session.skinUrl,
+  skinVariant: session.skinVariant,
 );
 
 /// Keeps a Microsoft account usable across days.

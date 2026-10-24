@@ -33,6 +33,7 @@ class ListRow extends StatelessWidget {
     this.labelKey,
     this.leadingIcon,
     this.leadingImage,
+    this.leadingWidget,
     this.supporting = '',
     this.supportingWidget,
     this.supportingMono = false,
@@ -58,6 +59,11 @@ class ListRow extends StatelessWidget {
   /// the place of [leadingIcon] when present, and is rendered at the same 18 px so the
   /// row's text still starts at the same x in every list.
   final Uint8List? leadingImage;
+
+  /// A widget in the leading slot - an avatar, a status dot - for the rows whose subject
+  /// is an *identity* rather than a file. Sized by the caller (a face reads at 28 px, an
+  /// icon at 18), and it wins over [leadingIcon]/[leadingImage] when both are given.
+  final m3.Widget? leadingWidget;
 
   /// Optional second line: a path, a status, a description. One line, truncated.
   final String supporting;
@@ -105,7 +111,11 @@ class ListRow extends StatelessWidget {
       padding: const m3.EdgeInsets.symmetric(horizontal: 8, vertical: 10),
       builder: (hovered) => m3.Row(
         children: [
-          if (leadingImage != null) ...[
+          if (leadingWidget != null) ...[
+            const m3.SizedBox(width: 4),
+            leadingWidget!,
+            const m3.SizedBox(width: 12),
+          ] else if (leadingImage != null) ...[
             const m3.SizedBox(width: 4),
             m3.ClipRRect(
               borderRadius: m3.BorderRadius.circular(4),

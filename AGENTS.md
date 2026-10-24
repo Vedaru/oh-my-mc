@@ -187,6 +187,12 @@ directory and `test/shots/` are now git-ignored.)
   old account: a launch that works with a stale token beats one that refuses. The Azure
   app id is `AppSettings.microsoftClientId`, empty by default and asked for in the sign-in
   dialog - it is per-launcher, so a build cannot ship one.
+- **A skin is a rect, not an image.** The texture is a 64×64 PNG from
+  `textures.minecraft.net`; the face is `(8,8)-(16,16)` and its hat layer `(40,8)`, scaled
+  by `width/64` so an HD skin works. `skins.first` is the *oldest* upload - read the entry
+  in the `ACTIVE` state. A 64×32 skin has no overlay, and drawing one puts a leg on a
+  head. No skin is a state: an offline account gets its initial, because three generic
+  person icons make three identities look like one.
 - **An update check identifies a *file*, not a mod.** `FileUpdateChecker.checkFiles` takes
   path + name + project type, so `mods/`, `resourcepacks/` and `shaderpacks/` share one
   implementation and one provider (`fileUpdateCheckerProvider`) — the name matters: the

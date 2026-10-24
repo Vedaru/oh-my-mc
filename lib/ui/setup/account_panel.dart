@@ -9,6 +9,7 @@ import '../components/app_button.dart';
 import '../components/app_text_field.dart';
 import '../components/empty_state.dart';
 import '../components/list_row.dart';
+import '../components/skin_avatar.dart';
 import '../accounts/microsoft_sign_in_dialog.dart';
 import '../shell/shell_icons.dart';
 import '../theme/app_theme.dart';
@@ -124,15 +125,14 @@ class _AccountRow extends ConsumerWidget {
 
     return ListRow(
       key: m3.ValueKey('account-${account.id}'),
-      // The leading icon is the account *kind*; "which one is active" is answered once,
-      // by the radio at the trailing edge. It used to be both - a tick on the left and a
-      // switch on the right - which is two answers to one question, and a switch claims
-      // each account has its own on/off rather than there being one choice.
-      leadingIcon: switch (account.kind) {
-        AccountKind.offline => ShellIcons.account,
-        AccountKind.microsoft => ShellIcons.cloud,
-        AccountKind.thirdParty => ShellIcons.lan,
-      },
+      // The face is the identity: a player recognises their own skin faster than a name,
+      // and an offline account has none, which is itself information. "Which one is
+      // active" is answered once, by the radio at the trailing edge - it used to be both
+      // a tick on the left and a switch on the right.
+      leadingWidget: SkinAvatar(
+        skinUrl: account.skinUrl,
+        fallbackLabel: account.name,
+      ),
       label: account.name,
       // Kind and server, not the uuid: a hex prefix tells a user nothing, and two
       // accounts cannot share a name, so there is nothing to disambiguate.

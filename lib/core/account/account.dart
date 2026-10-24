@@ -35,6 +35,8 @@ class Account {
     this.uuid,
     this.refreshToken,
     this.expiresAt,
+    this.skinUrl,
+    this.skinVariant,
   });
 
   /// Stable id for the account itself (not the player uuid): renames keep the account.
@@ -61,6 +63,13 @@ class Account {
 
   /// When [accessToken] stops being accepted. Null means "no known expiry".
   final DateTime? expiresAt;
+
+  /// The account's skin texture, when it has one. Offline accounts never do: a skin is
+  /// something a server-verified identity owns.
+  final String? skinUrl;
+
+  /// `CLASSIC` (Steve-shaped) or `SLIM` (Alex-shaped).
+  final String? skinVariant;
 
   bool get isOffline => kind == AccountKind.offline;
 
@@ -98,6 +107,8 @@ class Account {
     String? uuid,
     String? refreshToken,
     DateTime? expiresAt,
+    String? skinUrl,
+    String? skinVariant,
   }) => Account(
     id: id,
     name: name ?? this.name,
@@ -107,6 +118,8 @@ class Account {
     uuid: uuid ?? this.uuid,
     refreshToken: refreshToken ?? this.refreshToken,
     expiresAt: expiresAt ?? this.expiresAt,
+    skinUrl: skinUrl ?? this.skinUrl,
+    skinVariant: skinVariant ?? this.skinVariant,
   );
 
   Map<String, Object?> toJson() => {
@@ -118,6 +131,8 @@ class Account {
     if (uuid != null) 'uuid': uuid,
     if (refreshToken != null) 'refreshToken': refreshToken,
     if (expiresAt != null) 'expiresAt': expiresAt!.toUtc().toIso8601String(),
+    if (skinUrl != null) 'skinUrl': skinUrl,
+    if (skinVariant != null) 'skinVariant': skinVariant,
   };
 
   factory Account.fromJson(Map<String, Object?> json) => Account(
@@ -133,6 +148,8 @@ class Account {
     uuid: json['uuid'] as String?,
     refreshToken: json['refreshToken'] as String?,
     expiresAt: DateTime.tryParse(json['expiresAt'] as String? ?? '')?.toLocal(),
+    skinUrl: json['skinUrl'] as String?,
+    skinVariant: json['skinVariant'] as String?,
   );
 
   /// A uuid the game recognises for [name] in offline mode.

@@ -148,6 +148,8 @@ class MicrosoftSession {
     required this.accessToken,
     required this.refreshToken,
     required this.expiresAt,
+    this.skinUrl,
+    this.skinVariant,
   });
 
   /// The player uuid, dashed, as the game and every server expect it.
@@ -161,6 +163,13 @@ class MicrosoftSession {
 
   /// The MSA refresh token, used a day later to get a new [accessToken].
   final String refreshToken;
+
+  /// The active skin's texture, as `textures.minecraft.net` serves it. Absent for an
+  /// account that has never uploaded one, which is why the launcher has a fallback.
+  final String? skinUrl;
+
+  /// `CLASSIC` or `SLIM` (Alex). Only changes how the arms are drawn.
+  final String? skinVariant;
 
   final DateTime expiresAt;
 }
@@ -356,6 +365,9 @@ class MicrosoftAuth {
       );
     }
     final body = _decode(profile);
+    // The profile carries the skins the same way the game reads them: a list with one
+    // entry in the `ACTIVE` state.
+    final active = _activeSkin(body);
     return MicrosoftSession(
       // The profile endpoint answers with 32 hex characters; the game, the server list
       // and every world folder want the dashed form.
@@ -364,7 +376,24 @@ class MicrosoftAuth {
       accessToken: accessToken,
       refreshToken: refreshToken,
       expiresAt: _now().add(expiresIn),
+      skinUrl: active?['url'] as String?,
+      skinVariant: active?['variant'] as String?,
     );
+  }
+
+  /// The `ACTIVE` entry of the profile's `skins` list, or null.
+  ///
+  /// Reading `skins.first` would be wrong: the list keeps every skin the account has
+  /// worn, and the first one is the oldest.
+  Map<String, Object?>? _activeSkin(Map<String, Object?> profile) {
+    final skins = profile['skins'];
+    if (skins is! List) return null;
+    for (final skin in skins) {
+      if (skin is Map<String, Object?> && skin['state'] == 'ACTIVE') {
+        return skin;
+      }
+    }
+    return null;
   }
 
   void _requireClientId() {

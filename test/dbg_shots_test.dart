@@ -2,6 +2,7 @@
 library;
 
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:material_ui/material_ui.dart' as m3;
 import 'package:flutter/services.dart';
@@ -21,6 +22,7 @@ import 'package:oh_my_mc/data/account_providers.dart';
 import 'package:oh_my_mc/data/account_store.dart';
 import 'package:oh_my_mc/data/install_providers.dart';
 import 'package:oh_my_mc/data/modpack_providers.dart';
+import 'package:oh_my_mc/data/skin_providers.dart';
 import 'package:oh_my_mc/data/wallpaper_provider.dart';
 import 'package:oh_my_mc/core/install/version_installer.dart';
 import 'package:oh_my_mc/core/net/progress.dart';
@@ -488,6 +490,9 @@ void main() {
       '/accounts',
       'accounts',
       overrides: [
+        // A face for the signed-in account: the avatar's job is to make an identity
+        // recognisable, and a shot of three fallback icons reviews nothing.
+        skinTextureProvider.overrideWith((ref, url) async => _shotSkin()),
         accountStoreProvider.overrideWithValue(
           MemoryAccountStore(
             const AccountList(
@@ -500,6 +505,8 @@ void main() {
                   kind: AccountKind.thirdParty,
                   server: 'https://auth.example.net/api',
                   uuid: '11111111-2222-3333-4444-555555555555',
+                  skinUrl: 'https://textures.example/skin',
+                  skinVariant: 'CLASSIC',
                 ),
               ],
               activeId: 'offline-Survival',
@@ -1255,4 +1262,39 @@ class _ShotVersionList extends VersionListController {
 class _ShotInstalled extends InstalledVersions {
   @override
   Set<String> build() => {'1.21', '1.20.1'};
+}
+
+/// A 64×64 skin with a face and a hat layer, drawn once for the shots.
+///
+/// The real texture comes from `textures.minecraft.net`; a screenshot harness must not
+/// depend on the network, and a two-colour PNG is enough to review whether a head reads
+/// as a head at 28 px.
+ui.Image? _skinCache;
+
+ui.Image _shotSkin() {
+  final cached = _skinCache;
+  if (cached != null) return cached;
+  final recorder = ui.PictureRecorder();
+  final canvas = ui.Canvas(recorder);
+  canvas.drawRect(
+    const ui.Rect.fromLTWH(0, 0, 64, 64),
+    ui.Paint()..color = const ui.Color(0x00000000),
+  );
+  // Skin tone, then the two pixels of the eyes at the right offsets of the face block.
+  canvas.drawRect(
+    const ui.Rect.fromLTWH(8, 8, 8, 8),
+    ui.Paint()..color = const ui.Color(0xFFB58863),
+  );
+  canvas.drawRect(
+    const ui.Rect.fromLTWH(10, 11, 1, 1),
+    ui.Paint()..color = const ui.Color(0xFF2B2B2B),
+  );
+  canvas.drawRect(
+    const ui.Rect.fromLTWH(13, 11, 1, 1),
+    ui.Paint()..color = const ui.Color(0xFF2B2B2B),
+  );
+  // The hat layer is deliberately transparent: a player not wearing one leaves it empty.
+  final image = recorder.endRecording().toImageSync(64, 64);
+  _skinCache = image;
+  return image;
 }

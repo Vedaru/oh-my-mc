@@ -14,7 +14,7 @@ Axolotl / Modrinth App（本项目主要参照）。
 | 微软登录（OAuth 设备码） | 有 | 有 | 有 | 有 | **有** | `core/account/microsoft.dart` 走完 MSA → XBL → XSTS → Minecraft 服务 → 玩家档案；令牌到期自动续期（`AccountRefresher`，启动前）。需要用户自备 Azure 应用 ID（每个启动器注册自己的，不能随包发） |
 | 第三方认证（authlib-injector / Yggdrasil） | 有 | 有 | 有 | 部分 | **半** | 账户模型已支持 `AccountKind.thirdParty`（自带 token/uuid，启动时透传），缺的是登录流程与 `authlib-injector` 的 javaagent 注入；这条**不需要注册任何凭据**，是最容易接的下一环 |
 | 多账户并存与切换 | 有 | 有 | 有 | 有 | **有** | 设置 → 账户：列表、切换、删除（删除只影响启动器） |
-| 皮肤查看 / 更换 / 离线皮肤 | 有 | 有 | 有 | 有 | **缺** | 无 `skin` 模块；设置里没有外观身份相关项 |
+| 皮肤查看 / 更换 / 离线皮肤 | 有 | 有 | 有 | 有 | **半** | **查看有**：登录时从玩家档案取 `ACTIVE` 皮肤，`SkinGeometry` 取 64×64 里的头部矩形，账户行画 28px 头像（离线账户显示首字母）。**更换/上传缺**：需要 `POST /minecraft/profile/skins` 与皮肤库 |
 
 ### HMCL 独有、我们还没有的安装目标
 
