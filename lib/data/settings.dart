@@ -112,11 +112,17 @@ class AppSettings {
 
   /// Persisted form. Keys are stable strings, not enum indices, so reordering an
   /// enum cannot silently reinterpret an existing user's setting.
+  ///
+  /// **Null is a value here, not an absence.** A nullable field that is left out of the
+  /// map cannot be cleared: the store writes only what it is given, the old key stays in
+  /// the preferences file, and the next launch reads the value the user removed (this is
+  /// how a deleted wallpaper came back). Every key is always present, and `null` means
+  /// "remove this key".
   Map<String, Object?> toMap() => {
     'theme': theme.name,
     'language': language.name,
     'accent': accent.name,
-    'backgroundPath': ?backgroundPath,
+    'backgroundPath': backgroundPath,
     'backgroundDim': backgroundDim,
     'playerName': playerName,
     'microsoftClientId': microsoftClientId,
@@ -126,7 +132,7 @@ class AppSettings {
     // the preferences file.
     'javaDirs': jsonEncode(javaDirs),
     'downloadSource': downloadSource.name,
-    'fastestSource': ?fastestSource,
+    'fastestSource': fastestSource,
   };
 
   /// Reads [map], falling back to [defaults] per field rather than wholesale, so

@@ -39,20 +39,33 @@ void main() {
     expect(reopened.current, written);
   });
 
-  test('the language can be set back to system and stays system', () async {
-    SharedPreferences.setMockInitialValues({
-      'ohmy.setting.language': 'english',
-    });
-    final store = PrefsSettingsStore();
-    await store.init();
-    expect(store.current.language, LanguagePreference.english);
+  test(
+    'a wallpaper survives a restart, and clearing it really clears it',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final store = PrefsSettingsStore();
+      await store.init();
 
-    await store.write(
-      store.current.copyWith(language: LanguagePreference.system),
-    );
+      await store.write(
+        store.current.copyWith(
+          backgroundPath: '/pictures/wall.png',
+          backgroundDim: 0.4,
+        ),
+      );
+      final afterSet = PrefsSettingsStore();
+      await afterSet.init();
+      expect(afterSet.current.backgroundPath, '/pictures/wall.png');
+      expect(afterSet.current.backgroundDim, 0.4);
 
-    final reopened = PrefsSettingsStore();
-    await reopened.init();
-    expect(reopened.current.language, LanguagePreference.system);
-  });
+      // "No wallpaper" is a value, not an absence: before this, the key was skipped on
+      // write, the old path stayed in the preferences file, and the next launch put the
+      // picture back - the user's own report.
+      await afterSet.write(afterSet.current.copyWith(clearBackground: true));
+      final cleared = PrefsSettingsStore();
+      await cleared.init();
+      expect(cleared.current.backgroundPath, isNull);
+      // The dim is a separate setting and must not be collateral damage.
+      expect(cleared.current.backgroundDim, 0.4);
+    },
+  );
 }

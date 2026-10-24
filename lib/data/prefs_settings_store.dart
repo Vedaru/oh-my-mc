@@ -53,9 +53,14 @@ class PrefsSettingsStore implements SettingsStore {
       for (final entry in settings.toMap().entries) {
         final key = '$_prefix${entry.key}';
         final value = entry.value;
-        if (value is bool) {
+        if (value == null) {
+          // A cleared field is a removal, not a silent no-op: writing nothing leaves the
+          // previous value in the file, and the next launch reads it back as if the user
+          // had never cleared it.
+          await prefs.remove(key);
+        } else if (value is bool) {
           await prefs.setBool(key, value);
-        } else if (value != null) {
+        } else {
           await prefs.setString(key, value.toString());
         }
       }
