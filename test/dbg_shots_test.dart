@@ -371,6 +371,28 @@ void main() {
     );
   });
 
+  // The same pack page *after* a check: the update action has to fit in a row that
+  // already carries a switch and a delete, and the header grows a second button.
+  testWidgets('instance pack updates', (tester) async {
+    await shoot(
+      tester,
+      '/instances/a',
+      'instance-pack-updates',
+      instances: [_instance('a', 'Survival', '1.20.1')],
+      openKey: 'detail-section-resource-packs',
+      overrides: [
+        gameContentProvider.overrideWith(
+          (ref) =>
+              (root) => _ShotContent(),
+        ),
+        fileUpdateCheckerProvider.overrideWithValue(
+          FileUpdateChecker(_ShotUpdateClient(), hash: (_) async => 'sha1'),
+        ),
+      ],
+      tapAfter: 'content-check-updates',
+    );
+  });
+
   testWidgets('instance mods', (tester) async {
     await shoot(
       tester,
@@ -591,11 +613,11 @@ void main() {
           ],
         ),
         modsRepositoryProvider.overrideWithValue(_ShotModsRecorder()),
-        modUpdateCheckerProvider.overrideWithValue(
-          ModUpdateChecker(_ShotUpdateClient(), hash: (_) async => 'sha1'),
+        fileUpdateCheckerProvider.overrideWithValue(
+          FileUpdateChecker(_ShotUpdateClient(), hash: (_) async => 'sha1'),
         ),
       ],
-      tapAfter: 'mods-check-updates',
+      tapAfter: 'content-check-updates',
     );
   });
 

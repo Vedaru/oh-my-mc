@@ -187,6 +187,12 @@ directory and `test/shots/` are now git-ignored.)
   old account: a launch that works with a stale token beats one that refuses. The Azure
   app id is `AppSettings.microsoftClientId`, empty by default and asked for in the sign-in
   dialog - it is per-launcher, so a build cannot ship one.
+- **An update check identifies a *file*, not a mod.** `FileUpdateChecker.checkFiles` takes
+  path + name + project type, so `mods/`, `resourcepacks/` and `shaderpacks/` share one
+  implementation and one provider (`fileUpdateCheckerProvider`) — the name matters: the
+  launcher's own update check already owns `UpdateChecker`. Replacing an update means
+  install-then-delete, and the old file only survives a *failed* download: an install that
+  skipped ("already there") still replaces it.
 - **A modpack is an orchestration, not a fifth pipeline.** `ModpackInstaller` composes
   the services that already exist (`InstallNotifier` for the version, `InstanceNotifier`
   for the instance, `MrpackImporter` for the files) through function seams, and reads the

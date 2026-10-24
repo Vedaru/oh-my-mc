@@ -72,8 +72,9 @@ class _InstanceContentPageState extends ConsumerState<InstanceContentPage> {
   /// Bumped after a write, so the list re-reads the folder the write landed in.
   var _generation = 0;
 
-  /// Mods with a newer version on Modrinth, once the user asked.
-  List<ModUpdate>? _updates;
+  /// Files with a newer version on Modrinth, once the user asked. Mods, resource packs
+  /// and shaders all answer to the same question about the same bytes.
+  List<FileUpdate>? _updates;
   var _checking = false;
 
   /// The world the data pack page is pointed at.
@@ -121,21 +122,36 @@ class _InstanceContentPageState extends ConsumerState<InstanceContentPage> {
 
   Future<void> _checkUpdates() async {
     final instance = widget.instance;
-    if (!instance.loader.isModded) return;
+    final kind = widget.kind;
+    // A vanilla instance has no loader to match a mod against; a pack needs nothing.
+    if (kind == InstanceContentKind.mods && !instance.loader.isModded) return;
     setState(() => _checking = true);
     try {
-      final mods = await ref.read(instanceModsProvider(instance.id).future);
-      final updates = await ref
-          .read(modUpdateCheckerProvider)
-          .check(
-            mods,
-            gameVersion: instance.versionId,
-            loader: instance.loader.modrinthTag,
-          );
+      final checker = ref.read(fileUpdateCheckerProvider);
+      final updates = switch (kind) {
+        InstanceContentKind.mods => await checker.checkMods(
+          await ref.read(instanceModsProvider(instance.id).future),
+          gameVersion: instance.versionId,
+          loader: instance.loader.modrinthTag,
+        ),
+        // Packs are identified the same way - a sha1 - but they are not built for a
+        // loader, and Modrinth keeps them in their own catalogue.
+        _ => await checker.checkFiles(
+          [
+            for (final entry
+                in await ref
+                    .read(gameContentProvider)(_root)
+                    .list(kind.contentKind!))
+              (path: entry.path, name: entry.name),
+          ],
+          gameVersion: instance.versionId,
+          projectType: kind.catalog!.modrinthType,
+        ),
+      };
       if (mounted) setState(() => _updates = updates);
     } on Object {
       // A check that cannot reach Modrinth is not an error state for the list: the
-      // mods are still there and the button can be pressed again.
+      // files are still there and the button can be pressed again.
       if (mounted) setState(() => _updates = const []);
     } finally {
       if (mounted) setState(() => _checking = false);
@@ -143,30 +159,41 @@ class _InstanceContentPageState extends ConsumerState<InstanceContentPage> {
   }
 
   /// Installs the newer file over the old one.
-  Future<void> _applyUpdate(ModUpdate update) async {
-    await ref
+  ///
+  /// The install writes the new file next to the old one, so the old one goes right
+  /// after: two versions of the same mod is a crash the launcher caused, and two
+  /// resource packs with the same name is one the user cannot explain.
+  Future<void> _applyUpdate(FileUpdate update) async {
+    final directory = widget.kind == InstanceContentKind.mods
+        ? modsDirFor(ref.read(launcherPathsProvider), widget.instance)
+        : p.join(_root, widget.kind.folderName);
+    final outcome = await ref
         .read(modInstallerProvider)
         .install(
           plans: [
             ModInstallPlan(
               projectId: update.latest.projectId,
-              title: update.mod.name ?? update.latest.name,
+              title: update.name,
               file: update.latest.primaryFile!,
             ),
           ],
-          directory: modsDirFor(
-            ref.read(launcherPathsProvider),
-            widget.instance,
-          ),
+          directory: directory,
         );
-    // The old jar goes: two versions of the same mod is a crash the launcher caused.
-    await ref.read(modsRepositoryProvider).delete(update.mod);
-    ref.invalidate(instanceModsProvider(widget.instance.id));
+    // Only a *failed* download keeps the old file: an install that skipped one (the
+    // file was already there) still replaces it.
+    if (outcome.failed.isNotEmpty) return;
+    final old = File(update.path);
+    if (old.existsSync()) await old.delete();
+    if (widget.kind == InstanceContentKind.mods) {
+      ref.invalidate(instanceModsProvider(widget.instance.id));
+    }
+    // A pack list reads the folder; the generation key is what re-reads it.
     if (mounted) {
       setState(() {
+        _generation++;
         _updates = [
-          for (final entry in _updates ?? const <ModUpdate>[])
-            if (entry.mod.path != update.mod.path) entry,
+          for (final entry in _updates ?? const <FileUpdate>[])
+            if (entry.path != update.path) entry,
         ];
       });
     }
@@ -309,11 +336,10 @@ class _InstanceContentPageState extends ConsumerState<InstanceContentPage> {
                       tooltip: l10n.actionRefresh,
                     ),
                   ],
-                  if (widget.kind == InstanceContentKind.mods &&
-                      widget.instance.loader.isModded) ...[
+                  if (_canCheckUpdates) ...[
                     const m3.SizedBox(width: 8),
                     AppButton(
-                      key: const m3.ValueKey('mods-check-updates'),
+                      key: const m3.ValueKey('content-check-updates'),
                       onPressed: _checking ? null : _checkUpdates,
                       style: AppButtonStyle.text,
                       size: AppButtonSize.sm,
@@ -370,11 +396,23 @@ class _InstanceContentPageState extends ConsumerState<InstanceContentPage> {
                   kind: widget.kind,
                   world: _world,
                   onJoinServer: _joinServer,
+                  updates: _updates ?? const [],
+                  onApplyUpdate: _applyUpdate,
                 ),
         ),
       ],
     );
   }
+
+  /// Mods on a modded instance, and the two pack kinds: all three have a Modrinth
+  /// identity that a sha1 can prove. Worlds and servers have none - they are not
+  /// downloads - and a data pack belongs to a world Modrinth does not index.
+  bool get _canCheckUpdates => switch (widget.kind) {
+    InstanceContentKind.mods => widget.instance.loader.isModded,
+    InstanceContentKind.resourcePacks ||
+    InstanceContentKind.shaderPacks => true,
+    _ => false,
+  };
 
   String _hint(AppLocalizations l10n) => switch (widget.kind) {
     InstanceContentKind.mods => l10n.contentModsHint,
@@ -405,9 +443,9 @@ class _ModList extends ConsumerWidget {
   final Instance instance;
 
   /// Mods with a newer version, once the check has run.
-  final List<ModUpdate> updates;
+  final List<FileUpdate> updates;
 
-  final Future<void> Function(ModUpdate update) onApply;
+  final Future<void> Function(FileUpdate update) onApply;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -494,7 +532,7 @@ class _ModList extends ConsumerWidget {
 
   static String? _updateLabel(
     AppLocalizations l10n,
-    List<ModUpdate> updates,
+    List<FileUpdate> updates,
     ModEntry mod,
   ) {
     final update = _updateFor(updates, mod);
@@ -502,9 +540,9 @@ class _ModList extends ConsumerWidget {
     return l10n.modsUpdateTo(update.to);
   }
 
-  static ModUpdate? _updateFor(List<ModUpdate> updates, ModEntry mod) {
+  static FileUpdate? _updateFor(List<FileUpdate> updates, ModEntry mod) {
     for (final update in updates) {
-      if (update.mod.path == mod.path) return update;
+      if (update.path == mod.path) return update;
     }
     return null;
   }
@@ -522,6 +560,8 @@ class _GameContentPage extends ConsumerStatefulWidget {
     required this.kind,
     required this.world,
     this.onJoinServer,
+    this.updates = const [],
+    this.onApplyUpdate,
     super.key,
   });
 
@@ -533,6 +573,12 @@ class _GameContentPage extends ConsumerStatefulWidget {
 
   /// Present on the servers page: start the game into that row's address.
   final void Function(ContentEntry entry)? onJoinServer;
+
+  /// Files with a newer version, keyed by path. Empty until the check runs.
+  final List<FileUpdate> updates;
+
+  /// Installs a newer version over the file it replaces.
+  final Future<void> Function(FileUpdate update)? onApplyUpdate;
 
   @override
   ConsumerState<_GameContentPage> createState() => _GameContentPageState();
@@ -703,6 +749,16 @@ class _GameContentPageState extends ConsumerState<_GameContentPage> {
                     visualDensity: m3.VisualDensity.compact,
                     tooltip: context.l10n.serverJoin,
                   ),
+                if (_updateFor(entry) case final update?)
+                  AppButton(
+                    key: m3.ValueKey('content-update-${entry.name}'),
+                    onPressed: widget.onApplyUpdate == null
+                        ? null
+                        : () => widget.onApplyUpdate!(update),
+                    style: AppButtonStyle.text,
+                    size: AppButtonSize.sm,
+                    label: m3.Text(context.l10n.modsUpdateTo(update.to)),
+                  ),
                 m3.IconButton(
                   onPressed: () => _delete(entry),
                   icon: const m3.Icon(ShellIcons.trash, size: 18),
@@ -721,6 +777,13 @@ class _GameContentPageState extends ConsumerState<_GameContentPage> {
           ),
       ],
     );
+  }
+
+  FileUpdate? _updateFor(ContentEntry entry) {
+    for (final update in widget.updates) {
+      if (update.path == entry.path) return update;
+    }
+    return null;
   }
 
   String _emptyMessage(AppLocalizations l10n) => switch (widget.kind) {

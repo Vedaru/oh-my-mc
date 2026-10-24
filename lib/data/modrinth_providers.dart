@@ -150,6 +150,9 @@ final contentInstallActionProvider =
 /// A provider so a test can hand it a fake client *and* a fake hasher: identifying an
 /// installed jar means reading and hashing it, which does not complete inside the
 /// widget-test clock.
-final modUpdateCheckerProvider = Provider<ModUpdateChecker>(
-  (ref) => ModUpdateChecker(ref.watch(modrinthClientProvider)),
+/// Asks Modrinth whether installed files are current - mods, resource packs, shaders.
+/// One checker, because the question and the lookup are the same; only the folder and
+/// the project type differ.
+final fileUpdateCheckerProvider = Provider<FileUpdateChecker>(
+  (ref) => FileUpdateChecker(ref.watch(modrinthClientProvider)),
 );

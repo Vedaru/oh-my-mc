@@ -392,8 +392,8 @@ void main() {
         ),
       ],
       overrides: [
-        modUpdateCheckerProvider.overrideWithValue(
-          ModUpdateChecker(_UpdateClient(), hash: (_) async => 'sha1'),
+        fileUpdateCheckerProvider.overrideWithValue(
+          FileUpdateChecker(_UpdateClient(), hash: (_) async => 'sha1'),
         ),
         modsRepositoryProvider.overrideWithValue(_FakeModsRepository()),
         modInstallerProvider.overrideWithValue(installer),
@@ -403,7 +403,7 @@ void main() {
     // No `runAsync` here: the fake client and the fake hasher both complete on a
     // microtask, so the whole check runs inside the widget-test clock. Hashing a real
     // jar is what would need real time, and that is what the injected hasher avoids.
-    await tester.tap(find.byKey(const ValueKey('mods-check-updates')));
+    await tester.tap(find.byKey(const ValueKey('content-check-updates')));
     await tester.pumpAndSettle();
 
     // The row names the version it would move to, and offers the action.
@@ -420,6 +420,48 @@ void main() {
     // crash the launcher caused.
     expect(installer.directories, isNotEmpty);
     expect(find.text('Update to 2.0'), findsNothing);
+  });
+
+  testWidgets('a resource pack is checked and replaced the same way a mod is', (
+    tester,
+  ) async {
+    final installer = _FakeInstaller();
+    await pump(
+      tester,
+      section: 'resource-packs',
+      overrides: [
+        // The same checker the mods page uses: a pack's sha1 answers the same
+        // question, so there is no second implementation to keep in step.
+        fileUpdateCheckerProvider.overrideWithValue(
+          FileUpdateChecker(_UpdateClient(), hash: (_) async => 'sha1'),
+        ),
+        modInstallerProvider.overrideWithValue(installer),
+      ],
+    );
+
+    // Packs have no loader; the button is there because they do have an identity.
+    await tester.tap(find.byKey(const ValueKey('content-check-updates')));
+    await tester.pumpAndSettle();
+
+    // Every pack in the fixture answers to the same fake project, so the label is on
+    // more than one row; the action is per file, which is the point.
+    expect(find.text('Update to 2.0'), findsWidgets);
+    await tester.tap(find.byKey(const ValueKey('content-update-Pack A.zip')));
+    await tester.pumpAndSettle();
+
+    // It lands in `resourcepacks/`, not in the mods folder, and the row stops
+    // offering the update.
+    expect(installer.directories.single, endsWith('resourcepacks'));
+    // That file is done; the other pack's offer is still there, which is the point of
+    // an update being per file.
+    expect(
+      find.byKey(const ValueKey('content-update-Pack A.zip')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey('content-update-Pack B.zip')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('a server row shows whether the server is up', (tester) async {

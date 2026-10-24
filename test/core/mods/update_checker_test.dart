@@ -68,10 +68,10 @@ void main() {
 
   test('a newer version is reported, the current one is not', () async {
     final client = _Client(newestId: 'v2');
-    final updates = await ModUpdateChecker(
+    final updates = await FileUpdateChecker(
       client,
       hash: hash,
-    ).check([_mod('/mods/a.jar')], gameVersion: '1.20.1', loader: 'fabric');
+    ).checkMods([_mod('/mods/a.jar')], gameVersion: '1.20.1', loader: 'fabric');
 
     expect(updates, hasLength(1));
     expect(updates.single.from, '1.0');
@@ -83,17 +83,17 @@ void main() {
 
   test('the installed version being newest is not an update', () async {
     final client = _Client(newestId: 'v1');
-    final updates = await ModUpdateChecker(
+    final updates = await FileUpdateChecker(
       client,
       hash: hash,
-    ).check([_mod('/mods/a.jar')], gameVersion: '1.20.1', loader: 'fabric');
+    ).checkMods([_mod('/mods/a.jar')], gameVersion: '1.20.1', loader: 'fabric');
 
     expect(updates, isEmpty);
   });
 
   test('a jar Modrinth has never seen is skipped, not an error', () async {
     final client = _Client(newestId: 'v2');
-    final updates = await ModUpdateChecker(client, hash: hash).check(
+    final updates = await FileUpdateChecker(client, hash: hash).checkMods(
       [_mod('/mods/unknown.jar'), _mod('/mods/a.jar')],
       gameVersion: '1.20.1',
       loader: 'fabric',
@@ -102,14 +102,14 @@ void main() {
     // The unknown jar is skipped and the known one still reports its update: one
     // unidentifiable file must not hide every other mod's update.
     expect(updates, hasLength(1));
-    expect(updates.single.mod.path, '/mods/a.jar');
+    expect(updates.single.path, '/mods/a.jar');
   });
 
   test('a file that cannot be hashed is skipped', () async {
-    final updates = await ModUpdateChecker(
+    final updates = await FileUpdateChecker(
       _Client(newestId: 'v2'),
       hash: (_) async => null,
-    ).check([_mod('/mods/a.jar')], gameVersion: '1.20.1');
+    ).checkMods([_mod('/mods/a.jar')], gameVersion: '1.20.1');
 
     expect(updates, isEmpty);
   });
