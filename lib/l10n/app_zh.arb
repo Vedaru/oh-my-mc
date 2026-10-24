@@ -402,5 +402,18 @@
   "modpackStepImport": "应用它的模组",
   "modpackDone": "装好了，在「实例」页里。",
   "modpackSomeFailed": "有 {count} 个文件没能下载：",
-  "downloadTabVersions": "版本"
+  "downloadTabVersions": "版本",
+  "catalogBrowse": "浏览",
+  "catalogModsBlurb": "加载器、前置库，以及改变玩法的那些东西。",
+  "catalogResourcePacksBlurb": "材质与音效，一键启用。",
+  "catalogShadersBlurb": "光影，需要实例里装了 Iris 或 OptiFine。",
+  "catalogDataPacksBlurb": "配方与世界规则，按存档生效。",
+  "catalogImportWorldBlurb": "把压缩的存档放进这个实例的 saves。",
+  "downloadTabContent": "内容",
+  "downloadVersionsHint": "选游戏版本、选加载器、装。它需要的东西会一起下好。",
+  "catalogChooseFile": "选择文件",
+  "downloadColumnVersion": "版本",
+  "downloadColumnReleased": "发布时间",
+  "downloadColumnType": "类型",
+  "downloadColumnAction": "操作"
 }

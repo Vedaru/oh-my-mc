@@ -724,7 +724,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
-    await tester.tap(find.byKey(const ValueKey('modpack-open-fo')));
+    await tester.tap(find.byKey(const ValueKey('modpack-result-fo')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 

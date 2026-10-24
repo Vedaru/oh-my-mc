@@ -1319,4 +1319,48 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get downloadTabVersions => 'Versions';
+
+  @override
+  String get catalogBrowse => 'Browse';
+
+  @override
+  String get catalogModsBlurb =>
+      'Loaders, libraries and the things that change the game.';
+
+  @override
+  String get catalogResourcePacksBlurb =>
+      'Textures and sounds, switched on in one click.';
+
+  @override
+  String get catalogShadersBlurb =>
+      'Light and water. Needs Iris or OptiFine in the instance.';
+
+  @override
+  String get catalogDataPacksBlurb => 'Recipes and world rules, per save file.';
+
+  @override
+  String get catalogImportWorldBlurb =>
+      'A zipped save goes into this instance\'s saves folder.';
+
+  @override
+  String get downloadTabContent => 'Content';
+
+  @override
+  String get downloadVersionsHint =>
+      'Pick a game version, choose a loader, install. Everything it needs is downloaded with it.';
+
+  @override
+  String get catalogChooseFile => 'Choose file';
+
+  @override
+  String get downloadColumnVersion => 'Version';
+
+  @override
+  String get downloadColumnReleased => 'Released';
+
+  @override
+  String get downloadColumnType => 'Type';
+
+  @override
+  String get downloadColumnAction => 'Action';
 }

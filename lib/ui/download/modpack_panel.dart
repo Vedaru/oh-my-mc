@@ -9,6 +9,7 @@ import '../../l10n/l10n.dart';
 import '../components/app_button.dart';
 import '../components/app_dialog.dart';
 import '../components/catalog_list.dart';
+import '../components/action_card.dart';
 import '../components/list_row.dart';
 import '../shell/shell_icons.dart';
 import '../theme/app_theme.dart';
@@ -55,24 +56,20 @@ class _ModpackPanelState extends ConsumerState<ModpackPanel> {
             results: results,
             emptyText: l10n.catalogEmpty,
             maxHeight: double.infinity,
-            rowBuilder: (context, project) => ListRow(
+            wrap: true,
+            rowBuilder: (context, project) => ActionCard(
               key: m3.ValueKey('modpack-result-${project.id}'),
-              leadingIcon: ShellIcons.mods,
-              label: project.title,
+              icon: ShellIcons.mods,
+              title: project.title,
               // The download count is the only quality signal Modrinth gives that a
               // reader can use at a glance; the description alone makes a 12-download
               // pack look like a 1.2-million one.
-              supporting: [
+              subtitle: [
                 if (project.downloads > 0) _downloads(project.downloads),
                 project.description,
               ].where((part) => part.isNotEmpty).join(' · '),
-              trailingControl: AppButton(
-                key: m3.ValueKey('modpack-open-${project.id}'),
-                onPressed: () => ModpackVersionDialog.show(context, project),
-                style: AppButtonStyle.text,
-                size: AppButtonSize.sm,
-                label: m3.Text(l10n.modpackVersions),
-              ),
+              actionLabel: l10n.modpackVersions,
+              onPressed: () => ModpackVersionDialog.show(context, project),
             ),
           ),
         ),

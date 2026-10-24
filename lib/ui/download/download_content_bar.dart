@@ -12,7 +12,7 @@ import '../../data/instance_providers.dart';
 import '../../data/launch_factory.dart';
 import '../../data/modrinth_providers.dart';
 import '../../l10n/l10n.dart';
-import '../components/app_button.dart';
+import '../components/action_card.dart';
 import '../instances/content_search_dialog.dart';
 import '../shell/shell_icons.dart';
 import '../theme/app_theme.dart';
@@ -101,43 +101,54 @@ class _DownloadContentBarState extends ConsumerState<DownloadContentBar> {
     }
   }
 
-  /// The row's five actions, in reading order.
+  /// The five actions, in reading order, each with the sentence that makes it usable.
   ///
-  /// Every one goes through [_BarButton], the same widget with the same style: five
-  /// buttons built by five separate `AppButton(...)` calls is how one of them ended up
-  /// a text link with a wider optical gap than its neighbours.
-  List<Widget> _buttons(AppLocalizations l10n, bool enabled) => [
-    _BarButton(
-      id: 'catalog-mod',
+  /// Every card comes from one list through one widget: five separate cards built by
+  /// hand is how one of them ended up with a different weight, a wider gap, or no
+  /// explanation at all.
+  List<Widget> _cards(AppLocalizations l10n, bool enabled) => [
+    ActionCard(
+      key: const m3.ValueKey('catalog-mod'),
       icon: ShellIcons.mods,
-      label: l10n.catalogMods,
+      title: l10n.catalogMods,
+      subtitle: l10n.catalogModsBlurb,
+      actionLabel: l10n.catalogBrowse,
       onPressed: enabled ? () => _open(CatalogKind.mod) : null,
     ),
-    _BarButton(
-      id: 'catalog-resourcePack',
+    ActionCard(
+      key: const m3.ValueKey('catalog-resourcePack'),
       icon: ShellIcons.resourcePacks,
-      label: l10n.catalogResourcePacks,
+      title: l10n.catalogResourcePacks,
+      subtitle: l10n.catalogResourcePacksBlurb,
+      actionLabel: l10n.catalogBrowse,
       onPressed: enabled ? () => _open(CatalogKind.resourcePack) : null,
     ),
-    _BarButton(
-      id: 'catalog-shader',
+    ActionCard(
+      key: const m3.ValueKey('catalog-shader'),
       icon: ShellIcons.shaderPacks,
-      label: l10n.catalogShaders,
+      title: l10n.catalogShaders,
+      subtitle: l10n.catalogShadersBlurb,
+      actionLabel: l10n.catalogBrowse,
       onPressed: enabled ? () => _open(CatalogKind.shader) : null,
     ),
-    _BarButton(
-      id: 'catalog-datapack',
+    ActionCard(
+      key: const m3.ValueKey('catalog-datapack'),
       icon: ShellIcons.saves,
-      label: l10n.catalogDataPacks,
+      title: l10n.catalogDataPacks,
+      subtitle: l10n.catalogDataPacksBlurb,
+      actionLabel: l10n.catalogBrowse,
       onPressed: enabled ? () => _open(CatalogKind.datapack) : null,
     ),
     // Worlds and packs are files, not catalogues: Modrinth has no world directory, so
-    // promising a search there would be a dead end. The button is the same pill as the
-    // four catalogues - it is one more way to put content into an instance.
-    _BarButton(
-      id: 'catalog-import-world',
-      icon: ShellIcons.saves,
-      label: _importing ? l10n.catalogImporting : l10n.catalogImportWorld,
+    // promising a search there would be a dead end. Same card, because it is one more
+    // way to put content into an instance.
+    ActionCard(
+      key: const m3.ValueKey('catalog-import-world'),
+      icon: ShellIcons.folder,
+      title: _importing ? l10n.catalogImporting : l10n.catalogImportWorld,
+      subtitle: l10n.catalogImportWorldBlurb,
+      // "Browse" would promise a catalogue; this one opens a file picker.
+      actionLabel: l10n.catalogChooseFile,
       onPressed: enabled ? _importWorld : null,
     ),
   ];
@@ -149,71 +160,22 @@ class _DownloadContentBarState extends ConsumerState<DownloadContentBar> {
     final instance = _target;
     final enabled = instance != null && !_importing;
 
-    return m3.Padding(
-      padding: const m3.EdgeInsets.only(bottom: 12),
-      child: m3.Column(
-        crossAxisAlignment: m3.CrossAxisAlignment.start,
-        children: [
-          m3.Text(
-            instance == null
-                ? l10n.catalogNoTarget
-                : l10n.catalogTarget(instance.name),
-            style: AppTheme.caption(context)
-                .copyWith(color: scheme.onSurfaceVariant),
-          ),
-          const m3.SizedBox(height: 8),
-          // One row, scrolling sideways on a narrow window: five buttons that wrap
-          // onto a second line double the bar's height for no information gained.
-          //
-          // The gaps come from the loop, not from hand-placed `SizedBox`es between
-          // them: a row of five buttons is exactly the place where one missing spacer
-          // is invisible in code review and obvious on screen.
-          m3.SingleChildScrollView(
-            scrollDirection: m3.Axis.horizontal,
-            child: m3.Row(
-              children: [
-                for (final (index, button) in _buttons(
-                  l10n,
-                  enabled,
-                ).indexed) ...[
-                  if (index > 0) const m3.SizedBox(width: 8),
-                  button,
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// One pill in the content bar.
-///
-/// `id` is the widget key, not a catalogue: the world import is not a catalogue and
-/// still belongs in this row, and it has to be built exactly like the four that are.
-class _BarButton extends StatelessWidget {
-  const _BarButton({
-    required this.id,
-    required this.icon,
-    required this.label,
-    required this.onPressed,
-  });
-
-  final String id;
-  final Object icon;
-  final String label;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppButton(
-      key: m3.ValueKey(id),
-      onPressed: onPressed,
-      style: AppButtonStyle.outlined,
-      size: AppButtonSize.sm,
-      icon: m3.Icon(icon as m3.IconData, size: 14),
-      label: m3.Text(label),
+    return m3.Column(
+      crossAxisAlignment: m3.CrossAxisAlignment.start,
+      children: [
+        m3.Text(
+          instance == null
+              ? l10n.catalogNoTarget
+              : l10n.catalogTarget(instance.name),
+          style: AppTheme.caption(context)
+              .copyWith(color: scheme.onSurfaceVariant),
+        ),
+        const m3.SizedBox(height: 12),
+        // A grid, not a row: five cards at their natural width fill a 1440 px window
+        // and wrap to two or three columns on a narrow one, instead of five pills in a
+        // line above an empty page.
+        m3.Wrap(spacing: 12, runSpacing: 12, children: _cards(l10n, enabled)),
+      ],
     );
   }
 }

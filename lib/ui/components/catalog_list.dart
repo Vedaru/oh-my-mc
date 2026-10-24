@@ -78,6 +78,7 @@ class CatalogList<T> extends StatelessWidget {
     required this.rowBuilder,
     required this.emptyText,
     this.maxHeight = 380,
+    this.wrap = false,
     super.key,
   });
 
@@ -88,6 +89,13 @@ class CatalogList<T> extends StatelessWidget {
   final String emptyText;
 
   final double maxHeight;
+
+  /// Cards in a wrapping grid instead of rows in a list.
+  ///
+  /// A catalogue of *things you pick one of* reads better as cards, and a grid fills a
+  /// wide window where a list of rows leaves it half empty. The three states above are
+  /// the same either way, which is the point of this widget.
+  final bool wrap;
 
   @override
   Widget build(BuildContext context) {
@@ -107,6 +115,13 @@ class CatalogList<T> extends StatelessWidget {
           emptyText,
           style: AppTheme.body(context)
               .copyWith(color: scheme.onSurfaceVariant),
+        ),
+      ),
+      AsyncData(:final value) when wrap => m3.SingleChildScrollView(
+        child: m3.Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [for (final item in value) rowBuilder(context, item)],
         ),
       ),
       AsyncData(:final value) => m3.ListView(

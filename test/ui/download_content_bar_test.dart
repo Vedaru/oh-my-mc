@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:flutter/widgets.dart' show Rect, Size;
+import 'package:flutter/widgets.dart' show Size;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart' as m3;
@@ -13,7 +13,7 @@ import 'package:oh_my_mc/data/instance_store.dart';
 import 'package:oh_my_mc/data/launch_factory.dart';
 import 'package:oh_my_mc/data/modrinth_providers.dart';
 import 'package:oh_my_mc/data/settings.dart';
-import 'package:oh_my_mc/ui/components/app_button.dart';
+import 'package:oh_my_mc/ui/components/action_card.dart';
 import 'package:oh_my_mc/ui/download/download_content_bar.dart';
 import 'package:path/path.dart' as p;
 
@@ -161,15 +161,15 @@ void main() {
     await pump(tester, instances: const [], selectedId: null);
 
     expect(find.textContaining('Select an instance'), findsOneWidget);
-    // A button that cannot do anything is disabled, not missing: the bar still shows
-    // what the page can do once an instance exists.
-    final button = tester.widget<AppButton>(
+    // A card that cannot do anything is disabled, not missing: the page still shows what
+    // it can do once an instance exists.
+    final card = tester.widget<ActionCard>(
       find.byKey(const m3.ValueKey('catalog-mod')),
     );
-    expect(button.onPressed, isNull);
+    expect(card.onPressed, isNull);
   });
 
-  testWidgets('the five actions are one row of equal pills', (tester) async {
+  testWidgets('the five actions are one grid of equal cards', (tester) async {
     await pump(tester);
 
     const ids = [
@@ -180,33 +180,26 @@ void main() {
       'catalog-import-world',
     ];
 
-    final rects = <String, Rect>{
-      for (final id in ids) id: tester.getRect(find.byKey(m3.ValueKey(id))),
-    };
-
-    // Same shape: every one is an outlined pill, so the row reads as five variants of
-    // one action rather than "four buttons and a link".
+    // Every one is the same widget, so they cannot drift into "four cards and a link".
     for (final id in ids) {
-      final button = tester.widget<AppButton>(find.byKey(m3.ValueKey(id)));
+      expect(find.byKey(m3.ValueKey(id)), findsOneWidget, reason: id);
       expect(
-        button.style,
-        AppButtonStyle.outlined,
-        reason: '$id is not a pill',
-      );
-      expect(
-        button.size,
-        AppButtonSize.sm,
-        reason: '$id has a different height',
+        tester.widget(find.byKey(m3.ValueKey(id))),
+        isA<ActionCard>(),
+        reason: '$id is not built from the shared card',
       );
     }
 
-    // Same rhythm: the gap between neighbours is one number, and 导入世界 is not
-    // further from 数据包 than the catalogues are from each other.
-    final gaps = [
-      for (var i = 1; i < ids.length; i++)
-        rects[ids[i]]!.left - rects[ids[i - 1]]!.right,
-    ];
-    expect(gaps, everyElement(moreOrLessEquals(8, epsilon: 0.01)));
+    // A grid: the first two share a row and a height, and the wrap puts the third on
+    // the same line only when the pane is wide enough.
+    final first = tester.getRect(find.byKey(const m3.ValueKey('catalog-mod')));
+    final second = tester.getRect(
+      find.byKey(const m3.ValueKey('catalog-resourcePack')),
+    );
+    expect(first.top, moreOrLessEquals(second.top, epsilon: 0.5));
+    expect(second.left, greaterThan(first.right));
+    expect(first.height, moreOrLessEquals(second.height, epsilon: 0.5));
+    expect(first.width, moreOrLessEquals(second.width, epsilon: 0.5));
   });
 
   testWidgets('a resource pack installs into resourcepacks/ and is enabled', (

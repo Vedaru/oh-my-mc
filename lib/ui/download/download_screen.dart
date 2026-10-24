@@ -33,6 +33,7 @@ class VersionRowData {
     required this.isRelease,
     required this.isSnapshot,
     required this.isAncient,
+    this.released,
   });
 
   factory VersionRowData.of(ManifestVersion version) => VersionRowData(
@@ -40,12 +41,17 @@ class VersionRowData {
     isRelease: version.isRelease,
     isSnapshot: version.isSnapshot,
     isAncient: version.isAncient,
+    released: version.releaseTime,
   );
 
   final String id;
   final bool isRelease;
   final bool isSnapshot;
   final bool isAncient;
+
+  /// When Mojang published it. A version list without dates is a list of strings:
+  /// "1.20.1" means nothing until it says 2023.
+  final DateTime? released;
 
   /// Snapshots are listed only when the user asks, and old betas never: they
   /// cannot install without extra tooling, so an Install button for them would
@@ -141,22 +147,23 @@ class _DownloadScreenState extends ConsumerState<DownloadScreen> {
         crossAxisAlignment: m3.CrossAxisAlignment.stretch,
         children: [
           PageTitle(l10n.navDownload),
-          // Before the version list: "mods / resource packs / shaders / data packs"
-          // is what most visits to 下载 are about once a version is installed.
-          //
-          // Hidden while an install is running: the panel below it is the thing to
-          // watch then, and on a short window the two together push the list out of
-          // the viewport.
-          // No content bar in the modpack tab: mods and packs go into an existing
-          // instance, and this tab is about creating one.
-          if (install is InstallIdle && _mode == _DownloadMode.versions)
-            const DownloadContentBar(),
+          // The switch sits directly under the title, above everything that changes
+          // with it. It used to sit below the content bar, so choosing 整合包 moved the
+          // control the user had just pressed a hundred pixels up - the control has to
+          // stay where the hand left it.
           _ModeSwitch(
             mode: _mode,
             onChanged: (mode) => setState(() => _mode = mode),
           ),
+          const m3.SizedBox(height: 12),
           if (_mode == _DownloadMode.modpacks)
             const m3.Expanded(child: ModpackPanel())
+          else if (_mode == _DownloadMode.content)
+            // Content is not a list of versions: it fills the pane with the five
+            // things that can be added to the selected instance.
+            m3.Expanded(
+              child: m3.SingleChildScrollView(child: DownloadContentBar()),
+            )
           else ...[
             _Toolbar(
               search: _search,
@@ -216,7 +223,7 @@ class _DownloadScreenState extends ConsumerState<DownloadScreen> {
   }
 }
 
-enum _DownloadMode { versions, modpacks }
+enum _DownloadMode { versions, modpacks, content }
 
 /// 版本 / 整合包, as one segmented control above the body.
 ///
@@ -245,6 +252,10 @@ class _ModeSwitch extends StatelessWidget {
               m3.ButtonSegment(
                 value: _DownloadMode.modpacks,
                 label: m3.Text(l10n.modpackTab),
+              ),
+              m3.ButtonSegment(
+                value: _DownloadMode.content,
+                label: m3.Text(l10n.downloadTabContent),
               ),
             ],
             selected: {mode},
@@ -427,21 +438,111 @@ class _VersionList extends StatelessWidget {
               message: l10n.downloadStaleCache,
             ),
           ),
+        // One width for the name column, measured once and shared by the header and
+        // every row: the fixed columns are fixed, and the name takes what is left up to
+        // the point where a version id stops needing more. Hard-coding 300 overflowed a
+        // narrow window by 12 px; letting it flex pushed the date to the far edge.
         m3.Expanded(
-          child: StaggerList(
-            itemCount: versions.length,
-            padding: EdgeInsets.zero,
-            itemBuilder: (context, index) => _VersionRow(
-              version: versions[index],
-              installed: installed.contains(versions[index].id),
-              incomplete: incomplete.contains(versions[index].id),
-              busy: busy,
-              onInstall: onInstall,
-              onUninstall: onUninstall,
-            ),
+          child: m3.LayoutBuilder(
+            builder: (context, constraints) {
+              final nameWidth = (constraints.maxWidth - _fixedColumns).clamp(
+                120.0,
+                300.0,
+              );
+              return m3.Column(
+                crossAxisAlignment: m3.CrossAxisAlignment.stretch,
+                children: [
+                  _ListHeader(nameWidth: nameWidth),
+                  m3.Expanded(
+                    child: StaggerList(
+                      itemCount: versions.length,
+                      padding: EdgeInsets.zero,
+                      itemBuilder: (context, index) => _VersionRow(
+                        version: versions[index],
+                        installed: installed.contains(versions[index].id),
+                        incomplete: incomplete.contains(versions[index].id),
+                        busy: busy,
+                        nameWidth: nameWidth,
+                        onInstall: onInstall,
+                        onUninstall: onUninstall,
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ],
+    );
+  }
+}
+
+/// `2023-06-12`, or an empty string when the manifest had no date.
+///
+/// ISO rather than a localised long date: the list is hundreds of rows of versions and
+/// someone scanning it wants the year first.
+String _dateOf(DateTime? date) => date == null
+    ? ''
+    : '${date.year}-${date.month.toString().padLeft(2, '0')}-'
+          '${date.day.toString().padLeft(2, '0')}';
+
+/// Everything in a version row except the name, plus the row's own padding.
+///
+/// 28 icon + 12 + 132 date + 96 type + 16 + 96 action + 40 uninstall, and 16 of horizontal
+/// padding from `HoverRow`. The name column gets `maxWidth - this`.
+const _fixedColumns = 28.0 + 12 + 132 + 96 + 16 + 96 + 40 + 16;
+
+/// The column names above the version list.
+///
+/// A table needs a header, otherwise the two right-hand columns are just text that
+/// happens to line up. It also gives the list a top edge - the page used to start with a
+/// row of data directly under the toolbar, which is why it read as empty.
+class _ListHeader extends StatelessWidget {
+  const _ListHeader({required this.nameWidth});
+
+  final double nameWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final scheme = m3.Theme.of(context).colorScheme;
+    final style = AppTheme.caption(
+      context,
+    ).copyWith(color: scheme.onSurfaceVariant, fontWeight: m3.FontWeight.w600);
+    return m3.Padding(
+      padding: const m3.EdgeInsets.only(bottom: 6),
+      child: m3.Row(
+        children: [
+          // Mirrors the row exactly - 28 icon, 300 name, 12, 132 date, 96 type, 16,
+          // 96 action, 40 trash - so every label sits over its column instead of
+          // floating to the right edge.
+          const m3.SizedBox(width: 28),
+          m3.SizedBox(
+            width: nameWidth,
+            child: m3.Text(l10n.downloadColumnVersion, style: style),
+          ),
+          const m3.SizedBox(width: 12),
+          m3.SizedBox(
+            width: 132,
+            child: m3.Text(l10n.downloadColumnReleased, style: style),
+          ),
+          m3.SizedBox(
+            width: 96,
+            child: m3.Text(l10n.downloadColumnType, style: style),
+          ),
+          const m3.SizedBox(width: 16),
+          m3.SizedBox(
+            width: 96,
+            child: m3.Text(
+              l10n.downloadColumnAction,
+              textAlign: m3.TextAlign.end,
+              style: style,
+            ),
+          ),
+          const m3.SizedBox(width: 40),
+        ],
+      ),
     );
   }
 }
@@ -452,11 +553,15 @@ class _VersionRow extends StatelessWidget {
     required this.installed,
     required this.incomplete,
     required this.busy,
+    required this.nameWidth,
     required this.onInstall,
     required this.onUninstall,
   });
 
   final VersionRowData version;
+
+  /// Shared with the header, so the columns line up at any window width.
+  final double nameWidth;
   final bool installed;
 
   /// The install started and did not finish; the files may be partial.
@@ -496,13 +601,32 @@ class _VersionRow extends StatelessWidget {
                   : scheme.onSurfaceVariant,
             ),
           ),
-          m3.Expanded(
-            child: m3.Text(version.id, style: AppTheme.body(context)),
+          // Fixed columns: the name column is as wide as a version id needs, so the
+          // date and type sit beside it. Letting the name take the slack pushed the
+          // other two to the far edge and the row read as two unrelated columns.
+          m3.SizedBox(
+            width: nameWidth,
+            child: m3.Text(
+              version.id,
+              style: AppTheme.body(context),
+              overflow: m3.TextOverflow.ellipsis,
+            ),
           ),
-          m3.Text(
-            version.isRelease ? l10n.downloadRelease : l10n.downloadSnapshot,
-            style: AppTheme.caption(context)
-                .copyWith(color: scheme.onSurfaceVariant),
+          m3.SizedBox(
+            width: 132,
+            child: m3.Text(
+              _dateOf(version.released),
+              style: AppTheme.caption(context)
+                  .copyWith(color: scheme.onSurfaceVariant),
+            ),
+          ),
+          m3.SizedBox(
+            width: 96,
+            child: m3.Text(
+              version.isRelease ? l10n.downloadRelease : l10n.downloadSnapshot,
+              style: AppTheme.caption(context)
+                  .copyWith(color: scheme.onSurfaceVariant),
+            ),
           ),
           const m3.SizedBox(width: 16),
           m3.SizedBox(
@@ -512,14 +636,24 @@ class _VersionRow extends StatelessWidget {
                   ? l10n.downloadInstalled
                   : incomplete
                   ? l10n.downloadIncomplete
-                  : '',
+                  // A row whose action is only visible on hover is a row that looks
+                  // inert; the label is the accent colour because it is the thing to do.
+                  : busy
+                  ? ''
+                  : l10n.catalogInstall,
               textAlign: m3.TextAlign.end,
               style: AppTheme.caption(context).copyWith(
                 color: installed
                     ? success
                     : incomplete
                     ? AppTheme.status(context).warning
+                    // Calm until pointed at: a table of 800 accent words is noise.
+                    : hovered
+                    ? scheme.primary
                     : scheme.onSurfaceVariant,
+                fontWeight: installed || incomplete
+                    ? m3.FontWeight.w400
+                    : m3.FontWeight.w600,
               ),
             ),
           ),

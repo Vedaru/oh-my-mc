@@ -559,9 +559,47 @@ void main() {
               description: 'A small kitchen-sink pack for 1.20.1.',
               downloads: 43000,
             ),
+            ModrinthProject(
+              id: 'atm',
+              slug: 'all-the-mods',
+              title: 'All the Mods 9',
+              description: 'The kitchen sink, and the kitchen it came in.',
+              downloads: 8700000,
+            ),
+            ModrinthProject(
+              id: 'prom',
+              slug: 'prominence',
+              title: 'Prominence II RPG',
+              description: 'An RPG overhaul with quests and bosses.',
+              downloads: 2400000,
+            ),
+            ModrinthProject(
+              id: 'bet',
+              slug: 'better-mc',
+              title: 'Better MC',
+              description: 'Vanilla-plus with a curated mod list.',
+              downloads: 3100000,
+            ),
+            ModrinthProject(
+              id: 'van',
+              slug: 'vanilla-tweaks',
+              title: 'Vanilla Tweaks Pack',
+              description: 'Quality of life, nothing that changes the look.',
+              downloads: 640000,
+            ),
           ],
         ),
       ],
+    );
+  });
+
+  testWidgets('download content', (tester) async {
+    await shoot(
+      tester,
+      '/download',
+      'download-content',
+      instances: [_instance('mc', 'mc', '1.20.1')],
+      tapText: 'Content',
     );
   });
 
@@ -586,6 +624,9 @@ void main() {
       '/download',
       'download',
       instances: [_instance('mc', 'mc', '1.20.1')],
+      // A real list, not the skeleton: the shot exists to review the page, and the
+      // loading state is a frame nobody has an opinion about.
+      overrides: [versionListProvider.overrideWith(() => _ShotVersionList())],
     );
   });
 
@@ -1246,13 +1287,23 @@ class _ShotVersionList extends VersionListController {
     VersionManifest.fromJson({
       'latest': {'release': '1.21', 'snapshot': '24w14a'},
       'versions': [
-        for (final id in ['1.21', '1.20.6', '1.20.1', '1.19.4'])
+        // Real dates, spread out: a column where every row says the same day is a
+        // column that cannot be reviewed.
+        for (final row in [
+          ('1.21', 'release', '2024-06-13'),
+          ('1.20.6', 'release', '2024-04-29'),
+          ('1.20.1', 'release', '2023-06-12'),
+          ('1.19.4', 'release', '2023-03-14'),
+          ('1.19.2', 'release', '2022-08-05'),
+          ('1.18.2', 'release', '2022-02-28'),
+          ('24w14a', 'snapshot', '2024-04-03'),
+        ])
           {
-            'id': id,
-            'type': 'release',
-            'url': 'https://example.invalid/$id.json',
+            'id': row.$1,
+            'type': row.$2,
+            'url': 'https://example.invalid/${row.$1}.json',
             'sha1': 'aa',
-            'releaseTime': '2024-06-13T00:00:00+00:00',
+            'releaseTime': '${row.$3}T00:00:00+00:00',
           },
       ],
     }),

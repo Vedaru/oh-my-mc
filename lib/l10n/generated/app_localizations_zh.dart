@@ -1266,4 +1266,43 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get downloadTabVersions => '版本';
+
+  @override
+  String get catalogBrowse => '浏览';
+
+  @override
+  String get catalogModsBlurb => '加载器、前置库，以及改变玩法的那些东西。';
+
+  @override
+  String get catalogResourcePacksBlurb => '材质与音效，一键启用。';
+
+  @override
+  String get catalogShadersBlurb => '光影，需要实例里装了 Iris 或 OptiFine。';
+
+  @override
+  String get catalogDataPacksBlurb => '配方与世界规则，按存档生效。';
+
+  @override
+  String get catalogImportWorldBlurb => '把压缩的存档放进这个实例的 saves。';
+
+  @override
+  String get downloadTabContent => '内容';
+
+  @override
+  String get downloadVersionsHint => '选游戏版本、选加载器、装。它需要的东西会一起下好。';
+
+  @override
+  String get catalogChooseFile => '选择文件';
+
+  @override
+  String get downloadColumnVersion => '版本';
+
+  @override
+  String get downloadColumnReleased => '发布时间';
+
+  @override
+  String get downloadColumnType => '类型';
+
+  @override
+  String get downloadColumnAction => '操作';
 }

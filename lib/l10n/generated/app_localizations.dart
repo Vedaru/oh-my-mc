@@ -2287,6 +2287,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Versions'**
   String get downloadTabVersions;
+
+  /// Download page copy: catalogBrowse
+  ///
+  /// In en, this message translates to:
+  /// **'Browse'**
+  String get catalogBrowse;
+
+  /// Download page copy: catalogModsBlurb
+  ///
+  /// In en, this message translates to:
+  /// **'Loaders, libraries and the things that change the game.'**
+  String get catalogModsBlurb;
+
+  /// Download page copy: catalogResourcePacksBlurb
+  ///
+  /// In en, this message translates to:
+  /// **'Textures and sounds, switched on in one click.'**
+  String get catalogResourcePacksBlurb;
+
+  /// Download page copy: catalogShadersBlurb
+  ///
+  /// In en, this message translates to:
+  /// **'Light and water. Needs Iris or OptiFine in the instance.'**
+  String get catalogShadersBlurb;
+
+  /// Download page copy: catalogDataPacksBlurb
+  ///
+  /// In en, this message translates to:
+  /// **'Recipes and world rules, per save file.'**
+  String get catalogDataPacksBlurb;
+
+  /// Download page copy: catalogImportWorldBlurb
+  ///
+  /// In en, this message translates to:
+  /// **'A zipped save goes into this instance\'s saves folder.'**
+  String get catalogImportWorldBlurb;
+
+  /// Download page copy: downloadTabContent
+  ///
+  /// In en, this message translates to:
+  /// **'Content'**
+  String get downloadTabContent;
+
+  /// Download page copy: downloadVersionsHint
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a game version, choose a loader, install. Everything it needs is downloaded with it.'**
+  String get downloadVersionsHint;
+
+  /// Card action: opens a file picker rather than a catalogue.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose file'**
+  String get catalogChooseFile;
+
+  /// Version list column header.
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get downloadColumnVersion;
+
+  /// Version list column header: release date.
+  ///
+  /// In en, this message translates to:
+  /// **'Released'**
+  String get downloadColumnReleased;
+
+  /// Version list column header: release or snapshot.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get downloadColumnType;
+
+  /// Version list column header above the per-row action.
+  ///
+  /// In en, this message translates to:
+  /// **'Action'**
+  String get downloadColumnAction;
 }
 
 class _AppLocalizationsDelegate

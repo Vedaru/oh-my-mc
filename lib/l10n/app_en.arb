@@ -1838,5 +1838,57 @@
   "downloadTabVersions": "Versions",
   "@downloadTabVersions": {
     "description": "Download page tab: the version list."
+  },
+  "catalogBrowse": "Browse",
+  "@catalogBrowse": {
+    "description": "Download page copy: catalogBrowse"
+  },
+  "catalogModsBlurb": "Loaders, libraries and the things that change the game.",
+  "@catalogModsBlurb": {
+    "description": "Download page copy: catalogModsBlurb"
+  },
+  "catalogResourcePacksBlurb": "Textures and sounds, switched on in one click.",
+  "@catalogResourcePacksBlurb": {
+    "description": "Download page copy: catalogResourcePacksBlurb"
+  },
+  "catalogShadersBlurb": "Light and water. Needs Iris or OptiFine in the instance.",
+  "@catalogShadersBlurb": {
+    "description": "Download page copy: catalogShadersBlurb"
+  },
+  "catalogDataPacksBlurb": "Recipes and world rules, per save file.",
+  "@catalogDataPacksBlurb": {
+    "description": "Download page copy: catalogDataPacksBlurb"
+  },
+  "catalogImportWorldBlurb": "A zipped save goes into this instance's saves folder.",
+  "@catalogImportWorldBlurb": {
+    "description": "Download page copy: catalogImportWorldBlurb"
+  },
+  "downloadTabContent": "Content",
+  "@downloadTabContent": {
+    "description": "Download page copy: downloadTabContent"
+  },
+  "downloadVersionsHint": "Pick a game version, choose a loader, install. Everything it needs is downloaded with it.",
+  "@downloadVersionsHint": {
+    "description": "Download page copy: downloadVersionsHint"
+  },
+  "catalogChooseFile": "Choose file",
+  "@catalogChooseFile": {
+    "description": "Card action: opens a file picker rather than a catalogue."
+  },
+  "downloadColumnVersion": "Version",
+  "@downloadColumnVersion": {
+    "description": "Version list column header."
+  },
+  "downloadColumnReleased": "Released",
+  "@downloadColumnReleased": {
+    "description": "Version list column header: release date."
+  },
+  "downloadColumnType": "Type",
+  "@downloadColumnType": {
+    "description": "Version list column header: release or snapshot."
+  },
+  "downloadColumnAction": "Action",
+  "@downloadColumnAction": {
+    "description": "Version list column header above the per-row action."
   }
 }
