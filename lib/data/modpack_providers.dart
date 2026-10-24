@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 
 import '../core/instance/instance.dart';
+import '../core/net/downloader.dart';
 import '../core/mods/modrinth.dart';
 import '../core/packs/mrpack_importer.dart';
 import '../core/packs/modpack_install.dart';
@@ -70,19 +71,27 @@ final modpackInstallerProvider = Provider<ModpackInstaller>((ref) {
               loader: loader,
               loaderVersion: loaderVersion,
             ),
-    download: (url, target, {cancel}) async {
-      await target.parent.create(recursive: true);
-      final client = HttpClient()
-        ..connectionTimeout = const Duration(seconds: 30);
+    // The installer's own downloader, not a second HTTP client: it already retries,
+    // writes `.part` then renames, and checks the SHA-1 the catalogue handed us.
+    download: (url, target, {String sha1 = '', int size = 0, cancel}) async {
+      final downloader = FileDownloader();
       try {
-        final request = await client.getUrl(url);
-        final response = await request.close();
-        if (response.statusCode >= 400) {
-          throw HttpException('HTTP ${response.statusCode}', uri: url);
-        }
-        await response.pipe(target.openWrite());
+        await downloader
+            .download(
+              [
+                DownloadTask(
+                  url: url,
+                  targetPath: target.path,
+                  sha1: sha1,
+                  size: size,
+                ),
+              ],
+              concurrency: 1,
+              cancel: cancel,
+            )
+            .drain<void>();
       } finally {
-        client.close(force: true);
+        downloader.close();
       }
     },
     import: (pack, {required gameDir, onProgress}) async {

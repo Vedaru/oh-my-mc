@@ -60,6 +60,8 @@ typedef ModpackInstanceCreate = Future<Instance> Function({
 typedef ModpackDownload = Future<void> Function(
   Uri url,
   File target, {
+  String sha1,
+  int size,
   CancelToken? cancel,
 });
 
@@ -112,7 +114,13 @@ class ModpackInstaller {
     final packFile = File(p.join(cacheDir.path, file.filename));
 
     onProgress?.call(ModpackStep.download, file.filename);
-    await download(Uri.parse(file.url), packFile, cancel: cancel);
+    await download(
+      Uri.parse(file.url),
+      packFile,
+      sha1: file.sha1 ?? '',
+      size: file.sizeBytes,
+      cancel: cancel,
+    );
     cancel?.throwIfCancelled('modpack download');
 
     final index = await MrpackIndex.read(packFile);

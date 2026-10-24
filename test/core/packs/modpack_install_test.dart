@@ -112,7 +112,7 @@ void main() {
             );
             return created!;
           },
-      download: (url, target, {cancel}) async {
+      download: (url, target, {String sha1 = '', int size = 0, cancel}) async {
         await target.parent.create(recursive: true);
         await target.writeAsBytes(packBytes());
       },
@@ -185,7 +185,7 @@ void main() {
         LoaderKind loader = LoaderKind.vanilla,
         String? loaderVersion,
       }) async => Instance(id: 'x', name: name, versionId: versionId),
-      download: (url, target, {cancel}) async {
+      download: (url, target, {String sha1 = '', int size = 0, cancel}) async {
         await target.parent.create(recursive: true);
         await target.writeAsBytes(
           packBytes(
@@ -244,7 +244,8 @@ void main() {
         LoaderKind loader = LoaderKind.vanilla,
         String? loaderVersion,
       }) async => fail('must not create an instance'),
-      download: (url, target, {cancel}) async => fail('must not download'),
+      download: (url, target, {String sha1 = '', int size = 0, cancel}) async =>
+          fail('must not download'),
       import: (pack, {required gameDir, onProgress}) async =>
           fail('must not import'),
       cacheDir: Directory(p.join(root.path, 'cache')),
