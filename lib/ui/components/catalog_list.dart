@@ -114,7 +114,6 @@ class CatalogList<T> extends StatelessWidget {
         padding: m3.EdgeInsets.zero,
         children: [for (final item in value) rowBuilder(context, item)],
       ),
-      _ => const m3.SizedBox.shrink(),
     };
 
     return m3.ConstrainedBox(

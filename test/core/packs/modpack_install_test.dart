@@ -52,7 +52,7 @@ void main() {
           utf8.encode(jsonEncode(index)),
         ),
       );
-    return ZipEncoder().encode(archive)!;
+    return ZipEncoder().encode(archive);
   }
 
   ModrinthVersion versionOf(String fileName) => ModrinthVersion(
