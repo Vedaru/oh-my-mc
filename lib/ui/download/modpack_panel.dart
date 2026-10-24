@@ -38,17 +38,27 @@ class _ModpackPanelState extends ConsumerState<ModpackPanel> {
     return m3.Column(
       crossAxisAlignment: m3.CrossAxisAlignment.stretch,
       children: [
+        // The search is the first row of every pane and sits at the same height in all
+        // of them: it is the control the hand goes to after the tab, so it must not move.
+        m3.SizedBox(
+          // 48, not 40: the version pane's first row is a search field beside a
+          // segmented control, and that row is 48 tall. Every pane's first row has to be
+          // the same height or the content below the switch still shifts by 8 px.
+          height: 48,
+          child: DebouncedSearchField(
+            fieldKey: const m3.ValueKey('modpack-search'),
+            hint: l10n.modpackSearchHint,
+            onQuery: (text) => setState(() => _query = text),
+          ),
+        ),
+        const m3.SizedBox(height: 12),
+        // The explanation sits *below* the search: it can wrap to two lines without
+        // pushing the control the user is about to use.
         m3.Text(
           l10n.modpackHint,
           style: AppTheme.caption(
             context,
           ).copyWith(color: m3.Theme.of(context).colorScheme.onSurfaceVariant),
-        ),
-        const m3.SizedBox(height: 12),
-        DebouncedSearchField(
-          fieldKey: const m3.ValueKey('modpack-search'),
-          hint: l10n.modpackSearchHint,
-          onQuery: (text) => setState(() => _query = text),
         ),
         const m3.SizedBox(height: 12),
         m3.Expanded(

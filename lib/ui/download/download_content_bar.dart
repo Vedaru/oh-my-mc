@@ -163,12 +163,21 @@ class _DownloadContentBarState extends ConsumerState<DownloadContentBar> {
     return m3.Column(
       crossAxisAlignment: m3.CrossAxisAlignment.start,
       children: [
-        m3.Text(
-          instance == null
-              ? l10n.catalogNoTarget
-              : l10n.catalogTarget(instance.name),
-          style: AppTheme.caption(context)
-              .copyWith(color: scheme.onSurfaceVariant),
+        // The other two panes start with a 48 px search row; this one has no search, so
+        // its single line occupies that row instead of sitting 24 px higher than theirs.
+        m3.SizedBox(
+          key: const m3.ValueKey('content-target-row'),
+          height: 48,
+          child: m3.Align(
+            alignment: m3.Alignment.centerLeft,
+            child: m3.Text(
+              instance == null
+                  ? l10n.catalogNoTarget
+                  : l10n.catalogTarget(instance.name),
+              style: AppTheme.caption(context)
+                  .copyWith(color: scheme.onSurfaceVariant),
+            ),
+          ),
         ),
         const m3.SizedBox(height: 12),
         // A grid, not a row: five cards at their natural width fill a 1440 px window

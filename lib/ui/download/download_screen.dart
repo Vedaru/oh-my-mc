@@ -244,6 +244,10 @@ class _ModeSwitch extends StatelessWidget {
         children: [
           m3.SegmentedButton<_DownloadMode>(
             key: const m3.ValueKey('download-mode'),
+            // No selected-icon slot: a check mark appears on the chosen segment and
+            // widens it, so every segment (and the control's own width) jumps each time
+            // the user switches - "the gap changes as I select". The loader control
+            // below has the same setting for the same reason.
             segments: [
               m3.ButtonSegment(
                 value: _DownloadMode.versions,
@@ -258,6 +262,7 @@ class _ModeSwitch extends StatelessWidget {
                 label: m3.Text(l10n.downloadTabContent),
               ),
             ],
+            showSelectedIcon: false,
             selected: {mode},
             onSelectionChanged: (selection) => onChanged(selection.first),
           ),

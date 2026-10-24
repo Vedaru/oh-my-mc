@@ -14,6 +14,7 @@ import 'package:oh_my_mc/data/modpack_providers.dart';
 import 'package:oh_my_mc/core/install/version_remover.dart';
 import 'package:oh_my_mc/data/install_providers.dart';
 import 'package:oh_my_mc/data/launch_factory.dart';
+import 'package:oh_my_mc/ui/components/app_text_field.dart';
 import 'package:oh_my_mc/ui/download/download_screen.dart';
 import 'package:oh_my_mc/ui/motion/motion.dart';
 
@@ -691,6 +692,61 @@ void main() {
     expect(find.text('已安装'), findsOneWidget);
     expect(find.text('Versions'), findsNothing);
     expect(find.text('Installed'), findsNothing);
+  });
+
+  testWidgets('the switch does not move or resize when a tab is chosen', (
+    tester,
+  ) async {
+    await pump(tester);
+
+    // A selected-icon slot widens the chosen segment, so the control's own width (and
+    // the position of everything beside it) changed on every click. Measured, because
+    // "looks fine" is exactly what a 24 px shift looks like in a still.
+    final before = tester.getRect(find.byKey(const ValueKey('download-mode')));
+    final firstSegment = tester.getRect(find.text('Versions'));
+
+    await tester.tap(find.text('Modpacks'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    final after = tester.getRect(find.byKey(const ValueKey('download-mode')));
+    expect(after.width, moreOrLessEquals(before.width, epsilon: 0.5));
+    expect(after.left, moreOrLessEquals(before.left, epsilon: 0.5));
+    expect(after.top, moreOrLessEquals(before.top, epsilon: 0.5));
+    // And the first segment kept its own box: no segment grew a check mark.
+    expect(
+      tester.getRect(find.text('Versions')).width,
+      moreOrLessEquals(firstSegment.width, epsilon: 0.5),
+    );
+  });
+
+  testWidgets('every tab starts its content at the same place', (tester) async {
+    await pump(tester);
+    await tester.pump(const Duration(milliseconds: 400));
+
+    // The complaint was "the selector gap changes as I select": each pane used to begin
+    // with a different first row (a search field, two lines of hint, a caption), so the
+    // content under the switch started 24, 68 or 52 px down. One 48 px first row each.
+    final switchRect = tester.getRect(
+      find.byKey(const ValueKey('download-mode')),
+    );
+    double gapTo(Finder finder) =>
+        tester.getRect(finder).top - switchRect.bottom;
+
+    final versions = gapTo(find.byType(AppTextField).first);
+
+    await tester.tap(find.text('Modpacks'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    final modpacks = gapTo(find.byKey(const ValueKey('modpack-search')));
+
+    await tester.tap(find.text('Content'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    final content = gapTo(find.byKey(const ValueKey('content-target-row')));
+
+    expect(modpacks, moreOrLessEquals(versions, epsilon: 0.5));
+    expect(content, moreOrLessEquals(versions, epsilon: 0.5));
   });
 
   testWidgets('the page has two kinds of install: versions and modpacks', (
