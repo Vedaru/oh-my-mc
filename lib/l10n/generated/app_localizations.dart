@@ -2203,6 +2203,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A launcher identifies itself to Microsoft with an app id registered in your own Azure account (the official launchers use theirs). Paste one here and it is remembered.'**
   String get microsoftClientIdHint;
+
+  /// Modpack catalogue: modpackTab
+  ///
+  /// In en, this message translates to:
+  /// **'Modpacks'**
+  String get modpackTab;
+
+  /// Modpack catalogue: modpackHint
+  ///
+  /// In en, this message translates to:
+  /// **'A modpack brings its own Minecraft version and loader, so installing one creates an instance instead of filling the one you selected.'**
+  String get modpackHint;
+
+  /// Modpack catalogue: modpackSearchHint
+  ///
+  /// In en, this message translates to:
+  /// **'Search modpacks'**
+  String get modpackSearchHint;
+
+  /// Modpack catalogue: modpackVersions
+  ///
+  /// In en, this message translates to:
+  /// **'Choose version'**
+  String get modpackVersions;
+
+  /// Modpack catalogue: modpackNoVersions
+  ///
+  /// In en, this message translates to:
+  /// **'This pack has no downloadable version.'**
+  String get modpackNoVersions;
+
+  /// Modpack catalogue: modpackInstall
+  ///
+  /// In en, this message translates to:
+  /// **'Install'**
+  String get modpackInstall;
+
+  /// Modpack catalogue: modpackStarting
+  ///
+  /// In en, this message translates to:
+  /// **'Starting'**
+  String get modpackStarting;
+
+  /// Modpack catalogue: modpackStepDownload
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading the pack'**
+  String get modpackStepDownload;
+
+  /// Modpack catalogue: modpackStepInstall
+  ///
+  /// In en, this message translates to:
+  /// **'Installing its Minecraft version'**
+  String get modpackStepInstall;
+
+  /// Modpack catalogue: modpackStepCreate
+  ///
+  /// In en, this message translates to:
+  /// **'Creating the instance'**
+  String get modpackStepCreate;
+
+  /// Modpack catalogue: modpackStepImport
+  ///
+  /// In en, this message translates to:
+  /// **'Applying its mods'**
+  String get modpackStepImport;
+
+  /// Shown when a modpack install finished.
+  ///
+  /// In en, this message translates to:
+  /// **'Installed. Find it on the Instances page.'**
+  String get modpackDone;
+
+  /// Count of files a modpack manifest listed but could not fetch.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} files could not be downloaded:'**
+  String modpackSomeFailed(int count);
+
+  /// Download page tab: the version list.
+  ///
+  /// In en, this message translates to:
+  /// **'Versions'**
+  String get downloadTabVersions;
 }
 
 class _AppLocalizationsDelegate

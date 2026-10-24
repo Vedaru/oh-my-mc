@@ -1,4 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
+
+import '../mods/zip_entry_reader.dart';
 
 import '../instance/instance.dart';
 
@@ -71,6 +74,26 @@ class MrpackIndex {
   final String? loaderVersion;
 
   final List<MrpackFile> files;
+
+  /// Reads the manifest out of a `.mrpack` without downloading anything.
+  ///
+  /// The manifest is what names the Minecraft version and the loader, so an installer
+  /// has to read it *before* it decides what to install - and the same read is what makes
+  /// an import repeatable.
+  static Future<MrpackIndex> read(File pack) async {
+    final reader = await ZipEntryReader.open(pack);
+    try {
+      final manifest = await reader.readFirst(const ['modrinth.index.json']);
+      if (manifest == null) {
+        throw const FormatException(
+          'not a Modrinth pack: no modrinth.index.json',
+        );
+      }
+      return MrpackIndex.parse(manifest);
+    } finally {
+      await reader.close();
+    }
+  }
 
   /// Throws [FormatException] for anything that is not a modrinth index.
   factory MrpackIndex.parse(String text) {

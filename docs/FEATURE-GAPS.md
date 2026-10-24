@@ -34,7 +34,7 @@ Axolotl / Modrinth App（本项目主要参照）。
 | Modrinth 模组 / 资源包 / 光影 / 数据包 安装 | 有 | 有 | 有 | 有 | **有** | `core/mods/modrinth.dart` + `mod_installer.dart`，含依赖解析 |
 | 模组更新检查与一键更新 | 部分 | 有 | 有 | 有 | **有** | `core/mods/update_checker.dart`（按 sha1 认领项目） |
 | 资源包 / 光影的更新检查 | 部分 | 有 | 有 | 有 | **缺** | 更新检查目前只覆盖 `mods/`；pack 的 sha1 认领逻辑可直接复用 |
-| 整合包目录浏览与一键安装（Modrinth） | 有 | 有 | 有 | 有 | **缺** | 只有 `.mrpack` **文件**导入（`core/packs/mrpack_importer.dart`），没有 `project_type:modpack` 的搜索页 |
+| 整合包目录浏览与一键安装（Modrinth） | 有 | 有 | 有 | 有 | **有** | 下载 → 整合包：`project_type:modpack` 搜索、选版本、一键装成本地实例。`core/packs/modpack_install.dart` 先读 `modrinth.index.json`（版本与加载器由整合包决定，不由用户选的版本决定），再装版本/加载器、建实例、应用清单 |
 | 整合包更新 | 有 | 有 | 有 | 有 | **缺** | 导入后没有记住「这份整合包来自哪个项目/版本」，因此无法比对升级 |
 | CurseForge 内容 | 有 | 有 | 有 | 有 | **缺** | 需要 API key |
 | 从其它启动器导入实例（CurseForge / MultiMC / Prism / Technic） | 有 | 有 | 有 | 有 | **缺** | 只有自有格式与 `.mrpack` 导入 |

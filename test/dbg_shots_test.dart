@@ -20,6 +20,7 @@ import 'package:oh_my_mc/core/account/account.dart';
 import 'package:oh_my_mc/data/account_providers.dart';
 import 'package:oh_my_mc/data/account_store.dart';
 import 'package:oh_my_mc/data/install_providers.dart';
+import 'package:oh_my_mc/data/modpack_providers.dart';
 import 'package:oh_my_mc/data/wallpaper_provider.dart';
 import 'package:oh_my_mc/core/install/version_installer.dart';
 import 'package:oh_my_mc/core/net/progress.dart';
@@ -225,6 +226,7 @@ void main() {
     List<Override> overrides = const [],
     String? openKey,
     String? tapAfter,
+    String? tapText,
   }) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
@@ -270,6 +272,14 @@ void main() {
       // A section whose rows read something asynchronous (a server's ping) needs one
       // more frame after the answer lands, or the shot captures the pending state.
       await tester.pump(const Duration(milliseconds: 400));
+    }
+
+    if (tapText != null) {
+      // A control with no key of its own - a segmented button's segment - is still
+      // reachable by its label.
+      await tester.tap(find.text(tapText).first);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
     }
 
     if (tapAfter != null) {
@@ -491,6 +501,37 @@ void main() {
           ],
         ),
         lanDiscoveryProvider.overrideWith((ref) => _ShotLanWorlds()),
+      ],
+    );
+  });
+
+  testWidgets('download modpacks', (tester) async {
+    await shoot(
+      tester,
+      '/download',
+      'download-modpacks',
+      instances: [_instance('mc', 'mc', '1.20.1')],
+      tapText: 'Modpacks',
+      overrides: [
+        modpackSearchProvider.overrideWith(
+          (ref, query) async => const [
+            ModrinthProject(
+              id: 'fo',
+              slug: 'fabulously-optimized',
+              title: 'Fabulously Optimized',
+              description:
+                  'A performance-focused pack that keeps vanilla behaviour.',
+              downloads: 1200000,
+            ),
+            ModrinthProject(
+              id: 'rpo',
+              slug: 'raspberry',
+              title: 'Raspberry Flavour',
+              description: 'A small kitchen-sink pack for 1.20.1.',
+              downloads: 43000,
+            ),
+          ],
+        ),
       ],
     );
   });

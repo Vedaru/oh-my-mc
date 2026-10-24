@@ -388,5 +388,19 @@
   "microsoftCodeHint": "在打开的微软页面上输入这串代码：",
   "microsoftWaiting": "等你确认…这个窗口可以一直开着。",
   "microsoftNeedsClientId": "微软登录需要一个 Azure 应用 ID。",
-  "microsoftClientIdHint": "启动器要向微软表明自己是谁，这需要一个在你自己的 Azure 账号里注册的应用 ID（官方启动器用的是它们自己的）。把 ID 填进来就会记住。"
+  "microsoftClientIdHint": "启动器要向微软表明自己是谁，这需要一个在你自己的 Azure 账号里注册的应用 ID（官方启动器用的是它们自己的）。把 ID 填进来就会记住。",
+  "modpackTab": "整合包",
+  "modpackHint": "整合包自带它需要的游戏版本和加载器，所以装一个整合包会新建一个实例，而不是塞进你当前选中的实例。",
+  "modpackSearchHint": "搜索整合包",
+  "modpackVersions": "选择版本",
+  "modpackNoVersions": "这个整合包没有可下载的版本。",
+  "modpackInstall": "安装",
+  "modpackStarting": "准备中",
+  "modpackStepDownload": "下载整合包",
+  "modpackStepInstall": "安装它需要的游戏版本",
+  "modpackStepCreate": "创建实例",
+  "modpackStepImport": "应用它的模组",
+  "modpackDone": "装好了，在「实例」页里。",
+  "modpackSomeFailed": "有 {count} 个文件没能下载：",
+  "downloadTabVersions": "版本"
 }

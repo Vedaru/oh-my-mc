@@ -187,6 +187,13 @@ directory and `test/shots/` are now git-ignored.)
   old account: a launch that works with a stale token beats one that refuses. The Azure
   app id is `AppSettings.microsoftClientId`, empty by default and asked for in the sign-in
   dialog - it is per-launcher, so a build cannot ship one.
+- **A modpack is an orchestration, not a fifth pipeline.** `ModpackInstaller` composes
+  the services that already exist (`InstallNotifier` for the version, `InstanceNotifier`
+  for the instance, `MrpackImporter` for the files) through function seams, and reads the
+  `.mrpack` manifest *before* installing anything: the pack names its own Minecraft
+  version and loader, so a "install the pack for the version you selected" flow is wrong
+  by construction. Its UI is a sibling of the version list on 下载 (版本 / 整合包), because
+  both answer "what am I adding?" and differ in whether they create an instance.
 - **The rail carries the seven things a session starts from**: 启动, 实例, 账户, 联机, 下载, 日志, 设置.
   账户 and 联机 are destinations, not settings sections: an account is what every launch depends on,
   and joining a friend is something you do while playing - both were 设置 sections (通用, 网络) that

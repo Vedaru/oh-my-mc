@@ -1777,5 +1777,66 @@
   "microsoftClientIdHint": "A launcher identifies itself to Microsoft with an app id registered in your own Azure account (the official launchers use theirs). Paste one here and it is remembered.",
   "@microsoftClientIdHint": {
     "description": "Explains where an Azure app id comes from."
+  },
+  "modpackTab": "Modpacks",
+  "@modpackTab": {
+    "description": "Modpack catalogue: modpackTab"
+  },
+  "modpackHint": "A modpack brings its own Minecraft version and loader, so installing one creates an instance instead of filling the one you selected.",
+  "@modpackHint": {
+    "description": "Modpack catalogue: modpackHint"
+  },
+  "modpackSearchHint": "Search modpacks",
+  "@modpackSearchHint": {
+    "description": "Modpack catalogue: modpackSearchHint"
+  },
+  "modpackVersions": "Choose version",
+  "@modpackVersions": {
+    "description": "Modpack catalogue: modpackVersions"
+  },
+  "modpackNoVersions": "This pack has no downloadable version.",
+  "@modpackNoVersions": {
+    "description": "Modpack catalogue: modpackNoVersions"
+  },
+  "modpackInstall": "Install",
+  "@modpackInstall": {
+    "description": "Modpack catalogue: modpackInstall"
+  },
+  "modpackStarting": "Starting",
+  "@modpackStarting": {
+    "description": "Modpack catalogue: modpackStarting"
+  },
+  "modpackStepDownload": "Downloading the pack",
+  "@modpackStepDownload": {
+    "description": "Modpack catalogue: modpackStepDownload"
+  },
+  "modpackStepInstall": "Installing its Minecraft version",
+  "@modpackStepInstall": {
+    "description": "Modpack catalogue: modpackStepInstall"
+  },
+  "modpackStepCreate": "Creating the instance",
+  "@modpackStepCreate": {
+    "description": "Modpack catalogue: modpackStepCreate"
+  },
+  "modpackStepImport": "Applying its mods",
+  "@modpackStepImport": {
+    "description": "Modpack catalogue: modpackStepImport"
+  },
+  "modpackDone": "Installed. Find it on the Instances page.",
+  "@modpackDone": {
+    "description": "Shown when a modpack install finished."
+  },
+  "modpackSomeFailed": "{count} files could not be downloaded:",
+  "@modpackSomeFailed": {
+    "description": "Count of files a modpack manifest listed but could not fetch.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadTabVersions": "Versions",
+  "@downloadTabVersions": {
+    "description": "Download page tab: the version list."
   }
 }

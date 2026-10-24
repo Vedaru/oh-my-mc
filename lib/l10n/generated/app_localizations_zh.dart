@@ -1222,4 +1222,48 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get microsoftClientIdHint =>
       '启动器要向微软表明自己是谁，这需要一个在你自己的 Azure 账号里注册的应用 ID（官方启动器用的是它们自己的）。把 ID 填进来就会记住。';
+
+  @override
+  String get modpackTab => '整合包';
+
+  @override
+  String get modpackHint => '整合包自带它需要的游戏版本和加载器，所以装一个整合包会新建一个实例，而不是塞进你当前选中的实例。';
+
+  @override
+  String get modpackSearchHint => '搜索整合包';
+
+  @override
+  String get modpackVersions => '选择版本';
+
+  @override
+  String get modpackNoVersions => '这个整合包没有可下载的版本。';
+
+  @override
+  String get modpackInstall => '安装';
+
+  @override
+  String get modpackStarting => '准备中';
+
+  @override
+  String get modpackStepDownload => '下载整合包';
+
+  @override
+  String get modpackStepInstall => '安装它需要的游戏版本';
+
+  @override
+  String get modpackStepCreate => '创建实例';
+
+  @override
+  String get modpackStepImport => '应用它的模组';
+
+  @override
+  String get modpackDone => '装好了，在「实例」页里。';
+
+  @override
+  String modpackSomeFailed(int count) {
+    return '有 $count 个文件没能下载：';
+  }
+
+  @override
+  String get downloadTabVersions => '版本';
 }

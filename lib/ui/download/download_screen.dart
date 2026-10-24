@@ -14,6 +14,7 @@ import '../../l10n/l10n.dart';
 import '../components/app_banner.dart';
 import '../components/hover_row.dart';
 import '../components/page_body.dart';
+import 'modpack_panel.dart';
 import '../components/skeleton_block.dart';
 import '../motion/motion.dart';
 import '../shell/shell_icons.dart';
@@ -71,6 +72,11 @@ class _DownloadScreenState extends ConsumerState<DownloadScreen> {
   final _search = TextEditingController();
   bool _snapshots = false;
   var _loader = LoaderKind.vanilla;
+
+  /// 版本 or 整合包. Two kinds of install that share a page because they share a
+  /// question - "what am I adding?" - and differ in everything after it: a modpack
+  /// creates the instance instead of installing into the selected one.
+  var _mode = _DownloadMode.versions;
 
   @override
   void dispose() {
@@ -141,54 +147,108 @@ class _DownloadScreenState extends ConsumerState<DownloadScreen> {
           // Hidden while an install is running: the panel below it is the thing to
           // watch then, and on a short window the two together push the list out of
           // the viewport.
-          if (install is InstallIdle) const DownloadContentBar(),
-          _Toolbar(
-            search: _search,
-            snapshots: _snapshots,
-            loader: _loader,
-            busy: install is InstallRunning,
-            onLoader: (value) => setState(() => _loader = value),
-            onSnapshots: (value) => setState(() => _snapshots = value),
-            onQuery: () => setState(() {}),
+          // No content bar in the modpack tab: mods and packs go into an existing
+          // instance, and this tab is about creating one.
+          if (install is InstallIdle && _mode == _DownloadMode.versions)
+            const DownloadContentBar(),
+          _ModeSwitch(
+            mode: _mode,
+            onChanged: (mode) => setState(() => _mode = mode),
           ),
-          if (install is! InstallIdle) _InstallPanel(state: install),
-          m3.Expanded(
-            child: switch (list) {
-              // A skeleton, not a spinner: the row rhythm is known, so the list
-              // can say "rows this size are coming" instead of "something is
-              // happening" (PLAN-M11 §3.1).
-              VersionListLoading() => const _VersionSkeleton(),
-              VersionListFailed(:final message) => _ListFailure(
-                message: message,
+          if (_mode == _DownloadMode.modpacks)
+            const m3.Expanded(child: ModpackPanel())
+          else ...[
+            _Toolbar(
+              search: _search,
+              snapshots: _snapshots,
+              loader: _loader,
+              busy: install is InstallRunning,
+              onLoader: (value) => setState(() => _loader = value),
+              onSnapshots: (value) => setState(() => _snapshots = value),
+              onQuery: () => setState(() {}),
+            ),
+            if (install is! InstallIdle) _InstallPanel(state: install),
+            m3.Expanded(
+              child: switch (list) {
+                // A skeleton, not a spinner: the row rhythm is known, so the list
+                // can say "rows this size are coming" instead of "something is
+                // happening" (PLAN-M11 §3.1).
+                VersionListLoading() => const _VersionSkeleton(),
+                VersionListFailed(:final message) => _ListFailure(
+                  message: message,
+                ),
+                VersionListReady(:final manifest, :final fromCache) =>
+                  _VersionList(
+                    versions: [
+                      for (final v in manifest.versions)
+                        if (VersionRowData.of(v)
+                            .visible(showSnapshots: _snapshots, query: query))
+                          VersionRowData.of(v),
+                    ],
+                    query: query,
+                    installed: installed,
+                    incomplete: incomplete,
+                    stale: fromCache,
+                    // A second install while one is running would race on the same
+                    // `libraries/` tree; the rows are inert until it finishes.
+                    busy: install is InstallRunning,
+                    onInstall: (id) {
+                      final notifier = ref.read(
+                        installControllerProvider.notifier,
+                      );
+                      // An interrupted install is resumed, not restarted: a restart
+                      // would re-run a loader installer (minutes, and a JVM) to
+                      // replace libraries that are simply missing.
+                      if (incomplete.contains(id)) {
+                        notifier.repair(id);
+                      } else {
+                        notifier.install(id, loader: _loader);
+                      }
+                    },
+                    onUninstall: (id) => _uninstall(id),
+                  ),
+              },
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+enum _DownloadMode { versions, modpacks }
+
+/// 版本 / 整合包, as one segmented control above the body.
+///
+/// A `SegmentedButton` rather than tabs: the page has one title and one body, and the
+/// switch changes what the body lists - the same control the loader choice uses.
+class _ModeSwitch extends StatelessWidget {
+  const _ModeSwitch({required this.mode, required this.onChanged});
+
+  final _DownloadMode mode;
+  final void Function(_DownloadMode mode) onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return m3.Padding(
+      padding: const m3.EdgeInsets.only(bottom: 12),
+      child: m3.Row(
+        children: [
+          m3.SegmentedButton<_DownloadMode>(
+            key: const m3.ValueKey('download-mode'),
+            segments: [
+              m3.ButtonSegment(
+                value: _DownloadMode.versions,
+                label: m3.Text(l10n.downloadTabVersions),
               ),
-              VersionListReady(:final manifest, :final fromCache) => _VersionList(
-                versions: [
-                  for (final v in manifest.versions)
-                    if (VersionRowData.of(v)
-                        .visible(showSnapshots: _snapshots, query: query))
-                      VersionRowData.of(v),
-                ],
-                query: query,
-                installed: installed,
-                incomplete: incomplete,
-                stale: fromCache,
-                // A second install while one is running would race on the same
-                // `libraries/` tree; the rows are inert until it finishes.
-                busy: install is InstallRunning,
-                onInstall: (id) {
-                  final notifier = ref.read(installControllerProvider.notifier);
-                  // An interrupted install is resumed, not restarted: a restart
-                  // would re-run a loader installer (minutes, and a JVM) to
-                  // replace libraries that are simply missing.
-                  if (incomplete.contains(id)) {
-                    notifier.repair(id);
-                  } else {
-                    notifier.install(id, loader: _loader);
-                  }
-                },
-                onUninstall: (id) => _uninstall(id),
+              m3.ButtonSegment(
+                value: _DownloadMode.modpacks,
+                label: m3.Text(l10n.modpackTab),
               ),
-            },
+            ],
+            selected: {mode},
+            onSelectionChanged: (selection) => onChanged(selection.first),
           ),
         ],
       ),

@@ -224,6 +224,28 @@ class ModrinthClient {
     ];
   }
 
+  /// Every published version of [projectId], newest first, as Modrinth orders them.
+  ///
+  /// Needed by anything that installs a *whole thing* rather than a file: a modpack
+  /// version carries its own Minecraft version and loader, so the picker cannot filter by
+  /// the instance's - there is no instance yet - and showing only the newest version per
+  /// game version and loader would be wrong.
+  Future<List<ModrinthVersion>> versions(
+    String projectId, {
+    CancelToken? cancel,
+  }) async {
+    final uri = _base.replace(path: '/v2/project/$projectId/version');
+    final body = await _getJson(uri, cancel: cancel);
+    if (body is! List) return const [];
+    return [
+      for (final entry in body)
+        if (entry is Map<String, dynamic>)
+          if (ModrinthVersion.fromJson(entry) case final version
+              when version.primaryFile != null)
+            version,
+    ];
+  }
+
   /// The newest version of [projectId] that matches [gameVersion] and [loader].
   Future<ModrinthVersion> versionFor(
     String projectId, {

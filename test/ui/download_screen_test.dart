@@ -9,6 +9,8 @@ import 'package:oh_my_mc/core/install/version_installer.dart';
 import 'package:oh_my_mc/core/net/progress.dart';
 import 'package:oh_my_mc/core/net/version_manifest.dart';
 import 'package:oh_my_mc/core/instance/instance.dart';
+import 'package:oh_my_mc/core/mods/modrinth.dart';
+import 'package:oh_my_mc/data/modpack_providers.dart';
 import 'package:oh_my_mc/core/install/version_remover.dart';
 import 'package:oh_my_mc/data/install_providers.dart';
 import 'package:oh_my_mc/data/launch_factory.dart';
@@ -217,6 +219,31 @@ void main() {
           ),
         ),
         versionRemoverProvider.overrideWithValue(remover ?? _FakeRemover()),
+        modpackVersionsProvider.overrideWith(
+          (ref, projectId) async => const [
+            ModrinthVersion(
+              id: 'v1',
+              projectId: 'fo',
+              name: 'Version 3.0.0',
+              versionNumber: '3.0.0',
+              files: [],
+              dependencies: [],
+              gameVersions: ['1.20.1'],
+            ),
+          ],
+        ),
+        // The modpack tab searches Modrinth; a test that switches to it must not.
+        modpackSearchProvider.overrideWith(
+          (ref, query) async => const [
+            ModrinthProject(
+              id: 'fo',
+              slug: 'fabulously-optimized',
+              title: 'Fabulously Optimized',
+              description: 'a pack',
+              downloads: 10,
+            ),
+          ],
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -664,6 +691,46 @@ void main() {
     expect(find.text('已安装'), findsOneWidget);
     expect(find.text('Versions'), findsNothing);
     expect(find.text('Installed'), findsNothing);
+  });
+
+  testWidgets('the page has two kinds of install: versions and modpacks', (
+    tester,
+  ) async {
+    await pump(tester);
+
+    // Versions first: that is what most visits are about.
+    expect(find.byKey(const ValueKey('download-mode')), findsOneWidget);
+    expect(find.text('Versions'), findsOneWidget);
+    expect(find.text('Modpacks'), findsOneWidget);
+
+    await tester.tap(find.text('Modpacks'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    // The catalogue, and no version list behind it: the tab replaces the body,
+    // because the two answer different questions.
+    expect(find.byKey(const ValueKey('modpack-search')), findsOneWidget);
+    expect(find.text('Fabulously Optimized'), findsOneWidget);
+    expect(find.text('1.20.1'), findsNothing);
+    // The content bar installs into an instance; this tab creates one.
+    expect(find.text('Mods'), findsNothing);
+  });
+
+  testWidgets('a modpack opens its versions, not an immediate install', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tester.tap(find.text('Modpacks'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    await tester.tap(find.byKey(const ValueKey('modpack-open-fo')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    // The pack brings its own Minecraft version and loader, so the only choice worth
+    // offering is *which* pack version.
+    expect(find.byKey(const ValueKey('modpack-version-v1')), findsOneWidget);
   });
 }
 

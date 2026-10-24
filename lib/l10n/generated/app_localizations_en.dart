@@ -1274,4 +1274,49 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get microsoftClientIdHint =>
       'A launcher identifies itself to Microsoft with an app id registered in your own Azure account (the official launchers use theirs). Paste one here and it is remembered.';
+
+  @override
+  String get modpackTab => 'Modpacks';
+
+  @override
+  String get modpackHint =>
+      'A modpack brings its own Minecraft version and loader, so installing one creates an instance instead of filling the one you selected.';
+
+  @override
+  String get modpackSearchHint => 'Search modpacks';
+
+  @override
+  String get modpackVersions => 'Choose version';
+
+  @override
+  String get modpackNoVersions => 'This pack has no downloadable version.';
+
+  @override
+  String get modpackInstall => 'Install';
+
+  @override
+  String get modpackStarting => 'Starting';
+
+  @override
+  String get modpackStepDownload => 'Downloading the pack';
+
+  @override
+  String get modpackStepInstall => 'Installing its Minecraft version';
+
+  @override
+  String get modpackStepCreate => 'Creating the instance';
+
+  @override
+  String get modpackStepImport => 'Applying its mods';
+
+  @override
+  String get modpackDone => 'Installed. Find it on the Instances page.';
+
+  @override
+  String modpackSomeFailed(int count) {
+    return '$count files could not be downloaded:';
+  }
+
+  @override
+  String get downloadTabVersions => 'Versions';
 }

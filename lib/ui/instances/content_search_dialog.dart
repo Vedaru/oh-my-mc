@@ -12,9 +12,8 @@ import '../../data/modrinth_providers.dart';
 import '../../l10n/l10n.dart';
 import '../components/app_button.dart';
 import '../components/app_dialog.dart';
-import '../components/app_text_field.dart';
+import '../components/catalog_list.dart';
 import '../components/list_row.dart';
-import '../motion/tokens.dart';
 import '../shell/shell_icons.dart';
 import '../theme/app_theme.dart';
 
@@ -168,79 +167,49 @@ class _ContentSearchDialogState extends ConsumerState<ContentSearchDialog> {
                 ),
               )
             else ...[
-              AppTextField(
-                key: const m3.ValueKey('content-search'),
-                controller: _text,
+              DebouncedSearchField(
+                fieldKey: const m3.ValueKey('content-search'),
                 autofocus: true,
                 hint: l10n.catalogSearchHint,
-                leading: const m3.Icon(ShellIcons.search, size: 15),
-                onSubmitted: (text) => setState(() => _query = _queryFor(text)),
-                onChanged: (text) {
-                  // Search after a pause, not on every keystroke: the API is rate
-                  // limited and a one-letter query matches the whole site.
-                  Future<void>.delayed(Durations.debounce, () {
-                    if (!mounted || _text.text != text) return;
-                    setState(() => _query = _queryFor(text));
-                  });
-                },
+                onQuery: (text) => setState(() => _query = _queryFor(text)),
               ),
               const m3.SizedBox(height: 12),
-              m3.ConstrainedBox(
-                constraints: const m3.BoxConstraints(maxHeight: 380),
-                child: results.when(
-                  loading: () => const m3.Padding(
-                    padding: m3.EdgeInsets.symmetric(vertical: 24),
-                    child: m3.Center(child: m3.CircularProgressIndicator()),
-                  ),
-                  error: (error, _) => m3.Padding(
-                    padding: const m3.EdgeInsets.symmetric(vertical: 24),
-                    child: m3.SelectableText('$error'),
-                  ),
-                  data: (hits) => hits.isEmpty
-                      ? m3.Padding(
-                          padding: const m3.EdgeInsets.symmetric(vertical: 24),
-                          child: m3.Text(
-                            l10n.catalogEmpty,
-                            style: AppTheme.body(context)
-                                .copyWith(color: scheme.onSurfaceVariant),
-                          ),
-                        )
-                      : m3.ListView(
-                          shrinkWrap: true,
-                          padding: m3.EdgeInsets.zero,
-                          children: [
-                            for (final hit in hits)
-                              ListRow(
-                                key: m3.ValueKey('catalog-result-${hit.id}'),
-                                leadingIcon: _icon,
-                                label: hit.title,
-                                supporting: hit.description,
-                                trailingControl: _busy.contains(hit.id)
-                                    ? const m3.SizedBox(
-                                        width: 16,
-                                        height: 16,
-                                        child: m3.CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
-                                      )
-                                    : _done.contains(hit.id)
-                                    ? const m3.Icon(ShellIcons.check, size: 16)
-                                    : AppButton(
-                                        onPressed: () => _install(hit),
-                                        style: AppButtonStyle.text,
-                                        size: AppButtonSize.sm,
-                                        label: m3.Text(l10n.catalogInstall),
-                                      ),
-                                errorText: _errors[hit.id],
-                              ),
-                          ],
-                        ),
-                ),
+              CatalogList<ModrinthProject>(
+                results: results,
+                emptyText: l10n.catalogEmpty,
+                rowBuilder: _row,
               ),
             ],
           ],
         ),
       ),
+    );
+  }
+
+  /// One search hit: what it is, and the one thing to do with it.
+  Widget _row(BuildContext context, ModrinthProject hit) {
+    final l10n = context.l10n;
+    final busy = _busy.contains(hit.id);
+    return ListRow(
+      key: m3.ValueKey('catalog-result-${hit.id}'),
+      leadingIcon: _icon,
+      label: hit.title,
+      supporting: hit.description,
+      trailingControl: busy
+          ? const m3.SizedBox(
+              width: 16,
+              height: 16,
+              child: m3.CircularProgressIndicator(strokeWidth: 2),
+            )
+          : _done.contains(hit.id)
+          ? const m3.Icon(ShellIcons.check, size: 16)
+          : AppButton(
+              onPressed: () => _install(hit),
+              style: AppButtonStyle.text,
+              size: AppButtonSize.sm,
+              label: m3.Text(l10n.catalogInstall),
+            ),
+      errorText: _errors[hit.id],
     );
   }
 
